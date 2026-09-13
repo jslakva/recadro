@@ -29,7 +29,7 @@ new device is a row in that table.
 ```
 tool → page:   ?panel=<slug>&device=<slot>&locale=<locale>&captures=<folder URL>
 page → tool:   nothing
-tool → disk:   <out>/<locale>/<device>/<NN-slug>.png
+tool → disk:   <out>/<device>/<locale>/<NN-slug>.png
 ```
 
 The tool reads what a set's files are called and where they are. It never

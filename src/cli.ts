@@ -125,8 +125,8 @@ async function main(): Promise<void> {
   const server = await startServer(set, { port });
   try {
     console.log(`recadro  ${counted(server.panels.length, "panel")} in ${shown(set.dir)}`);
-    console.log(`         locales   ${locales.join(", ")}  (${localesFrom})`);
     console.log(`         devices   ${ids.join(", ")}  (${devicesFrom})`);
+    console.log(`         locales   ${locales.join(", ")}  (${localesFrom})`);
     console.log(`         out       ${shown(outDir)}\n`);
 
     const result = await render({
@@ -134,7 +134,7 @@ async function main(): Promise<void> {
       panels: server.panels,
       slots,
       locales,
-      capturesUrl: (locale, device) => capturesUrl(set, locale, device),
+      capturesUrl: (device, locale) => capturesUrl(set, device, locale),
       outDir,
       incomplete: values.incomplete,
     });

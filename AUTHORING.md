@@ -36,7 +36,7 @@ A set is a folder holding `panels/`:
 ```
 tool → page:   ?panel=<slug>&device=<slot>&locale=<locale>&captures=<folder URL>
 page → tool:   nothing
-tool → disk:   <out>/<locale>/<device>/<slug>.png
+tool → disk:   <out>/<device>/<locale>/<slug>.png
 ```
 
 | slot      | delivered pixels | viewport (CSS px) | scale |
@@ -48,7 +48,7 @@ The page is the viewport, `100vw × 100vh`. Those numbers are for your
 understanding; they belong in no panel.
 
 `captures` is a root-absolute folder URL ending in `/`, already resolved for
-this locale and slot. The page appends a filename: the slug plus `.png`, or
+this slot and locale. The page appends a filename: the slug plus `.png`, or
 whatever its strings map the slug to.
 
 ## recadro.json
@@ -130,7 +130,7 @@ including ones whose capture does not exist yet, somewhere outside the set's
 npx recadro render --out <scratch dir> --incomplete
 ```
 
-Then open `<scratch dir>/<locale>/<device>/<slug>.png` for every panel you
+Then open `<scratch dir>/<device>/<locale>/<slug>.png` for every panel you
 touched, at every slot and locale. Look for a headline that wraps badly or is
 cropped, text overflowing the frame, a fallback font, a capture that didn't
 load, and a layout that only works on one slot or in one language. Look at the
@@ -147,16 +147,16 @@ It first prints what it picked and why:
 
 ```
 recadro  6 panels in store/screenshots
-         locales   de-DE, en-US  (strings/)
          devices   6.9  (no captures folder for 13-iPad)
+         locales   de-DE, en-US  (strings/)
          out       store/screenshots/out
 ```
 
-Then `wrote <locale>/<device>/<slug>.png` per shot and
-`skipped <locale>/<device>/<slug> — no capture at <url>` per incomplete panel,
+Then `wrote <device>/<locale>/<slug>.png` per shot and
+`skipped <device>/<locale>/<slug> — no capture at <url>` per incomplete panel,
 and it exits 0 either way — read the lines, not the exit code. A device missing
 from `devices` has no captures folder; pass `--devices` to render it anyway.
-Each `<out>/<locale>/<device>/` is cleared first, so it only ever holds this
+Each `<out>/<device>/<locale>/` is cleared first, so it only ever holds this
 run's complete panels. `--incomplete` refuses to write into the set's `out`.
 
 `render` needs Playwright's chromium once. If it fails for want of a browser,

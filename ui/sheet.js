@@ -158,7 +158,7 @@ function figureFor(panel, context) {
   const panelUrl =
     `${panel.urlPath}?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}` +
     `&locale=${encodeURIComponent(locale)}&captures=${encodeURIComponent(captures)}`;
-  const pngUrl = `${manifest.outUrl}/${locale}/${slot.id}/${panel.slug}.png`;
+  const pngUrl = `${manifest.outUrl}/${slot.id}/${locale}/${panel.slug}.png`;
 
   if (mode === "live") {
     const iframe = document.createElement("iframe");

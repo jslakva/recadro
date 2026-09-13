@@ -22,11 +22,11 @@ export interface RenderOptions {
   panels: Panel[];
   /** Slots to render each panel into. */
   slots: Slot[];
-  /** Locale codes: the output directory names, and the page's `?locale=`. */
+  /** Locale codes: the output folder names under each slot, and the page's `?locale=`. */
   locales: string[];
-  /** The page's `?captures=` for one locale and slot: a root-absolute folder URL. */
-  capturesUrl: (locale: string, device: string) => string;
-  /** Absolute path of the output directory; `<out>/<locale>/<device>/`. */
+  /** The page's `?captures=` for one slot and locale: a root-absolute folder URL. */
+  capturesUrl: (device: string, locale: string) => string;
+  /** Absolute path of the output directory; `<out>/<device>/<locale>/`. */
   outDir: string;
   /**
    * Shoot incomplete panels too, instead of skipping them. For looking, never
@@ -41,7 +41,7 @@ export interface RenderResult {
   /** Files written, as paths relative to `outDir`. */
   written: string[];
   /**
-   * Panels with an image that resolved to nothing, as `locale/device/slug` with
+   * Panels with an image that resolved to nothing, as `device/locale/slug` with
    * the srcs. Skipped, or written anyway under `incomplete`.
    */
   incomplete: { where: string; missing: string[] }[];
@@ -78,10 +78,10 @@ async function settle(page: import("playwright").Page): Promise<string[]> {
 }
 
 /**
- * Renders every locale x slot x panel whose capture exists, or every panel at
+ * Renders every slot x locale x panel whose capture exists, or every panel at
  * all under `incomplete`.
  *
- * Each `<out>/<locale>/<device>/` directory is cleared first, so a panel
+ * Each `<out>/<device>/<locale>/` directory is cleared first, so a panel
  * deleted from the directory cannot survive as a stale PNG that an upload
  * would still find and ship.
  */
@@ -91,9 +91,9 @@ export async function render(options: RenderOptions): Promise<RenderResult> {
   const browser = await chromium.launch();
 
   try {
-    for (const locale of locales) {
-      for (const slot of slots) {
-        const dir = join(outDir, locale, slot.id);
+    for (const slot of slots) {
+      for (const locale of locales) {
+        const dir = join(outDir, slot.id, locale);
         rmSync(dir, { recursive: true, force: true });
         mkdirSync(dir, { recursive: true });
 
@@ -104,7 +104,7 @@ export async function render(options: RenderOptions): Promise<RenderResult> {
         });
         const page = await context.newPage();
 
-        const captures = encodeURIComponent(capturesUrl(locale, slot.id));
+        const captures = encodeURIComponent(capturesUrl(slot.id, locale));
         for (const panel of panels) {
           const query =
             `?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}&locale=${locale}&captures=${captures}`;
@@ -116,7 +116,7 @@ export async function render(options: RenderOptions): Promise<RenderResult> {
 
           const missing = await settle(page);
           if (missing.length) {
-            result.incomplete.push({ where: `${locale}/${slot.id}/${panel.slug}`, missing });
+            result.incomplete.push({ where: `${slot.id}/${locale}/${panel.slug}`, missing });
             if (!incomplete) continue;
           }
 
@@ -128,7 +128,7 @@ export async function render(options: RenderOptions): Promise<RenderResult> {
             .withIccProfile("srgb")
             .png({ compressionLevel: 9 })
             .toFile(file);
-          result.written.push(`${locale}/${slot.id}/${panel.slug}.png`);
+          result.written.push(`${slot.id}/${locale}/${panel.slug}.png`);
         }
 
         await context.close();

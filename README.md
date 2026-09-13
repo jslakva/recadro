@@ -26,7 +26,7 @@ store/screenshots/          # the set, found from wherever you run recadro
   captures/6.9/01-hero.png  # raw captures, one folder per device
   panel.css, panel.js       # whatever the panels share; recadro never reads them
   recadro.json              # optional: only when captures live elsewhere
-  out/                      # rendered: <locale>/<device>/<NN-slug>.png
+  out/                      # rendered: <device>/<locale>/<NN-slug>.png
 ```
 
 The whole tool ↔ layout contract is four query params:
@@ -34,7 +34,7 @@ The whole tool ↔ layout contract is four query params:
 ```
 tool → page:   ?panel=02-feature&device=6.9&locale=en-US&captures=/store/screenshots/captures/6.9/
 page → tool:   nothing
-tool → disk:   out/<locale>/<device>/<NN-slug>.png, at exact slot pixels
+tool → disk:   out/<device>/<locale>/<NN-slug>.png, at exact slot pixels
 ```
 
 recadro reads what things are called, never what they say. A page fetches its

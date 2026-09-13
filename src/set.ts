@@ -39,7 +39,7 @@ export const CONFIG_FILE = "recadro.json";
 const DEFAULTS = { captures: "captures/{device}", out: "out" };
 
 /** The placeholders a `captures` pattern may use. */
-const PLACEHOLDERS = ["{locale}", "{device}"];
+const PLACEHOLDERS = ["{device}", "{locale}"];
 
 /** A set as the commands use it: where it is and what its names say. */
 export interface PanelSet {
@@ -200,19 +200,19 @@ export function loadSet(dir: string): PanelSet {
   return { dir, root, configured, captures, outDir: resolve(dir, out), locales: localesIn(dir) };
 }
 
-/** The absolute folder holding one locale's captures for one slot. */
-export function capturesDir(set: PanelSet, locale: string, device: string): string {
+/** The absolute folder holding one slot's captures in one locale. */
+export function capturesDir(set: PanelSet, device: string, locale: string): string {
   return resolve(set.dir, set.captures.replaceAll("{locale}", locale).replaceAll("{device}", device));
 }
 
 /**
  * The captures folder as the URL a page is given in `?captures=`, root-absolute
- * with a trailing slash so a page appends a filename. Left with `{locale}` and
- * `{device}` in it when no locale and device are given, for the contact sheet
+ * with a trailing slash so a page appends a filename. Left with `{device}` and
+ * `{locale}` in it when no slot and locale are given, for the contact sheet
  * to fill.
  */
-export function capturesUrl(set: PanelSet, locale = "{locale}", device = "{device}"): string {
-  return `${urlPathFor(set.root, capturesDir(set, locale, device))}/`;
+export function capturesUrl(set: PanelSet, device = "{device}", locale = "{locale}"): string {
+  return `${urlPathFor(set.root, capturesDir(set, device, locale))}/`;
 }
 
 /**
@@ -221,7 +221,7 @@ export function capturesUrl(set: PanelSet, locale = "{locale}", device = "{devic
  * not captured yet — gets every slot, so it still renders.
  */
 export function devicesWithCaptures(set: PanelSet, locales: readonly string[]): string[] {
-  const found = SLOTS.filter((slot) => locales.some((locale) => existsSync(capturesDir(set, locale, slot.id))));
+  const found = SLOTS.filter((slot) => locales.some((locale) => existsSync(capturesDir(set, slot.id, locale))));
   return found.map((slot) => slot.id);
 }
 
