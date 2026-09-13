@@ -134,6 +134,9 @@ shows — with the rest below. It shows the live panels by default and the
 contents of `out/` on a toggle, so a rendered set can be compared against the
 design.
 
+Click a panel to see it alone, as large as the window allows; the arrow keys
+step through the set and Esc comes back to the sheet.
+
 The pointer (`P`) copies a reference to one spot on one panel — its file, the
 point in viewport units and delivered pixels, the element there — for pasting
 into a coding agent. [AUTHORING.md](AUTHORING.md) tells the agent how to read it.

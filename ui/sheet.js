@@ -146,8 +146,10 @@ function aimFor(panel, context, frame) {
 function figureFor(panel, context) {
   const { slot, locale, mode, logicalW, logicalH } = context;
   const figure = document.createElement("figure");
+  figure.dataset.slug = panel.slug;
   const frame = document.createElement("div");
   frame.className = "frame";
+  const alone = `#${encodeURIComponent(panel.slug)}`;
 
   const panelUrl =
     `${panel.urlPath}?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}&locale=${locale}`;
@@ -158,6 +160,9 @@ function figureFor(panel, context) {
     iframe.src = panelUrl;
     iframe.width = logicalW;
     iframe.height = logicalH;
+    // Keys pressed with focus inside a panel still reach the sheet, on every
+    // load, since a panel reloading under HMR is a fresh window.
+    iframe.addEventListener("load", () => iframe.contentWindow.addEventListener("keydown", onKey));
     frame.append(iframe);
   } else {
     const img = document.createElement("img");
@@ -169,18 +174,48 @@ function figureFor(panel, context) {
     });
     frame.append(img);
   }
-  // A hole replaces the frame's children, overlay included: nothing to point at.
-  frame.append(aimFor(panel, context, frame));
+  // Clicking a frame in the sheet shows that panel alone. A hole replaces the
+  // frame's children, both overlays included: nothing to enlarge or point at.
+  const open = document.createElement("a");
+  open.className = "open";
+  open.href = alone;
+  open.setAttribute("aria-label", `show ${panel.slug} alone`);
+  frame.append(open, aimFor(panel, context, frame));
 
-  // The slug opens the panel on its own, at logical size — the view to
-  // reach for once the row has told you which one is wrong.
+  // The slug shows the panel alone too — not the bare panel URL, which only
+  // looks right in a window the slot's size, as render opens it.
   const caption = document.createElement("figcaption");
   const slugLink = document.createElement("a");
   slugLink.className = "slug";
-  slugLink.href = panelUrl;
-  slugLink.target = "_blank";
+  slugLink.href = alone;
   slugLink.textContent = panel.slug;
   caption.append(slugLink);
+
+  // Seen only when the panel is shown alone: where it sits in the set, its
+  // neighbours, and the way back.
+  const index = manifest.panels.indexOf(panel);
+  const nav = document.createElement("span");
+  nav.className = "nav";
+  const count = document.createElement("span");
+  count.textContent = `${index + 1} of ${manifest.panels.length}`;
+  nav.append(count);
+  for (const [delta, label] of [[-1, (s) => `‹ ${s}`], [1, (s) => `${s} ›`]]) {
+    const neighbour = manifest.panels[index + delta];
+    if (!neighbour) continue;
+    const link = document.createElement("a");
+    link.href = `#${encodeURIComponent(neighbour.slug)}`;
+    link.textContent = label(neighbour.slug);
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      step(delta);
+    });
+    nav.append(link);
+  }
+  const all = document.createElement("a");
+  all.href = "#";
+  all.textContent = "all";
+  nav.append(all);
+  caption.append(nav);
 
   if (mode === "out") {
     const pngLink = document.createElement("a");
@@ -194,15 +229,79 @@ function figureFor(panel, context) {
   return figure;
 }
 
-/** Sizes every frame by setting three CSS variables on the sheet, leaving the frames themselves untouched. */
+/**
+ * The widest frame for a panel shown alone that leaves its caption and the
+ * body's bottom padding inside the window. Measured from the figure as laid
+ * out, because the header wraps on a narrow window and has no fixed height.
+ */
+function fitWidth(figure, logicalW, logicalH) {
+  const frame = figure.querySelector(".frame").getBoundingClientRect();
+  const below = figure.getBoundingClientRect().bottom - frame.bottom;
+  const padding = parseFloat(getComputedStyle(document.body).paddingBottom);
+  const height = Math.floor(innerHeight - (frame.top + scrollY) - below - padding);
+  const width = document.documentElement.clientWidth - 40;
+  return Math.max(120, Math.floor(Math.min(width, (height * logicalW) / logicalH)));
+}
+
+/**
+ * Sizes every frame by setting three CSS variables on the sheet, leaving the
+ * frames themselves untouched: from the size slider, or fitted to the window
+ * when one panel is shown alone.
+ */
 function resize() {
   const slot = manifest.slots.find((s) => s.id === deviceSel.value);
-  const thumbW = Number(el("zoom").value);
-  const k = thumbW / (slot.width / slot.scale);
+  const logicalW = slot.width / slot.scale;
+  const logicalH = slot.height / slot.scale;
+  const focused = el("sheet").querySelector("figure.focused");
+  const thumbW = focused ? fitWidth(focused, logicalW, logicalH) : Number(el("zoom").value);
+  const k = thumbW / logicalW;
   const sheet = el("sheet").style;
   sheet.setProperty("--thumb-w", `${thumbW}px`);
-  sheet.setProperty("--frame-h", `${Math.round((slot.height / slot.scale) * k)}px`);
+  sheet.setProperty("--frame-h", `${Math.round(logicalH * k)}px`);
   sheet.setProperty("--k", String(k));
+}
+
+/** The panel the URL's hash names, if it names one. */
+function focusedSlug() {
+  const slug = decodeURIComponent(location.hash.slice(1));
+  return manifest.panels.some((p) => p.slug === slug) ? slug : null;
+}
+
+/** Where the sheet was scrolled before a panel was shown alone, to return to. */
+let sheetScroll = 0;
+// The sheet restores its own scroll. Left to the browser, Back would scroll to
+// the entry's old position before the hash change could record the current one.
+history.scrollRestoration = "manual";
+
+/**
+ * Shows the panel the hash names alone, fitted to the window, or the whole sheet
+ * when it names none. The other figures are hidden rather than removed, so going
+ * in and out reloads no panel and the sheet comes back scrolled where it was.
+ */
+function applyFocus() {
+  const slug = focusedSlug();
+  const was = document.body.classList.contains("focusing");
+  if (slug && !was) sheetScroll = scrollY;
+  document.body.classList.toggle("focusing", Boolean(slug));
+  for (const figure of el("sheet").querySelectorAll("figure")) {
+    figure.classList.toggle("focused", figure.dataset.slug === slug);
+  }
+  el("zoom").disabled = Boolean(slug);
+  resize();
+  if (slug) scrollTo(0, 0);
+  else if (was) scrollTo(0, sheetScroll);
+  // Leaving through `#` would keep a bare `#` in the address; drop it.
+  if (!slug && location.href.endsWith("#")) history.replaceState(null, "", location.pathname + location.search);
+}
+
+/**
+ * Shows the panel `delta` places along from the one shown alone. It replaces the
+ * history entry rather than adding one, so Back leads to the sheet, not through
+ * every panel stepped past.
+ */
+function step(delta) {
+  const next = manifest.panels[manifest.panels.findIndex((p) => p.slug === focusedSlug()) + delta];
+  if (next) location.replace(`#${encodeURIComponent(next.slug)}`);
 }
 
 /** Rebuilds the sheet from the current controls. */
@@ -214,7 +313,6 @@ function draw() {
   const logicalH = slot.height / slot.scale;
   const context = { slot, locale, mode, logicalW, logicalH };
 
-  resize();
   el("status").textContent = `${manifest.panels.length} panels · ${logicalW}×${logicalH} logical`;
 
   const groups = el("wrap").checked
@@ -240,6 +338,7 @@ function draw() {
     for (const panel of group.panels) strip.append(figureFor(panel, context));
     sheet.append(strip);
   }
+  applyFocus();
 }
 
 // Size alone never rebuilds: a rebuild makes fresh iframes, every live panel
@@ -248,6 +347,8 @@ for (const id of ["device", "locale", "mode", "wrap"]) {
   el(id).addEventListener("input", draw);
 }
 el("zoom").addEventListener("input", resize);
+window.addEventListener("resize", resize);
+window.addEventListener("hashchange", applyFocus);
 
 /** Turns pointer mode on or off; while on, every frame's overlay takes the mouse. */
 function setPointing(on) {
@@ -255,12 +356,23 @@ function setPointing(on) {
   el("point").setAttribute("aria-pressed", String(on));
 }
 
-el("point").addEventListener("click", () => setPointing(!document.body.classList.contains("pointing")));
-window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") return setPointing(false);
-  const typing = event.target.matches?.("input:not([type=checkbox]):not([type=range]), select");
-  if (event.key === "p" && !typing && !event.metaKey && !event.ctrlKey && !event.altKey) {
-    setPointing(!document.body.classList.contains("pointing"));
+/**
+ * The sheet's keys: P toggles the pointer, the arrows step through panels shown
+ * alone, and Esc leaves the pointer first and then the single panel.
+ */
+function onKey(event) {
+  if (event.key === "Escape") {
+    if (document.body.classList.contains("pointing")) setPointing(false);
+    else if (focusedSlug()) location.hash = "";
+    return;
   }
-});
+  const typing = event.target.matches?.("input:not([type=checkbox]):not([type=range]), select");
+  if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.key === "p") setPointing(!document.body.classList.contains("pointing"));
+  else if (event.key === "ArrowLeft" && focusedSlug()) step(-1);
+  else if (event.key === "ArrowRight" && focusedSlug()) step(1);
+}
+
+el("point").addEventListener("click", () => setPointing(!document.body.classList.contains("pointing")));
+window.addEventListener("keydown", onKey);
 draw();
