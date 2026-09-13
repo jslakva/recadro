@@ -18,13 +18,11 @@ for (const slot of manifest.slots) {
   deviceSel.append(new Option(`${slot.id} · ${slot.width}×${slot.height}`, slot.id));
 }
 
-/** Builds one panel's figure at the current size, in the current mode. */
-function figureFor(panel, { slot, locale, mode, thumbW, logicalW, logicalH, k }) {
+/** Builds one panel's figure in the current mode; its size comes from the sheet's CSS variables. */
+function figureFor(panel, { slot, locale, mode, logicalW, logicalH }) {
   const figure = document.createElement("figure");
   const frame = document.createElement("div");
   frame.className = "frame";
-  frame.style.width = `${thumbW}px`;
-  frame.style.height = `${Math.round(logicalH * k)}px`;
 
   const panelUrl =
     `${panel.urlPath}?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}&locale=${locale}`;
@@ -35,7 +33,6 @@ function figureFor(panel, { slot, locale, mode, thumbW, logicalW, logicalH, k })
     iframe.src = panelUrl;
     iframe.width = logicalW;
     iframe.height = logicalH;
-    iframe.style.transform = `scale(${k})`;
     frame.append(iframe);
   } else {
     const img = document.createElement("img");
@@ -70,16 +67,27 @@ function figureFor(panel, { slot, locale, mode, thumbW, logicalW, logicalH, k })
   return figure;
 }
 
-/** Redraws the sheet from the current controls. */
+/** Sizes every frame by setting three CSS variables on the sheet, leaving the frames themselves untouched. */
+function resize() {
+  const slot = manifest.slots.find((s) => s.id === deviceSel.value);
+  const thumbW = Number(el("zoom").value);
+  const k = thumbW / (slot.width / slot.scale);
+  const sheet = el("sheet").style;
+  sheet.setProperty("--thumb-w", `${thumbW}px`);
+  sheet.setProperty("--frame-h", `${Math.round((slot.height / slot.scale) * k)}px`);
+  sheet.setProperty("--k", String(k));
+}
+
+/** Rebuilds the sheet from the current controls. */
 function draw() {
   const slot = manifest.slots.find((s) => s.id === deviceSel.value);
   const locale = el("locale").value.trim() || "en-US";
   const mode = el("mode").value;
-  const thumbW = Number(el("zoom").value);
   const logicalW = slot.width / slot.scale;
   const logicalH = slot.height / slot.scale;
-  const context = { slot, locale, mode, thumbW, logicalW, logicalH, k: thumbW / logicalW };
+  const context = { slot, locale, mode, logicalW, logicalH };
 
+  resize();
   el("status").textContent = `${manifest.panels.length} panels · ${logicalW}×${logicalH} logical`;
 
   const groups = el("wrap").checked
@@ -107,7 +115,10 @@ function draw() {
   }
 }
 
-for (const id of ["device", "locale", "mode", "zoom", "wrap"]) {
+// Size alone never rebuilds: a rebuild makes fresh iframes, every live panel
+// loads again from blank, and dragging the slider turns that into a flicker.
+for (const id of ["device", "locale", "mode", "wrap"]) {
   el(id).addEventListener("input", draw);
 }
+el("zoom").addEventListener("input", resize);
 draw();
