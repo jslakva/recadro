@@ -140,8 +140,8 @@ function recadroPlugin(panelsDir: string, root: string): Plugin {
  *
  * vite's `searchForWorkspaceRoot` alone is not enough: it stops at a JS
  * workspace or the nearest `package.json`, and a native iOS repo has neither,
- * so it fell back to the panels directory and every capture outside it read as
- * missing. It remains the fallback outside git.
+ * which would leave the root at the panels directory. It is the fallback
+ * outside git.
  */
 function rootFor(panelsDir: string): string {
   for (let dir = panelsDir; ; dir = dirname(dir)) {

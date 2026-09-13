@@ -103,12 +103,11 @@ directory an upload lane reads would ship an empty frame.
 
 ## The root is the repository
 
-The vite root is the nearest directory holding `.git`, because a panel reaches
-for captures and stylesheets wherever the repo keeps them and a URL cannot
-climb above root. vite's own workspace search stops at the nearest
-`package.json`, and a native iOS repo has none, which left the root at the
-panels directory and every capture outside it unreachable. Outside git, that
-search is the fallback.
+The vite root is the nearest directory holding `.git`, not the nearest
+`package.json`: a panel reaches for captures and stylesheets wherever the repo
+keeps them, a URL cannot climb above root, and a native iOS repo has no
+`package.json` at all. Outside git, vite's own workspace search is the
+fallback.
 
 ## Agents get a document, not a skill
 

@@ -25,8 +25,6 @@ else is convention or the `vite.config.*` beside the panels.
 - `AUTHORING.md` is the package's instructions for coding agents in a
   consumer's repo, versioned with the tool on purpose. A change to the CLI's
   flags, output lines or readiness rules is not done until it is updated too.
-  There is deliberately no skill: nothing would install it, and a copy would
-  stop tracking the version.
 - `ui/` and `assets/` sit beside `src/` and `dist/` on purpose: the server
   resolves them from the package root, so `tsx src/cli.ts` and the published
   `dist/cli.js` find them without a copy step.
