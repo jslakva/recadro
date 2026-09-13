@@ -80,6 +80,26 @@ function referenceFor(panel, { slot, locale, logicalW, logicalH }, x, y, node) {
 }
 
 /**
+ * The part of an element's box that is actually on screen: its bounding box cut
+ * down by every ancestor that clips overflow, the panel's own viewport included.
+ * An image scaled up inside a clipping box — a crop of a capture — would
+ * otherwise outline the whole invisible image instead of the crop.
+ */
+function visibleRect(node) {
+  let { left, top, right, bottom } = node.getBoundingClientRect();
+  for (let n = node.parentElement; n; n = n.parentElement) {
+    const style = n.ownerDocument.defaultView.getComputedStyle(n);
+    if (style.overflowX === "visible" && style.overflowY === "visible") continue;
+    const clip = n.getBoundingClientRect();
+    left = Math.max(left, clip.left);
+    top = Math.max(top, clip.top);
+    right = Math.min(right, clip.right);
+    bottom = Math.min(bottom, clip.bottom);
+  }
+  return { left, top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+}
+
+/**
  * Builds the pointer overlay for one frame. It covers the frame only while the
  * sheet is pointing, so the iframe below neither swallows the mouse nor loses the
  * listener when its panel reloads. Hover outlines the element under the cursor;
@@ -110,7 +130,7 @@ function aimFor(panel, context, frame) {
   aim.addEventListener("mousemove", (event) => {
     const { x, y, k, node } = probe(event);
     if (node) {
-      const r = node.getBoundingClientRect();
+      const r = visibleRect(node);
       Object.assign(hit.style, {
         left: `${r.left * k}px`,
         top: `${r.top * k}px`,
