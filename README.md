@@ -134,7 +134,7 @@ A capture flow usually writes where it writes. Tell the set with
 `recadro.json` beside `panels/`:
 
 ```json
-{ "captures": "../../e2e/screenshots/{locale}/{device}" }
+{ "captures": "../../e2e/screenshots/{device}/{locale}" }
 ```
 
 Paths are relative to the set. `{device}` is the slot id and is required;

@@ -57,7 +57,7 @@ Only when captures are not in `<set>/captures/<device>/`, or renders should not
 go to `<set>/out`:
 
 ```json
-{ "captures": "../../e2e/screenshots/{locale}/{device}", "out": "out" }
+{ "captures": "../../e2e/screenshots/{device}/{locale}", "out": "out" }
 ```
 
 - Paths are relative to the set, and captures must be inside the repository.
@@ -65,6 +65,14 @@ go to `<set>/out`:
   optional and makes the captures per locale.
 - Those two keys are all it takes; anything else is an error. Command-line
   flags win over it.
+
+## Captures
+
+Captures are full-screen simulator screenshots, one per panel and slot, at
+`captures/<slot>/<file>.png`: `<slot>` exactly `6.9`, plus `13-iPad` when the
+app supports iPad (App Store Connect then requires it); `<file>` the panel's
+slug (`01-hero.png`) unless the page maps it. Per-locale captures go in
+`captures/<slot>/<locale>/`, with `"captures": "captures/{device}/{locale}"`.
 
 ## Don't
 

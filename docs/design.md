@@ -75,7 +75,7 @@ names, and the one file that exists is optional:
   with no captures folder at all — text-only, or not captured yet — renders
   every slot.
 - **`recadro.json` holds the two facts names cannot.** Where the capture flow
-  writes (`"captures": "../../maestro/{locale}/{device}"`, where `{locale}`
+  writes (`"captures": "../../maestro/{device}/{locale}"`, where `{locale}`
   makes captures per locale) and, rarely, where renders go. It sits in the set,
   so its paths are relative to the set and a repository can hold several sets.
   It is strict: a mistyped key or placeholder is an error, because one quietly
