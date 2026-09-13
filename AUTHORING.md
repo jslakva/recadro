@@ -105,6 +105,33 @@ the install is `npx playwright install chromium` — ask before downloading.
 person with a browser, at `/`. If you start it, run it in the background and
 stop it when you are done.
 
+## References from the contact sheet
+
+A person at the contact sheet may paste you what its pointer copies — one spot
+on one panel:
+
+```
+02-voices · 6.9 · en-US
+file     store/screenshots/panels/02-voices.html
+point    48.2vw 40.6vh · px 636,1164 of 1320×2868
+element  main > header > p.sub "Each character in its own voice."
+```
+
+- The first line is the slug, the slot and the locale. Look at that slot, not
+  only the default one.
+- `file` and any `src` are paths from the server's root, the repository.
+- `point` is one spot twice: in the panel's viewport units, which is what its
+  CSS is written in, and in the pixels of the PNG `render` writes for that slot.
+- `element` is what was under the cursor in the rendered page, with its own
+  text or its image source. Text a page fetched is not in its HTML file, so
+  search the repo for the quoted text, not for the selector.
+- A container as `element` means the spot is between its children: a gap, a
+  margin, the space around the capture. Read `point` for where.
+- A reference taken from the rendered `out/` view has no `element` line.
+
+The reference says where, not what is wrong; the words that come with it do.
+Shoot the panel before and after the change and look at that spot.
+
 ## Changing the set
 
 - **New panel:** add `panels/NN-slug.html`. Renaming or renumbering changes

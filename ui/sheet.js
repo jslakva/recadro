@@ -18,8 +18,133 @@ for (const slot of manifest.slots) {
   deviceSel.append(new Option(`${slot.id} · ${slot.width}×${slot.height}`, slot.id));
 }
 
+/**
+ * A selector for `node` inside its panel: the path from `<body>`, stopping at the
+ * nearest id, with `:nth-of-type` only where a sibling shares the tag.
+ */
+function selectorFor(node) {
+  const parts = [];
+  for (let n = node; n && n !== n.ownerDocument.body && n !== n.ownerDocument.documentElement; n = n.parentElement) {
+    if (n.id) {
+      parts.unshift(`#${CSS.escape(n.id)}`);
+      break;
+    }
+    let part = n.localName + [...n.classList].map((c) => `.${CSS.escape(c)}`).join("");
+    const twins = [...n.parentElement.children].filter((s) => s.localName === n.localName);
+    if (twins.length > 1) part += `:nth-of-type(${twins.indexOf(n) + 1})`;
+    parts.unshift(part);
+  }
+  return parts.join(" > ") || node.localName;
+}
+
+/**
+ * What to search the repo for: an image's source, or the element's own text.
+ * The source is resolved and, when it is served from root, written as a path in
+ * the repo — however the page spelled it, and without a port that means nothing
+ * to the reader. Only text directly inside the element counts, so a container
+ * doesn't quote every child's words as if they were its own.
+ */
+function anchorFor(node) {
+  if (node.localName === "img") {
+    const src = new URL(node.currentSrc || node.src, node.baseURI);
+    return ` src="${src.origin === location.origin ? decodeURI(src.pathname).slice(1) : src.href}"`;
+  }
+  const own = [...node.childNodes]
+    .filter((c) => c.nodeType === Node.TEXT_NODE)
+    .map((c) => c.textContent)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!own) return "";
+  return ` "${own.length > 80 ? `${own.slice(0, 79)}…` : own}"`;
+}
+
+/**
+ * The text a pointer click copies: the panel and slot, the file, the spot in
+ * viewport units and in the slot's PNG pixels, and the element there when the
+ * panel is live.
+ */
+function referenceFor(panel, { slot, locale, logicalW, logicalH }, x, y, node) {
+  const px = (v, max) => Math.min(Math.floor(v * slot.scale), max - 1);
+  const lines = [
+    `${panel.slug} · ${slot.id} · ${locale}`,
+    `file     ${panel.urlPath.slice(1)}`,
+    `point    ${((x / logicalW) * 100).toFixed(1)}vw ${((y / logicalH) * 100).toFixed(1)}vh` +
+      ` · px ${px(x, slot.width)},${px(y, slot.height)} of ${slot.width}×${slot.height}`,
+  ];
+  if (node) lines.push(`element  ${selectorFor(node)}${anchorFor(node)}`);
+  return lines.join("\n");
+}
+
+/**
+ * Builds the pointer overlay for one frame. It covers the frame only while the
+ * sheet is pointing, so the iframe below neither swallows the mouse nor loses the
+ * listener when its panel reloads. Hover outlines the element under the cursor;
+ * a click copies its reference.
+ */
+function aimFor(panel, context, frame) {
+  const aim = document.createElement("div");
+  aim.className = "aim";
+  const hit = document.createElement("div");
+  hit.className = "hit";
+  hit.hidden = true;
+  const tag = document.createElement("div");
+  tag.className = "tag";
+  aim.append(hit, tag);
+  // What the tag says after a click, and until when it keeps saying it.
+  let flash = { text: "", until: 0 };
+
+  // The spot in the panel's logical pixels, and the element there when live.
+  const probe = (event) => {
+    const box = aim.getBoundingClientRect();
+    const k = box.width / context.logicalW;
+    const x = Math.max(0, Math.min((event.clientX - box.left) / k, context.logicalW));
+    const y = Math.max(0, Math.min((event.clientY - box.top) / k, context.logicalH));
+    const node = frame.querySelector("iframe")?.contentDocument?.elementFromPoint(x, y) ?? null;
+    return { x, y, k, node };
+  };
+
+  aim.addEventListener("mousemove", (event) => {
+    const { x, y, k, node } = probe(event);
+    if (node) {
+      const r = node.getBoundingClientRect();
+      Object.assign(hit.style, {
+        left: `${r.left * k}px`,
+        top: `${r.top * k}px`,
+        width: `${r.width * k}px`,
+        height: `${r.height * k}px`,
+      });
+    }
+    hit.hidden = !node;
+    const where = `${((x / context.logicalW) * 100).toFixed(0)}vw ${((y / context.logicalH) * 100).toFixed(0)}vh`;
+    tag.textContent =
+      Date.now() < flash.until ? flash.text : node ? `${selectorFor(node).split(" > ").pop()} · ${where}` : where;
+  });
+
+  aim.addEventListener("mouseleave", () => {
+    hit.hidden = true;
+    tag.textContent = "";
+  });
+
+  aim.addEventListener("click", async (event) => {
+    const { x, y, node } = probe(event);
+    const text = referenceFor(panel, context, x, y, node);
+    try {
+      await navigator.clipboard.writeText(text);
+      flash = { text: "copied", until: Date.now() + 1200 };
+    } catch {
+      console.log(text);
+      flash = { text: "copy failed — reference in console", until: Date.now() + 3000 };
+    }
+    tag.textContent = flash.text;
+  });
+
+  return aim;
+}
+
 /** Builds one panel's figure in the current mode; its size comes from the sheet's CSS variables. */
-function figureFor(panel, { slot, locale, mode, logicalW, logicalH }) {
+function figureFor(panel, context) {
+  const { slot, locale, mode, logicalW, logicalH } = context;
   const figure = document.createElement("figure");
   const frame = document.createElement("div");
   frame.className = "frame";
@@ -44,6 +169,8 @@ function figureFor(panel, { slot, locale, mode, logicalW, logicalH }) {
     });
     frame.append(img);
   }
+  // A hole replaces the frame's children, overlay included: nothing to point at.
+  frame.append(aimFor(panel, context, frame));
 
   // The slug opens the panel on its own, at logical size — the view to
   // reach for once the row has told you which one is wrong.
@@ -121,4 +248,19 @@ for (const id of ["device", "locale", "mode", "wrap"]) {
   el(id).addEventListener("input", draw);
 }
 el("zoom").addEventListener("input", resize);
+
+/** Turns pointer mode on or off; while on, every frame's overlay takes the mouse. */
+function setPointing(on) {
+  document.body.classList.toggle("pointing", on);
+  el("point").setAttribute("aria-pressed", String(on));
+}
+
+el("point").addEventListener("click", () => setPointing(!document.body.classList.contains("pointing")));
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") return setPointing(false);
+  const typing = event.target.matches?.("input:not([type=checkbox]):not([type=range]), select");
+  if (event.key === "p" && !typing && !event.metaKey && !event.ctrlKey && !event.altKey) {
+    setPointing(!document.body.classList.contains("pointing"));
+  }
+});
 draw();

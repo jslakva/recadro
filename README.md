@@ -134,6 +134,10 @@ shows — with the rest below. It shows the live panels by default and the
 contents of `out/` on a toggle, so a rendered set can be compared against the
 design.
 
+The pointer (`P`) copies a reference to one spot on one panel — its file, the
+point in viewport units and delivered pixels, the element there — for pasting
+into a coding agent. [AUTHORING.md](AUTHORING.md) tells the agent how to read it.
+
 There is deliberately no validation. Overflow, a cropped headline, the wrong face
 — the eye catches all of these instantly, and a check that duplicates the eye is
 dead weight. Asserting the output's dimensions would assert only that the script

@@ -127,6 +127,13 @@ the cache, so an edited sheet silently ran the previous version's JavaScript.
 The panels are real files under root and keep vite's transform and HMR, which is
 the part that needs it.
 
+The sheet's pointer is the one place the tool looks inside a rendered panel, and
+it does so the way DevTools does: it names the element under the cursor, gives
+the spot in viewport units and delivered pixels, and writes that to the
+clipboard for a person to paste to an agent. It names and never judges. A
+pointer that said a headline overflows would be the validation this section
+argues against, and nothing it reads ever reaches the tool.
+
 ## Why not an existing tool
 
 - **fastlane `frameit`** — fixed caption-over-device layout, and device frames
