@@ -144,8 +144,15 @@ npx recadro init store/screenshots --starter overlay --captures "../../e2e/scree
   and one review panel with no screen. Along the way it shows a highlighted
   word, a sparkle, a blurred copy of the capture as the background, an enlarged
   detail, a background image from the set's `assets/`, and a sticker.
+- **`panorama`** — one scene as wide as the whole set, drawn once in
+  `world.html`, with each panel showing its own stretch, so the panels read as
+  one picture side by side: a phone that spills into the next panel, a panel
+  of points instead of a screen, a phone lying across the edge of the last two,
+  turned in 3D.
+  Phones are drawn `steel`, `hairline` or with no frame at all, one attribute
+  in `world.html`; `--panorama-image` swaps the drawn scene for a picture.
 
-The copy is plain except for `{capture:N}` in its strings, which is filled with
+The copy is plain except for `{capture:N}` placeholders, each filled with
 the Nth capture already taken, in filename order, so the panels open showing
 the app. A placeholder with no capture yet stays as it is until one is taken.
 From there the set is yours: the variables at the top of `panel.css` are

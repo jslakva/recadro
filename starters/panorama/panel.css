@@ -1,0 +1,283 @@
+/*
+ * The panorama starter: one world as wide as the whole set — a ground, two
+ * waves, tilted phones — with every panel showing its own stretch, so the
+ * panels read as one picture side by side. The variables are the look, and
+ * --panorama-image replaces the drawn world with a picture of your own. Sizes
+ * are in vw/vh and the iPad forks on [data-device], so no device size appears.
+ */
+:root {
+  --ground: #14173a;
+  --ink: #ffffff;
+  --ink-soft: rgb(255 255 255 / 0.78);
+  --accent: #ff8a5c;
+  --font-display: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-text: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  /* A picture for the whole world instead, as wide as all the panels together: */
+  /* --panorama-image: url("assets/panorama.jpg"); */
+  --panorama-image: none;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+body {
+  position: relative;
+  background: var(--ground);
+  color: var(--ink);
+}
+
+/*
+ * The world: as wide as every panel together, moved left by this panel's place
+ * in the set. Its glows and gradient are in percent of the world, so they run
+ * on across panel edges.
+ */
+.world {
+  position: absolute;
+  top: 0;
+  left: calc(var(--i, 0) * -100vw);
+  width: calc(var(--panels, 1) * 100vw);
+  height: 100vh;
+  background:
+    var(--panorama-image) center / cover no-repeat,
+    radial-gradient(circle at 34% 34%, color-mix(in srgb, var(--accent) 45%, transparent) 0, transparent 14%),
+    radial-gradient(circle at 86% 28%, color-mix(in srgb, var(--accent) 28%, transparent) 0, transparent 11%),
+    linear-gradient(100deg, var(--ground), color-mix(in srgb, var(--ground) 72%, var(--accent)));
+}
+
+/* Two waves along the bottom of the whole world, drawn once and masked. */
+.wave {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 40vh;
+  background: linear-gradient(to bottom, var(--accent), color-mix(in srgb, var(--accent) 35%, var(--ground)));
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 100' preserveAspectRatio='none'%3E%3Cpath d='M0 42 C50 12 105 72 165 46 S265 8 325 42 S430 82 500 34 L500 100 L0 100 Z'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
+}
+
+.wave.back {
+  height: 52vh;
+  opacity: 0.35;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 100' preserveAspectRatio='none'%3E%3Cpath d='M0 30 C70 60 120 4 200 30 S330 66 390 24 S460 10 500 36 L500 100 L0 100 Z'/%3E%3C/svg%3E");
+}
+
+/*
+ * A phone in the world, centred on its --x and --y, tilted by --r. How it is
+ * drawn is data-frame on .phones in world.html: steel, a thin brushed band
+ * around a black bezel; hairline, one light line; none, the screen and its
+ * shadow alone.
+ */
+.phone {
+  position: absolute;
+  left: calc(var(--x) * 1vw);
+  top: calc(var(--y) * 1vh);
+  box-sizing: border-box;
+  height: calc(var(--h, 60) * 1vh);
+  aspect-ratio: 9 / 19.5;
+  border-radius: 9vw;
+  translate: -50% -50%;
+  rotate: calc(var(--r, 0) * 1deg);
+  transform: perspective(140vh) rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg));
+  box-shadow: 0 4vh 8vh rgb(0 0 0 / 0.45);
+  --edge: #0e1022;
+}
+
+/*
+ * A phone with depth: stacked hard shadows to one side, in the frame's edge
+ * colour, read as the side of the device once the phone is turned. --side is
+ * which side: 1 right, -1 left.
+ */
+.phone.deep {
+  box-shadow:
+    calc(0.45vw * var(--side, 1)) 0.1vw 0 color-mix(in srgb, var(--edge) 90%, white),
+    calc(0.9vw * var(--side, 1)) 0.2vw 0 var(--edge),
+    calc(1.35vw * var(--side, 1)) 0.3vw 0 color-mix(in srgb, var(--edge) 85%, black),
+    calc(1.8vw * var(--side, 1)) 0.4vw 0 color-mix(in srgb, var(--edge) 72%, black),
+    calc(2.2vw * var(--side, 1)) 0.5vw 0 color-mix(in srgb, var(--edge) 60%, black),
+    calc(3vw * var(--side, 1)) 5vh 9vh rgb(0 0 0 / 0.5);
+}
+
+.screen {
+  position: relative;
+  box-sizing: border-box;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 9vw;
+  background: #262a55;
+}
+
+[data-frame="steel"] .phone {
+  --edge: #6f7780;
+  padding: 1.3vw;
+  border-radius: 10.2vw;
+  background: linear-gradient(135deg, #eef0f3 0%, #9aa2ab 20%, #f8f9fb 38%, #6f7780 58%, #cdd2d8 78%, #868e97 100%);
+}
+
+[data-frame="steel"] .screen {
+  border: 0.45vw solid #07080c;
+  border-radius: 8.9vw;
+}
+
+[data-frame="hairline"] .phone:not(.deep) {
+  box-shadow: 0 0 0 0.25vw rgb(255 255 255 / 0.45), 0 4vh 8vh rgb(0 0 0 / 0.45);
+}
+
+[data-frame="hairline"] .screen img,
+[data-frame="none"] .screen img {
+  border-radius: inherit;
+}
+
+.screen::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 1.5%;
+  left: 50%;
+  width: 28%;
+  height: 2.6%;
+  translate: -50% 0;
+  border-radius: 99vw;
+  background: #000;
+}
+
+.screen img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* No capture yet: the phone's screen is still designed, and render skips the panel. */
+.phone[data-empty] .screen {
+  background: repeating-linear-gradient(45deg, #2b2f5e 0 2.5vw, #252852 2.5vw 5vw);
+}
+
+/* The words: this panel's own, over its stretch of the world. */
+.copy {
+  position: relative;
+  z-index: 1;
+  padding: 8vh 8vw 0;
+  text-align: center;
+}
+
+.copy h1 {
+  margin: 0;
+  font: 800 10vw/1.02 var(--font-display);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.copy h1 em {
+  color: var(--accent);
+  font-style: normal;
+}
+
+.copy p {
+  margin: 1.8vh 0 0;
+  color: var(--ink-soft);
+  font: 500 4.4vw/1.35 var(--font-text);
+  text-wrap: balance;
+}
+
+/*
+ * A list of points, for a panel that says rather than shows: centred in the
+ * space under the headline, each point behind a check in the accent.
+ */
+.points {
+  position: absolute;
+  z-index: 1;
+  top: 17vh;
+  bottom: 0;
+  left: 14vw;
+  right: 8vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4.5vh;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.points li {
+  position: relative;
+  padding-left: 11vw;
+  font: 700 6.6vw/1.2 var(--font-display);
+  text-wrap: balance;
+}
+
+.points li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.1em;
+  width: 7.5vw;
+  height: 7.5vw;
+  border-radius: 50%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 62% no-repeat,
+    var(--accent);
+}
+
+.points li em {
+  color: var(--accent);
+  font-style: normal;
+}
+
+[data-device="13-iPad"] .points {
+  top: 12vh;
+  left: 12vw;
+  right: 10vw;
+  gap: 4vh;
+}
+
+[data-device="13-iPad"] .points li {
+  padding-left: 6.5vw;
+  font-size: 3.8vw;
+}
+
+[data-device="13-iPad"] .points li::before {
+  width: 4.4vw;
+  height: 4.4vw;
+}
+
+[data-device="13-iPad"] .phone {
+  aspect-ratio: 3 / 4;
+  border-radius: 2vw;
+}
+
+[data-device="13-iPad"] .screen {
+  border-radius: 2vw;
+}
+
+[data-device="13-iPad"] [data-frame="steel"] .phone {
+  padding: 0.8vw;
+  border-radius: 2.7vw;
+}
+
+[data-device="13-iPad"] [data-frame="steel"] .screen {
+  border-width: 0.35vw;
+  border-radius: 1.9vw;
+}
+
+[data-device="13-iPad"] .screen::before {
+  display: none;
+}
+
+[data-device="13-iPad"] .copy {
+  padding-top: 6vh;
+}
+
+[data-device="13-iPad"] .copy h1 {
+  font-size: 6vw;
+}
+
+[data-device="13-iPad"] .copy p {
+  font-size: 2.6vw;
+}

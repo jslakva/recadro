@@ -76,10 +76,11 @@ slug (`01-hero.png`) unless the page maps it. Per-locale captures go in
 
 ## Starting a set
 
-`recadro init <dir> --starter overlay|caption [--captures <pattern>]` copies a
+`recadro init <dir> --starter overlay|caption|panorama [--captures <pattern>]` copies a
 starter into a new folder, fills its `{capture:N}` placeholders with the
 captures already taken, in filename order, and writes `--captures` to
-`recadro.json`. Then adapt the copy: the variables at the top of
+`recadro.json`. In `panorama` the placeholders are in `world.html`, the scene
+every panel shows a stretch of, found from the number its filename starts with. Then adapt the copy: the variables at the top of
 `panel.css` to the app's colours and fonts, the words in `strings/en-US.json`,
 and a `{capture:N}` left over to the capture still to take.
 
