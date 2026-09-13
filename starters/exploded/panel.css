@@ -1,0 +1,212 @@
+/*
+ * The exploded starter: the phone tipped back in an orthographic view — no
+ * perspective, so nothing shrinks with distance — with parts of its own screen
+ * lifted straight up off it in layers. The variables are the look. Sizes are in
+ * vw/vh and the iPad forks on [data-device], so no device size appears here.
+ */
+:root {
+  --ground: #eef1f7;
+  --ink: #111827;
+  --ink-soft: #4b5563;
+  --accent: #4f46e5;
+  --font-display: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-text: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  /* How far a layer rises off the screen, per step of its z, and how much larger it grows. */
+  --lift: 6vh;
+  --zoom: 1.25;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+body {
+  position: relative;
+  background:
+    radial-gradient(circle at 50% 62%, rgb(255 255 255 / 0.9) 0, transparent 55%),
+    var(--ground);
+  color: var(--ink);
+}
+
+.copy {
+  position: relative;
+  z-index: 1;
+  padding: 8vh 8vw 0;
+  text-align: center;
+}
+
+.copy h1 {
+  margin: 0;
+  font: 800 9.5vw/1.04 var(--font-display);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.copy h1 em {
+  color: var(--accent);
+  font-style: normal;
+}
+
+.copy p {
+  margin: 1.6vh 0 0;
+  color: var(--ink-soft);
+  font: 500 4.2vw/1.35 var(--font-text);
+  text-wrap: balance;
+}
+
+/*
+ * The stage: tipped back by --tilt and turned in its plane by --turn, in
+ * degrees — set either on one panel's .stage to vary it. No perspective
+ * anywhere above it, so the projection is orthographic, and preserve-3d lets
+ * the layers inside rise out of the screen.
+ */
+.stage {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  height: 70vh;
+  aspect-ratio: 9 / 19.5;
+  translate: -50% -50%;
+  transform: rotateX(calc(var(--tilt, 12) * 1deg)) rotateZ(calc(var(--turn, 4) * 1deg));
+  transform-style: preserve-3d;
+}
+
+/*
+ * No frame but a hairline: the phone is its screen, over two shadows drawn as gradients
+ * below it — a blur would flatten the 3D — a wide soft one it hovers over and a
+ * tighter one that keeps it grounded.
+ */
+.stage::before,
+.stage::after {
+  content: "";
+  position: absolute;
+  border-radius: 12vw;
+}
+
+.stage::before {
+  inset: -7%;
+  background: radial-gradient(closest-side, rgb(17 24 39 / 0.32), transparent);
+  transform: translateZ(-5vh);
+}
+
+.stage::after {
+  inset: 1%;
+  background: radial-gradient(closest-side, rgb(17 24 39 / 0.22), transparent 115%);
+  transform: translateZ(-1.5vh);
+}
+
+.phone {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 9vw;
+  background: #d7dce6;
+  box-shadow: 0 0 0 0.22vw rgb(17 24 39 / 0.22);
+}
+
+.screen img,
+.layer img {
+  position: absolute;
+  display: block;
+  object-fit: fill;
+}
+
+.screen img {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Where a layer came from: a dimmed socket left on the screen. */
+.socket {
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  top: calc(var(--y) * 1%);
+  width: calc(var(--w) * 1%);
+  height: calc(var(--h) * 1%);
+  border-radius: 1.8vw;
+  background: rgb(17 24 39 / 0.18);
+  box-shadow: inset 0 0 0 0.3vw rgb(17 24 39 / 0.12);
+}
+
+/* The layers ride in their own box over the screen, unclipped, so they can leave it. */
+.lifted {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+/*
+ * A layer: the region of the capture it covers, cut out exactly — the image
+ * inside is the whole capture, scaled and moved so only the region shows —
+ * lifted --z steps of --lift and grown by --zoom from its centre.
+ */
+.layer {
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  top: calc(var(--y) * 1%);
+  width: calc(var(--w) * 1%);
+  height: calc(var(--h) * 1%);
+  overflow: hidden;
+  border-radius: 1.8vw;
+  background: #fff;
+  box-shadow: 0 0 0 0.35vw #fff, 0 1.6vh 3.2vh rgb(17 24 39 / 0.28);
+  transform: translateZ(calc(var(--z) * var(--lift))) scale(var(--layer-zoom, var(--zoom)));
+}
+
+.layer img {
+  left: calc(var(--x) / var(--w) * -100%);
+  top: calc(var(--y) / var(--h) * -100%);
+  width: calc(100% * 100 / var(--w));
+  height: calc(100% * 100 / var(--h));
+}
+
+/* No capture yet: still a designed panel, and render skips it. */
+[data-empty] .screen {
+  background: repeating-linear-gradient(45deg, #dfe3eb 0 2.5vw, #d3d8e2 2.5vw 5vw);
+}
+
+[data-empty] .layer {
+  background: #f3f5f9;
+}
+
+[data-device="13-iPad"] .copy {
+  padding-top: 6vh;
+}
+
+[data-device="13-iPad"] .copy h1 {
+  font-size: 5.8vw;
+}
+
+[data-device="13-iPad"] .copy p {
+  font-size: 2.5vw;
+}
+
+[data-device="13-iPad"] .stage {
+  height: 70vh;
+  aspect-ratio: 3 / 4;
+}
+
+[data-device="13-iPad"] .screen {
+  border-radius: 2.6vw;
+}
+
+[data-device="13-iPad"] .stage::before,
+[data-device="13-iPad"] .stage::after {
+  border-radius: 4vw;
+}
+
+[data-device="13-iPad"] .socket,
+[data-device="13-iPad"] .layer {
+  border-radius: 1vw;
+}

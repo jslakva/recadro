@@ -149,6 +149,9 @@ npx recadro init store/screenshots --starter overlay --captures "../../e2e/scree
   one picture side by side: a phone that spills into the next panel, a panel
   of points instead of a screen, a phone lying across the edge of the last two,
   turned in 3D.
+- **`exploded`** — each phone tipped back in an orthographic view, with parts
+  of its own screen lifted straight up off it in layers; the regions are
+  `"layers"` in strings, in percent of the capture.
   Phones are drawn `steel`, `hairline` or with no frame at all, one attribute
   in `world.html`; `--panorama-image` swaps the drawn scene for a picture.
 
