@@ -36,8 +36,8 @@ export interface PanelServer {
 export interface ServerOptions {
   /** Port to listen on; vite picks one when absent. */
   port?: number;
-  /** Reload the panels when a capture appears or changes. For `dev`; `render` has nothing to reload. */
-  watchCaptures?: boolean;
+  /** Reload the panels when a capture or a file they fetch changes. For `dev`; `render` has nothing to reload. */
+  watchFetched?: boolean;
 }
 
 /**
@@ -108,19 +108,28 @@ function manifestFor(set: PanelSet): SheetManifest {
 }
 
 /**
- * Reloads every panel when a capture appears, changes or goes away. vite only
- * reloads for files a page imports, and a capture is an image a page asked for
- * by URL, so a capture flow running beside the open sheet would otherwise
- * change nothing on screen. Debounced, because a flow writes its captures in a
- * burst. The sheet itself has no vite client and stays; the panels inside it
- * reload.
+ * Reloads every panel when a file a page asked for by URL appears, changes or
+ * goes away: a capture, a strings file, a scene or anything else in the set
+ * that a panel fetches. vite reloads a page for what it imports, and these are
+ * outside its module graph, so an edit to them would otherwise change nothing
+ * on screen. Files vite does track — the panels themselves, their stylesheet
+ * and script — are left to it, and out/ is skipped, since render writes there.
+ * Debounced, because a capture flow or an editor writes in bursts. The sheet
+ * itself has no vite client and stays; the panels inside it reload.
  */
-function watchCaptures(server: ViteDevServer, set: PanelSet): void {
-  const base = capturesBase(set);
-  server.watcher.add(base);
+function watchFetched(server: ViteDevServer, set: PanelSet): void {
+  const captures = capturesBase(set);
+  const panels = join(set.dir, "panels") + sep;
+  server.watcher.add(captures);
   let pending: NodeJS.Timeout | undefined;
   server.watcher.on("all", (_event, file) => {
-    if (!file.startsWith(base + sep) || !CAPTURE_FILE.test(file)) return;
+    const capture = file.startsWith(captures + sep) && CAPTURE_FILE.test(file);
+    const fetched =
+      file.startsWith(set.dir + sep) &&
+      !file.startsWith(panels) &&
+      !file.startsWith(set.outDir + sep) &&
+      !server.moduleGraph.getModulesByFile(file)?.size;
+    if (!capture && !fetched) return;
     clearTimeout(pending);
     pending = setTimeout(() => server.ws.send({ type: "full-reload" }), 300);
   });
@@ -145,7 +154,7 @@ function recadroPlugin(set: PanelSet, options: ServerOptions): Plugin {
   return {
     name: "recadro",
     configureServer(server) {
-      if (options.watchCaptures) watchCaptures(server, set);
+      if (options.watchFetched) watchFetched(server, set);
 
       server.middlewares.use((req, res, next) => {
         const path = (req.url ?? "/").split("?")[0];

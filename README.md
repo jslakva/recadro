@@ -196,7 +196,8 @@ in a search result and the only view in which the *story* can be judged rather
 than the layout. The first three are grouped on their own — all a search result
 shows — with the rest below. It shows the live panels by default and the
 contents of `out/` on a toggle, so a rendered set can be compared against the
-design. When a capture appears or changes, the panels reload.
+design. When a capture, a strings file or anything else a panel fetches
+changes, the panels reload.
 
 Click a panel to see it alone, as large as the window allows; the arrow keys
 step through the set and Esc comes back to the sheet.

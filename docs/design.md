@@ -113,10 +113,11 @@ The server is what makes `file://` unnecessary, and `file://` was the problem:
 `fetch()` is blocked there, so a page could not read its own captions without a
 build step between every edit and every look.
 
-`dev` also watches the captures folder and reloads the panels when a capture
-appears or changes. vite reloads a page for the files it imports, and a capture
-is an image a page asks for by URL, so without this a capture flow running
-beside the open sheet would change nothing on screen.
+`dev` also reloads the panels when a file they ask for by URL changes: a
+capture, a strings file, anything else in the set a page fetches. vite reloads
+a page for the files it imports, and these are outside its module graph, so
+without this a capture flow running beside the open sheet, or an edit to a
+headline, would change nothing on screen.
 
 ## The contact sheet is the check
 

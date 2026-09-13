@@ -134,7 +134,7 @@ async function main(): Promise<void> {
   const port = values.port ? Number(values.port) : undefined;
 
   if (command === "dev") {
-    const { origin, panels } = await startServer(set, { port, watchCaptures: true });
+    const { origin, panels } = await startServer(set, { port, watchFetched: true });
     console.log(`recadro  ${counted(panels.length, "panel")} in ${shown(set.dir)}`);
     console.log(`         locales   ${locales.join(", ")}  (${localesFrom})`);
     console.log(`         captures  ${shown(resolve(set.dir, set.captures))}/`);
