@@ -12,6 +12,7 @@
     "ui",
     "assets",
     "README.md",
+    "AUTHORING.md",
     "LICENSE"
   ],
   "engines": {

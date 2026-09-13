@@ -101,6 +101,23 @@ and no browser, so `render --incomplete` shoots every panel. It refuses the
 default `out/`: the flag is for looking, and an incomplete shot in the
 directory an upload lane reads would ship an empty frame.
 
+## The root is the repository
+
+The vite root is the nearest directory holding `.git`, because a panel reaches
+for captures and stylesheets wherever the repo keeps them and a URL cannot
+climb above root. vite's own workspace search stops at the nearest
+`package.json`, and a native iOS repo has none, which left the root at the
+panels directory and every capture outside it unreachable. Outside git, that
+search is the fallback.
+
+## Agents get a document, not a skill
+
+`AUTHORING.md` ships inside the package and a consumer's own agent file points
+at it. A skill would need an installer the package cannot run, a copy of it
+would stop tracking the installed version, and it would serve one agent where a
+document serves all of them. What a skill adds is being loaded unasked, and the
+one line in the consumer's agent file does that.
+
 ## The sheet is the tool's UI, not a panel
 
 The contact sheet is served by the tool at `/`, from its own files, raw and
