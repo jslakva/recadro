@@ -25,12 +25,12 @@ set layout and the output naming. Everything else is the page's, or the
   tool (`workspace:*`); the tool never knows the site exists.
 - The package publishes from its own directory. `files` is a whitelist; check
   what ships with `npm pack --dry-run` and expect exactly `dist`, `ui`,
-  `assets`, README, AUTHORING, LICENSE.
+  `assets`, `starters`, README, AUTHORING, LICENSE.
 - `AUTHORING.md` is the package's instructions for coding agents in a
   consumer's repo, versioned with the tool on purpose. A change to the CLI's
   flags, output lines or readiness rules is not done until it is updated too.
-- `ui/` and `assets/` sit beside `src/` and `dist/` on purpose: the server
-  resolves them from the package root, so `tsx src/cli.ts` and the published
+- `ui/`, `assets/` and `starters/` sit beside `src/` and `dist/` on purpose: the
+  tool resolves them from the package root, so `tsx src/cli.ts` and the published
   `dist/cli.js` find them without a copy step.
 - No screenshots of rendered panels in git. Demo imagery for the site is
   produced at build time by the tool itself.

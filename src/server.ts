@@ -5,10 +5,10 @@
  */
 import { readFileSync } from "node:fs";
 import type { ServerResponse } from "node:http";
-import { dirname, join, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, sep } from "node:path";
 import { createServer, loadConfigFromFile, mergeConfig, type InlineConfig, type Plugin, type ViteDevServer } from "vite";
 import { discoverPanels, urlPathFor, type Panel } from "./panels.ts";
+import { PKG } from "./pkg.ts";
 import {
   capturesBase,
   capturesUrl,
@@ -18,13 +18,6 @@ import {
   type PanelSet,
 } from "./set.ts";
 import { SLOTS } from "./slots.ts";
-
-/**
- * The package root. Resolved relative to this module so it is right both when
- * running from `src/` under tsx and from `dist/` once published — `ui/` and
- * `assets/` sit beside both.
- */
-const PKG = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 /** A file `dev` treats as a capture when it appears or changes under the captures folder. */
 const CAPTURE_FILE = /\.(png|jpe?g|webp|heic)$/i;

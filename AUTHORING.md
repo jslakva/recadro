@@ -74,6 +74,15 @@ app supports iPad (App Store Connect then requires it); `<file>` the panel's
 slug (`01-hero.png`) unless the page maps it. Per-locale captures go in
 `captures/<slot>/<locale>/`, with `"captures": "captures/{device}/{locale}"`.
 
+## Starting a set
+
+`recadro init <dir> --starter overlay|caption [--captures <pattern>]` copies a
+starter into a new folder, fills its `{capture:N}` placeholders with the
+captures already taken, in filename order, and writes `--captures` to
+`recadro.json`. Then adapt the copy: the six variables at the top of
+`panel.css` to the app's colours and fonts, the words in `strings/en-US.json`,
+and a `{capture:N}` left over to the capture still to take.
+
 ## Don't
 
 - **Don't add keys to `recadro.json` or create another config for recadro.**

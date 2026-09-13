@@ -4,6 +4,7 @@ Compose store panels from raw simulator captures. Plain HTML in, exact slot
 sizes out.
 
 ```bash
+npx recadro init store/screenshots --starter caption   # a new set from a starter
 npx recadro dev      # vite + contact sheet, live
 npx recadro render   # serve, shoot, tear down
 ```
@@ -128,6 +129,26 @@ so a panel can reach anything in the repo by a relative or root-absolute URL.
 Outside git it is the nearest JS workspace or `package.json`, and failing both
 the set itself, where nothing beside it is reachable.
 
+## Starting from a starter
+
+`init` copies a premade set into a new folder:
+
+```bash
+npx recadro init store/screenshots --starter overlay --captures "../../e2e/screenshots/{device}"
+```
+
+- **`overlay`** — the capture fills the panel, and a band of colour over its
+  top carries the headline.
+- **`caption`** — a headline and a subline over the screen, framed in a device,
+  and one review panel with no screen.
+
+The copy is plain except for `{capture:N}` in its strings, which is filled with
+the Nth capture already taken, in filename order, so the panels open showing
+the app. A placeholder with no capture yet stays as it is until one is taken.
+From there the set is yours: the six variables at the top of `panel.css` are
+the look, `strings/en-US.json` the words. `--captures` is written to
+`recadro.json`; leave it out when captures go in the set's own `captures/`.
+
 ## When captures live elsewhere
 
 A capture flow usually writes where it writes. Tell the set with
@@ -145,6 +166,7 @@ other than `<set>/out`. Unknown keys are an error.
 ## Commands
 
 ```
+recadro init   <dir> --starter <name> [--captures <pattern>]
 recadro dev    [--panels <dir>] [--port <n>]
 recadro render [--panels <dir>] [--out <dir>] [--devices 6.9,13-iPad] [--locales en-US] [--incomplete]
 ```

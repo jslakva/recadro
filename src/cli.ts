@@ -2,13 +2,15 @@
 /**
  * recadro — App Store screenshots as code.
  *
- * Two commands over one vite server: `dev` opens the contact sheet and watches,
- * `render` shoots the same URLs at slot pixels and tears the server down. Flags
- * win over the set's `recadro.json`, which wins over the set's conventions.
+ * `init` copies a starter into a new set. `dev` and `render` drive one vite
+ * server: `dev` opens the contact sheet and watches, `render` shoots the same
+ * URLs at slot pixels. Flags win over the set's `recadro.json`, which wins over
+ * the set's conventions.
  */
 import { mkdirSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
+import { initSet, listStarters } from "./init.ts";
 import { startServer } from "./server.ts";
 import {
   capturesUrl,
@@ -23,8 +25,12 @@ import { SLOTS, selectSlots } from "./slots.ts";
 
 const USAGE = `recadro — App Store screenshots as code
 
+  recadro init   <dir> --starter <name> [--captures <pattern>]
   recadro dev    [--panels <dir>] [--port <n>]
   recadro render [--panels <dir>] [--out <dir>] [--devices 6.9,13-iPad] [--locales en-US] [--incomplete]
+
+  --starter     init: the starter to copy          (${listStarters().join(", ")})
+  --captures    init: where captures are, relative to <dir>, as ${CONFIG_FILE} takes it
 
   --panels      the set: a folder holding panels/       (default: found from here)
   --out         output directory       (default: ${CONFIG_FILE} "out", else <set>/out)
@@ -76,15 +82,18 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
-  if (command !== "dev" && command !== "render") {
+  if (command !== "init" && command !== "dev" && command !== "render") {
     console.error(`unknown command "${command}"\n\n${USAGE}`);
     process.exitCode = 1;
     return;
   }
 
-  const { values } = parseArgs({
+  const { values, positionals } = parseArgs({
     args: argv,
+    allowPositionals: true,
     options: {
+      starter: { type: "string" },
+      captures: { type: "string" },
       panels: { type: "string" },
       out: { type: "string" },
       port: { type: "string" },
@@ -93,6 +102,32 @@ async function main(): Promise<void> {
       incomplete: { type: "boolean", default: false },
     },
   });
+
+  if (command === "init") {
+    if (positionals.length !== 1 || !values.starter) {
+      throw new Error(`init takes a folder and a starter: recadro init <dir> --starter ${listStarters().join("|")}`);
+    }
+    const dir = resolve(positionals[0]);
+    const result = initSet({ dir, starter: values.starter, captures: values.captures });
+    const set = loadSet(dir);
+    console.log(`recadro  ${shown(dir)} from the ${values.starter} starter`);
+    console.log(`         captures  ${shown(resolve(set.dir, set.captures))}/`);
+    if (result.capturesFrom) {
+      const first = result.captures[0];
+      const last = result.captures.at(-1);
+      const range = result.captures.length > 1 ? `${first} … ${last}` : first;
+      console.log(`         filled    ${counted(result.captures.length, "capture")} from ${result.capturesFrom}: ${range}`);
+    } else {
+      console.log("         filled    nothing: no captures taken yet");
+    }
+    if (result.unfilled.length) {
+      const left = result.unfilled.map((n) => `{capture:${n}}`).join(", ");
+      console.log(`         left      ${left} in strings/, for captures still to take`);
+    }
+    console.log(`         next      recadro dev --panels ${shown(dir)}`);
+    return;
+  }
+  if (positionals.length) throw new Error(`${command} takes no ${positionals[0]}; name the set with --panels`);
 
   const set = loadSet(values.panels ? resolve(values.panels) : findSet(process.cwd()));
   const { locales, from: localesFrom } = localesFor(set, values.locales);

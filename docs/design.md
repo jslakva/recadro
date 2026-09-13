@@ -91,6 +91,17 @@ The extension point for the page side is a `vite.config.*` beside the panels,
 merged when present. It is a format the world already knows, so someone who
 wants Tailwind or Sass adds it themselves and the tool learns nothing.
 
+## Starters are copied, not referenced
+
+A starter is a premade set that ships in the package. `init` copies it once
+into a new folder and the set is the repo's from then on: nothing records which
+starter it came from, and no update to the starter reaches it. The one thing
+the copy changes is `{capture:N}`, replaced as plain text with the Nth capture
+already taken, so a starter opens on the app's own screens — the tool swaps a
+token in files it ships, and still parses nothing a page wrote. A placeholder
+without a capture stays as it is, which is also where the empty state comes
+from until one is taken.
+
 ## One server, two commands
 
 `dev` and `render` drive the same vite server and the same URLs. Playwright
