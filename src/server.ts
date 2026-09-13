@@ -64,6 +64,7 @@ const OWN_FILES: Record<string, { file: string; type: string }> = {
   "/__recadro/sheet.js": { file: "ui/sheet.js", type: "text/javascript" },
   "/__recadro/mark.png": { file: "assets/mark.png", type: "image/png" },
   "/__recadro/wordmark.png": { file: "assets/wordmark.png", type: "image/png" },
+  "/__recadro/favicon.png": { file: "assets/favicon.png", type: "image/png" },
 };
 
 /**
