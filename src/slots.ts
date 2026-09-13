@@ -21,7 +21,7 @@ export interface Slot {
  * Every slot recadro renders, in the order `--devices` reports them.
  *
  * Apple derives the smaller iPhone sizes from 6.9", so they are deliberately
- * absent — see `docs/ops.md`, "App Store screenshots".
+ * absent.
  */
 export const SLOTS: readonly Slot[] = [
   { id: "6.9", width: 1320, height: 2868, scale: 3 },
