@@ -1,0 +1,77 @@
+<!doctype html>
+<!--
+  The contact sheet: every panel side by side, which is how a customer meets
+  them in a search result and the only view in which the *story* can be judged
+  rather than the layout. Served by recadro at `/` so the panels directory holds
+  panels and nothing that knows about the tool.
+
+  Live mode iframes the panels at logical size and scales them down; `out/` mode
+  shows the rendered PNGs, where an unrendered panel appears as a hole. That
+  hole is the only failure signal there is, by design.
+
+  "Wrap three" is on by default, because the first three panels are the ones a
+  search result shows on their own and the rest are only reached by opening the
+  product page. Judging that split is most of what this view is for.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>recadro — contact sheet</title>
+    <style>
+      :root { color-scheme: light dark; --chrome: #1c1c1e; --ink: #f2f2f7; --dim: #8e8e93; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font: 13px/1.4 ui-sans-serif, -apple-system, system-ui, sans-serif;
+             background: var(--chrome); color: var(--ink); padding-bottom: 40px; }
+      header { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 18px;
+               align-items: center; padding: 12px 20px; background: #000; border-bottom: 1px solid #333; }
+      h1 { display: inline-flex; align-items: center; gap: 9px; margin: 0 10px 0 0; }
+      h1 img { display: block; width: auto; }
+      h1 .mark { height: 23px; }
+      h1 .wordmark { height: 14px; }
+      label { display: inline-flex; align-items: center; gap: 6px; color: var(--dim); }
+      select, input { font: inherit; background: #2c2c2e; color: var(--ink); border: 1px solid #3a3a3c;
+                      border-radius: 6px; padding: 3px 6px; }
+      input[type="range"] { padding: 0; width: 110px; }
+      input[type="checkbox"] { padding: 0; }
+      .group { margin: 26px 0 0; padding: 0 20px; font-size: 11px; font-weight: 500;
+               letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+      .strip { display: flex; gap: 20px; padding: 12px 20px 0; overflow-x: auto; align-items: flex-start; }
+      figure { margin: 0; flex: 0 0 auto; }
+      .frame { position: relative; overflow: hidden; border-radius: 10px; background: #000;
+               box-shadow: 0 6px 24px rgba(0,0,0,.5); }
+      iframe { border: 0; display: block; transform-origin: top left; }
+      .frame img { display: block; width: 100%; height: 100%; object-fit: contain; }
+      /* The hole. A panel with no render, which is expected for the two still
+         waiting on capture flows and is the only signal for one that failed. */
+      .hole { display: grid; place-items: center; color: var(--dim); text-align: center; padding: 12px;
+              background: repeating-linear-gradient(45deg, #2c2c2e 0 8px, #242426 8px 16px); }
+      figcaption { margin-top: 8px; font-size: 11px; color: var(--dim);
+                   display: flex; justify-content: space-between; gap: 10px; }
+      a { color: var(--dim); text-decoration: none; border-bottom: 1px solid transparent; }
+      a:hover { color: var(--ink); border-bottom-color: var(--dim); }
+      a.slug { color: var(--ink); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>
+        <img class="mark" src="/__recadro/mark.png" alt="" />
+        <img class="wordmark" src="/__recadro/wordmark.png" alt="recadro" />
+      </h1>
+      <label>device <select id="device"></select></label>
+      <label>locale <input id="locale" size="6" value="en-US" /></label>
+      <label>show
+        <select id="mode">
+          <option value="live">live panels</option>
+          <option value="out">rendered out/</option>
+        </select>
+      </label>
+      <label>size <input id="zoom" type="range" min="120" max="420" step="10" value="220" /></label>
+      <label><input id="wrap" type="checkbox" checked /> wrap three</label>
+      <span id="status" style="color: var(--dim)"></span>
+    </header>
+    <div id="sheet"></div>
+
+    <script type="module" src="/__recadro/sheet.js"></script>
+  </body>
+</html>

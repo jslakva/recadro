@@ -1,0 +1,54 @@
+{
+  "name": "recadro",
+  "version": "0.1.0",
+  "description": "App Store screenshots as code. Compose store panels from raw simulator captures. Plain HTML in, exact slot sizes out.",
+  "license": "FSL-1.1-ALv2",
+  "type": "module",
+  "bin": {
+    "recadro": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "ui",
+    "assets",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jslakva/recadro.git",
+    "directory": "packages/recadro"
+  },
+  "homepage": "https://github.com/jslakva/recadro#readme",
+  "bugs": "https://github.com/jslakva/recadro/issues",
+  "keywords": [
+    "app-store",
+    "screenshots",
+    "ios",
+    "aso",
+    "playwright",
+    "fastlane",
+    "app-store-connect",
+    "deliver"
+  ],
+  "scripts": {
+    "dev": "tsx src/cli.ts dev",
+    "render": "tsx src/cli.ts render",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0",
+    "sharp": "^0.34.5",
+    "vite": "^7.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
