@@ -1,11 +1,11 @@
 # recadro — App Store screenshots as code
 
 Compose store panels from raw simulator captures. Plain HTML in, exact slot
-sizes out. Works with or without fastlane.
+sizes out.
 
 ```bash
-npx recadro dev    --panels ./store/screenshots   # vite + contact sheet, live
-npx recadro render --panels ./store/screenshots   # serve, shoot, tear down
+npx recadro dev      # vite + contact sheet, live
+npx recadro render   # serve, shoot, tear down
 ```
 
 Both drive the **same** vite server, so Playwright navigates to the identical
@@ -16,36 +16,43 @@ with the preview.
 
 A panel is an HTML file. It is `100vw × 100vh` and never learns a device size —
 the renderer sets the viewport and the scale factor, so the delivered pixels come
-out by construction. Everything else is convention:
+out by construction. A set of panels is a folder, and recadro reads it by names:
 
 ```
-<panels>/
-  panels/01-hero.html       # discovered by glob; the number prefix is the order
+store/screenshots/          # the set, found from wherever you run recadro
+  panels/01-hero.html       # the panels; the number prefix is the order
   panels/02-feature.html
+  strings/en-US.json        # one per locale; the file names are the locales
+  captures/6.9/01-hero.png  # raw captures, one folder per device
   panel.css, panel.js       # whatever the panels share; recadro never reads them
-  vite.config.ts            # optional, merged when present — the extension point
+  recadro.json              # optional: only when captures live elsewhere
   out/                      # rendered: <locale>/<device>/<NN-slug>.png
 ```
 
-The whole tool ↔ layout contract is three query params:
+The whole tool ↔ layout contract is four query params:
 
 ```
-tool → page:   ?panel=02-feature&device=6.9&locale=en-US
+tool → page:   ?panel=02-feature&device=6.9&locale=en-US&captures=/store/screenshots/captures/6.9/
 page → tool:   nothing
 tool → disk:   out/<locale>/<device>/<NN-slug>.png, at exact slot pixels
 ```
 
-There is no manifest and no config schema. A page that needs strings, captures or
-design tokens fetches them itself, at paths of its own choosing; recadro opens
-none of them. What it owns is the two things that are facts about the App Store
-rather than preferences — the slot geometry table and the output naming
-`deliver` expects — and both are selected by flag.
+recadro reads what things are called, never what they say. A page fetches its
+own strings and tokens and picks its own capture filenames; recadro opens none
+of them. What it owns is what is a fact about the App Store rather than a
+preference — the slot geometry — and where a set keeps its pieces.
+
+- **Locales** are the names in `strings/`. Add `strings/de-DE.json` and
+  `render` renders German too.
+- **Devices** are the folders in `captures/`. No `13-iPad` folder, no iPad
+  panels; no captures at all yet, every slot.
+- **The set** is found: the folder you run in, the nearest set above it, or the
+  one set below it.
 
 ## Writing a panel
 
-A panel reads its three params and fetches everything else itself. This is a
-complete working set, from a repo that keeps its raw captures in `captures/`
-and its panels in `store/screenshots/`:
+A panel reads its four params and fetches everything else itself. This is a
+complete working set:
 
 ```html
 <!-- store/screenshots/panels/01-hero.html -->
@@ -60,19 +67,25 @@ and its panels in `store/screenshots/`:
 ```js
 // store/screenshots/panel.js
 const params = new URLSearchParams(location.search);
-const panel = params.get("panel");   // "01-hero": the filename without .html
-const device = params.get("device"); // "6.9" or "13-iPad"
-const locale = params.get("locale"); // "en-US"
+const panel = params.get("panel");       // "01-hero": the filename without .html
+const device = params.get("device");     // "6.9" or "13-iPad"
+const locale = params.get("locale");     // "en-US"
+const captures = params.get("captures"); // this locale and device's captures folder
 
 document.documentElement.lang = locale;
 document.documentElement.dataset.device = device;
 
 // Relative URLs resolve against the page, panels/01-hero.html.
-const captions = await fetch(`../captions/${locale}.json`).then((r) => r.json());
-document.querySelector("h1").textContent = captions[panel];
+const strings = await fetch(`../strings/${locale}.json`).then((r) => r.json());
+document.querySelector("h1").textContent = strings[panel];
 
 const capture = document.querySelector("img.capture");
-if (capture) capture.src = `../../../captures/${device}/${panel}.png`;
+if (capture) {
+  // A capture that does not exist yet stays a broken <img> — that is how
+  // render knows to skip the panel — and is hidden rather than replaced.
+  capture.addEventListener("error", () => { capture.style.visibility = "hidden"; });
+  capture.src = `${captures}${panel}.png`;
+}
 ```
 
 ```css
@@ -105,16 +118,29 @@ img.capture {
 [data-device="13-iPad"] img.capture { aspect-ratio: 3 / 4; border-radius: 2vh; }
 ```
 
-`captions/en-US.json` maps each slug to its headline. Every path in it is this
-example's choice, not recadro's: the strings could come from a Markdown table,
-the captures from fastlane `snapshot`'s output, the colours from your web app's
-tokens. Sizes are in `vw`/`vh` and the iPad forks on an attribute, so no device
-dimension appears anywhere.
+`strings/en-US.json` maps each slug to its headline. Its format is this
+example's choice, not recadro's: the strings could be a Markdown table, the
+colours your web app's tokens. Sizes are in `vw`/`vh` and the iPad forks on an
+attribute, so no device dimension appears anywhere.
 
 The server's root is the repository — the nearest directory holding `.git` —
 so a panel can reach anything in the repo by a relative or root-absolute URL.
 Outside git it is the nearest JS workspace or `package.json`, and failing both
-the panels directory, where nothing beside it is reachable.
+the set itself, where nothing beside it is reachable.
+
+## When captures live elsewhere
+
+A capture flow usually writes where it writes. Tell the set with
+`recadro.json` beside `panels/`:
+
+```json
+{ "captures": "../../e2e/screenshots/{locale}/{device}" }
+```
+
+Paths are relative to the set. `{device}` is the slot id and is required;
+`{locale}`, when present, makes the captures per locale. The folder must be
+inside the repository. The only other key is `out`, for renders somewhere
+other than `<set>/out`. Unknown keys are an error.
 
 ## Commands
 
@@ -123,7 +149,10 @@ recadro dev    [--panels <dir>] [--port <n>]
 recadro render [--panels <dir>] [--out <dir>] [--devices 6.9,13-iPad] [--locales en-US] [--incomplete]
 ```
 
-`--panels` defaults to the current directory; `--out` to `<panels>/out`.
+Flags win over `recadro.json`, which wins over the set's names. `--panels`
+defaults to the set found from the working directory, `--locales` to the names
+in `strings/` (or `en-US`), `--devices` to the slots with a captures folder (or
+all), `--out` to `<set>/out`. Both commands print what they picked and why.
 
 ## The contact sheet is the check
 
@@ -132,7 +161,7 @@ in a search result and the only view in which the *story* can be judged rather
 than the layout. The first three are grouped on their own — all a search result
 shows — with the rest below. It shows the live panels by default and the
 contents of `out/` on a toggle, so a rendered set can be compared against the
-design.
+design. When a capture appears or changes, the panels reload.
 
 Click a panel to see it alone, as large as the window allows; the arrow keys
 step through the set and Esc comes back to the sheet.
@@ -155,39 +184,22 @@ transparency), so there is nothing to test for.
 A panel is incomplete when it carries an `<img>` that resolved to nothing —
 typically a capture that does not exist yet. Those render in `dev` (a page can
 style a failed image into a deliberate empty state) and are **skipped** by
-`render`, so `out/` only ever holds complete panels and an upload lane can read
-it wholesale.
+`render`, so `out/` only ever holds complete panels and can be uploaded
+wholesale.
 
 A panel with **no** image at all — a text-only story panel — has nothing to fail
 and ships. The distinction is present-but-broken, not absent.
 
-The resulting gap in the numbering is harmless: `deliver` uploads what it finds
-in filename order.
-
 To look at incomplete panels without a browser — in CI, or from an agent —
 `render --incomplete --out <dir>` shoots every panel. It refuses to write into
-`<panels>/out`, where an empty frame would ship.
-
-## With fastlane
-
-The interface between render and upload is a directory of PNGs, so a lane is one
-line:
-
-```ruby
-lane :screenshots do
-  sh("npx recadro render --panels ../store/screenshots")
-  upload_screenshots   # point deliver at store/screenshots/out
-end
-```
-
-`deliver` picks each slot from the image dimensions, so nothing else is needed.
+the set's own `out`, where an empty frame would ship.
 
 ## With a coding agent
 
 [`AUTHORING.md`](AUTHORING.md) ships in the package: the contract as
-instructions, the mistakes an agent reliably makes with a tool that has no
-config, and how to look at its own work without a browser. Point your agent
-file at it — one line in `CLAUDE.md` or `AGENTS.md`:
+instructions, the mistakes an agent reliably makes with a tool that reads names
+and not contents, and how to look at its own work without a browser. Point your
+agent file at it — one line in `CLAUDE.md` or `AGENTS.md`:
 
 ```md
 Store screenshots are composed with recadro. Before editing store/screenshots/,

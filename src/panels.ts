@@ -17,6 +17,11 @@ export interface Panel {
   urlPath: string;
 }
 
+/** The root-absolute URL path of `file` on a server rooted at `root`. */
+export function urlPathFor(root: string, file: string): string {
+  return `/${relative(root, file).split("\\").join("/")}`;
+}
+
 /**
  * Lists the panels under `panelsDir/panels/`, ordered by filename.
  *
@@ -37,7 +42,7 @@ export function discoverPanels(panelsDir: string, root: string): Panel[] {
       return {
         slug: name.slice(0, -".html".length),
         file,
-        urlPath: `/${relative(root, file).split("\\").join("/")}`,
+        urlPath: urlPathFor(root, file),
       };
     });
 }

@@ -7,13 +7,17 @@ changing the tool's shape, because most of the shape is deliberate absence.
 
 ## The invariant
 
-The tool ↔ layout contract is three query params, and the page reports nothing
-back. The tool never opens a panel's files — not its captions, captures, tokens
-or config — and never learns a layout concept. A change that has it parse
-something a panel wrote, or add a config key, is the change to refuse: that is
-how a tool with your layout becomes a tool with its own. What the tool owns is
-the slot geometry table and the output naming `deliver` expects. Everything
-else is convention or the `vite.config.*` beside the panels.
+The tool ↔ layout contract is four query params — `panel`, `device`, `locale`,
+`captures` — and the page reports nothing back. The tool reads what a set's
+files are called and where they are (`panels/`, the entries in `strings/`, the
+captures folders) plus the set's optional `recadro.json`; it never reads what a
+page wrote — its markup, strings or tokens — and never learns a layout concept.
+`recadro.json` holds only what names cannot say: where captures are, where
+renders go. A change that has the tool parse a page's file, or adds a key a page
+lays out with, is the change to refuse: that is how a tool with your layout
+becomes a tool with its own. What the tool owns is the slot geometry table, the
+set layout and the output naming. Everything else is the page's, or the
+`vite.config.*` beside the panels.
 
 ## Layout rules
 
@@ -38,6 +42,11 @@ pnpm -C packages/recadro dev    --panels <dir>   # from source, live
 pnpm -C packages/recadro render --panels <dir>
 pnpm -C packages/recadro build                    # tsc → dist/
 ```
+
+`pnpm -C` runs from the package directory, where there is no set to discover,
+so name one with `--panels`. To exercise discovery, run
+`packages/recadro/node_modules/.bin/tsx packages/recadro/src/cli.ts` from inside
+the repo that holds the set.
 
 Before publishing, test the *built* form — `node dist/cli.js dev …` and
 `render …` — not the tsx one; users get `npx recadro`. `render` needs

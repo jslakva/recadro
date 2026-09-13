@@ -17,6 +17,9 @@ const deviceSel = el("device");
 for (const slot of manifest.slots) {
   deviceSel.append(new Option(`${slot.id} · ${slot.width}×${slot.height}`, slot.id));
 }
+for (const locale of manifest.locales) el("locale").append(new Option(locale, locale));
+if (manifest.locales.includes("en-US")) el("locale").value = "en-US";
+if (!manifest.outUrl) el("mode").querySelector('option[value="out"]').disabled = true;
 
 /**
  * A selector for `node` inside its panel: the path from `<body>`, stopping at the
@@ -151,9 +154,11 @@ function figureFor(panel, context) {
   frame.className = "frame";
   const alone = `#${encodeURIComponent(panel.slug)}`;
 
+  const captures = manifest.capturesUrl.replaceAll("{locale}", locale).replaceAll("{device}", slot.id);
   const panelUrl =
-    `${panel.urlPath}?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}&locale=${locale}`;
-  const pngUrl = `${manifest.panelsBase}/out/${locale}/${slot.id}/${panel.slug}.png`;
+    `${panel.urlPath}?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}` +
+    `&locale=${encodeURIComponent(locale)}&captures=${encodeURIComponent(captures)}`;
+  const pngUrl = `${manifest.outUrl}/${locale}/${slot.id}/${panel.slug}.png`;
 
   if (mode === "live") {
     const iframe = document.createElement("iframe");
@@ -307,13 +312,17 @@ function step(delta) {
 /** Rebuilds the sheet from the current controls. */
 function draw() {
   const slot = manifest.slots.find((s) => s.id === deviceSel.value);
-  const locale = el("locale").value.trim() || "en-US";
+  const locale = el("locale").value;
   const mode = el("mode").value;
   const logicalW = slot.width / slot.scale;
   const logicalH = slot.height / slot.scale;
   const context = { slot, locale, mode, logicalW, logicalH };
 
-  el("status").textContent = `${manifest.panels.length} panels · ${logicalW}×${logicalH} logical`;
+  // A slot with no captures is still worth designing, but render skips it by
+  // default, so the sheet says so while it is the one shown.
+  const bare = manifest.devicesWithCaptures.length && !manifest.devicesWithCaptures.includes(slot.id);
+  el("status").textContent =
+    `${manifest.panels.length} panels · ${logicalW}×${logicalH} logical${bare ? " · no captures for this slot" : ""}`;
 
   const groups = el("wrap").checked
     ? [

@@ -24,12 +24,14 @@ export interface RenderOptions {
   slots: Slot[];
   /** Locale codes: the output directory names, and the page's `?locale=`. */
   locales: string[];
+  /** The page's `?captures=` for one locale and slot: a root-absolute folder URL. */
+  capturesUrl: (locale: string, device: string) => string;
   /** Absolute path of the output directory; `<out>/<locale>/<device>/`. */
   outDir: string;
   /**
    * Shoot incomplete panels too, instead of skipping them. For looking, never
-   * for shipping: the caller keeps this away from the directory an upload lane
-   * reads.
+   * for shipping: the caller keeps this away from the set's own output
+   * directory, which is uploaded wholesale.
    */
   incomplete?: boolean;
 }
@@ -80,11 +82,11 @@ async function settle(page: import("playwright").Page): Promise<string[]> {
  * all under `incomplete`.
  *
  * Each `<out>/<locale>/<device>/` directory is cleared first, so a panel
- * deleted from the directory cannot survive as a stale PNG that the upload lane
+ * deleted from the directory cannot survive as a stale PNG that an upload
  * would still find and ship.
  */
 export async function render(options: RenderOptions): Promise<RenderResult> {
-  const { origin, panels, slots, locales, outDir, incomplete = false } = options;
+  const { origin, panels, slots, locales, capturesUrl, outDir, incomplete = false } = options;
   const result: RenderResult = { written: [], incomplete: [] };
   const browser = await chromium.launch();
 
@@ -102,8 +104,10 @@ export async function render(options: RenderOptions): Promise<RenderResult> {
         });
         const page = await context.newPage();
 
+        const captures = encodeURIComponent(capturesUrl(locale, slot.id));
         for (const panel of panels) {
-          const query = `?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}&locale=${locale}`;
+          const query =
+            `?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}&locale=${locale}&captures=${captures}`;
           // `networkidle` rather than `load`: a panel fetches its own captions and
           // sets its capture from them, so the image request does not exist yet
           // when `load` fires. Checking `document.images` before that would find

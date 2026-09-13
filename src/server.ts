@@ -3,20 +3,20 @@
  * `render` points Playwright at the identical URLs, so there is no second code
  * path that can disagree with the preview.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import type { ServerResponse } from "node:http";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createServer, loadConfigFromFile, mergeConfig, type InlineConfig, type Plugin, type ViteDevServer } from "vite";
+import { discoverPanels, urlPathFor, type Panel } from "./panels.ts";
 import {
-  createServer,
-  loadConfigFromFile,
-  mergeConfig,
-  searchForWorkspaceRoot,
-  type InlineConfig,
-  type Plugin,
-  type ViteDevServer,
-} from "vite";
-import { discoverPanels, type Panel } from "./panels.ts";
+  capturesBase,
+  capturesUrl,
+  DEFAULT_LOCALE,
+  devicesWithCaptures,
+  loadSet,
+  type PanelSet,
+} from "./set.ts";
 import { SLOTS } from "./slots.ts";
 
 /**
@@ -26,14 +26,25 @@ import { SLOTS } from "./slots.ts";
  */
 const PKG = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+/** A file `dev` treats as a capture when it appears or changes under the captures folder. */
+const CAPTURE_FILE = /\.(png|jpe?g|webp|heic)$/i;
+
 /** A running server, plus what the caller needs to build panel URLs. */
 export interface PanelServer {
   /** The vite server; close it when done. */
   vite: ViteDevServer;
   /** Origin the server is listening on, e.g. `http://localhost:5199`. */
   origin: string;
-  /** Panels discovered under `--panels`, in filename order. */
+  /** Panels in the set, in filename order. */
   panels: Panel[];
+}
+
+/** How to start the server. */
+export interface ServerOptions {
+  /** Port to listen on; vite picks one when absent. */
+  port?: number;
+  /** Reload the panels when a capture appears or changes. For `dev`; `render` has nothing to reload. */
+  watchCaptures?: boolean;
 }
 
 /**
@@ -41,18 +52,24 @@ export interface PanelServer {
  * `/__recadro/panels.json`; the flow is one-way — no page ever reports back.
  */
 interface SheetManifest {
-  panelsBase: string;
   panels: { slug: string; urlPath: string }[];
   slots: typeof SLOTS;
+  /** Locales `strings/` names, or the default one. */
+  locales: string[];
+  /** The `?captures=` URL with `{locale}` and `{device}` left for the sheet to fill. */
+  capturesUrl: string;
+  /** Slots with a captures folder, so the sheet can say which have none. */
+  devicesWithCaptures: string[];
+  /** Root-absolute URL of the output folder, or null when it lies outside the root and cannot be shown. */
+  outUrl: string | null;
 }
 
 /**
  * Loads a `vite.config.*` sitting beside the panels, if there is one.
  *
- * This is the whole extension point: a project that wants Tailwind, Sass or an
- * alias adds a vite config next to its panels and recadro learns nothing. The
- * format is one the world already knows, so the bespoke-config surface stays at
- * zero.
+ * The extension point for the page side: a project that wants Tailwind, Sass or
+ * an alias adds a vite config next to its panels and recadro learns nothing
+ * about it. The format is one the world already knows.
  */
 async function loadPanelConfig(panelsDir: string): Promise<InlineConfig> {
   const loaded = await loadConfigFromFile({ command: "serve", mode: "development" }, undefined, panelsDir);
@@ -80,6 +97,43 @@ function sendOwnFile(res: ServerResponse, file: string, type: string): void {
 }
 
 /**
+ * The sheet's manifest, from the set as it is on disk now. Read per request, so
+ * a panel or a strings file added while the server runs shows on reload.
+ */
+function manifestFor(set: PanelSet): SheetManifest {
+  const current = loadSet(set.dir);
+  const locales = current.locales.length ? current.locales : [DEFAULT_LOCALE];
+  const outUrl = urlPathFor(current.root, current.outDir);
+  return {
+    panels: discoverPanels(current.dir, current.root).map(({ slug, urlPath }) => ({ slug, urlPath })),
+    slots: SLOTS,
+    locales,
+    capturesUrl: capturesUrl(current),
+    devicesWithCaptures: devicesWithCaptures(current, locales),
+    outUrl: outUrl.startsWith("/..") ? null : outUrl,
+  };
+}
+
+/**
+ * Reloads every panel when a capture appears, changes or goes away. vite only
+ * reloads for files a page imports, and a capture is an image a page asked for
+ * by URL, so a capture flow running beside the open sheet would otherwise
+ * change nothing on screen. Debounced, because a flow writes its captures in a
+ * burst. The sheet itself has no vite client and stays; the panels inside it
+ * reload.
+ */
+function watchCaptures(server: ViteDevServer, set: PanelSet): void {
+  const base = capturesBase(set);
+  server.watcher.add(base);
+  let pending: NodeJS.Timeout | undefined;
+  server.watcher.on("all", (_event, file) => {
+    if (!file.startsWith(base + sep) || !CAPTURE_FILE.test(file)) return;
+    clearTimeout(pending);
+    pending = setTimeout(() => server.ws.send({ type: "full-reload" }), 300);
+  });
+}
+
+/**
  * Serves the contact sheet at `/`, its script, and its manifest.
  *
  * Registered from the `configureServer` body rather than its returned hook, so
@@ -94,22 +148,19 @@ function sendOwnFile(res: ServerResponse, file: string, type: string): void {
  * Hence a separate `sheet.js` under `ui/` and raw sends. The panels are real
  * files under root and keep vite's transform and HMR.
  */
-function recadroPlugin(panelsDir: string, root: string): Plugin {
+function recadroPlugin(set: PanelSet, options: ServerOptions): Plugin {
   return {
     name: "recadro",
     configureServer(server) {
+      if (options.watchCaptures) watchCaptures(server, set);
+
       server.middlewares.use((req, res, next) => {
         const path = (req.url ?? "/").split("?")[0];
 
         if (path === "/__recadro/panels.json") {
-          const manifest: SheetManifest = {
-            panelsBase: `/${relative(root, panelsDir).split("\\").join("/")}`,
-            panels: discoverPanels(panelsDir, root).map(({ slug, urlPath }) => ({ slug, urlPath })),
-            slots: SLOTS,
-          };
           res.setHeader("Content-Type", "application/json");
           res.setHeader("Cache-Control", "no-store");
-          res.end(JSON.stringify(manifest));
+          res.end(JSON.stringify(manifestFor(set)));
           return;
         }
 
@@ -131,46 +182,24 @@ function recadroPlugin(panelsDir: string, root: string): Plugin {
 }
 
 /**
- * The vite root for `panelsDir`: the repository it sits in.
- *
- * Derived rather than flagged, and it has to be the repository rather than
- * anything narrower, because a panel reaches for captures and stylesheets
- * wherever the repo keeps them — `../../fastlane/screenshots`, a web app's
- * tokens — and a URL cannot climb above root. The nearest `.git` (a directory,
- * or a file in a worktree or submodule) marks it.
- *
- * vite's `searchForWorkspaceRoot` alone is not enough: it stops at a JS
- * workspace or the nearest `package.json`, and a native iOS repo has neither,
- * which would leave the root at the panels directory. It is the fallback
- * outside git.
- */
-function rootFor(panelsDir: string): string {
-  for (let dir = panelsDir; ; dir = dirname(dir)) {
-    if (existsSync(join(dir, ".git"))) return dir;
-    if (dirname(dir) === dir) return searchForWorkspaceRoot(panelsDir);
-  }
-}
-
-/**
- * Starts the server on the repository that contains `panelsDir`, so the panels,
- * the raw captures and any stylesheet they link are all inside root and nothing
+ * Starts the server on the repository that contains the set, so the panels, the
+ * raw captures and any stylesheet they link are all inside root and nothing
  * needs `server.fs.allow`.
  */
-export async function startServer(panelsDir: string, port?: number): Promise<PanelServer> {
-  const root = rootFor(panelsDir);
+export async function startServer(set: PanelSet, options: ServerOptions = {}): Promise<PanelServer> {
   const ours: InlineConfig = {
-    root,
+    root: set.root,
     configFile: false,
     logLevel: "warn",
-    server: { port, host: "localhost" },
-    plugins: [recadroPlugin(panelsDir, root)],
+    server: { port: options.port, host: "localhost" },
+    plugins: [recadroPlugin(set, options)],
   };
 
-  const vite = await createServer(mergeConfig(await loadPanelConfig(panelsDir), ours));
+  const vite = await createServer(mergeConfig(await loadPanelConfig(set.dir), ours));
   await vite.listen();
 
   const resolved = vite.resolvedUrls?.local[0];
   if (!resolved) throw new Error("vite reported no local URL");
 
-  return { vite, origin: resolved.replace(/\/$/, ""), panels: discoverPanels(panelsDir, root) };
+  return { vite, origin: resolved.replace(/\/$/, ""), panels: discoverPanels(set.dir, set.root) };
 }

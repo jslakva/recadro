@@ -2,23 +2,39 @@
 
 For a coding agent, or a person, changing a panel set that recadro renders. The
 [README](README.md) explains the tool; this says what to do and what not to.
-Every rule here follows from one fact: **recadro reads nothing a panel wrote.**
-The layout, its strings, its captures and its tokens belong to the repo.
+Every rule here follows from one fact: **recadro reads what a set's files are
+called and where they are, never what they say.** The layout, its strings, its
+tokens and its capture filenames belong to the repo.
 
 ## Find your bearings
 
-- The panel set is the directory holding `panels/`. Panels are
-  `panels/NN-slug.html`, ordered by filename. The filename without `.html`
-  (`01-hero`) is the slug, the `?panel=` value and the output basename.
-- Read what the panels share — typically a `panel.css` and a `panel.js` beside
-  `panels/` — before changing one panel. The conventions there are the repo's.
-- There is no recadro config to look for. A `vite.config.*` beside `panels/`,
-  if present, is merged into the server; it cannot move the root.
+A set is a folder holding `panels/`:
+
+```
+<set>/
+  panels/NN-slug.html     the panels, ordered by filename
+  strings/<locale>.*      one entry per locale; the names are the locales
+  captures/<device>/      raw captures, unless recadro.json points elsewhere
+  recadro.json            optional: "captures" and "out", nothing else
+  out/                    renders
+  panel.css, panel.js     whatever the panels share
+```
+
+- The filename without `.html` (`01-hero`) is the slug, the `?panel=` value and
+  the output basename.
+- recadro finds the set: the folder a command runs in, the nearest set above
+  it, or the one set below it. With several sets in the repo, pass
+  `--panels <dir>`; the error lists them.
+- Read what the panels share — typically `panel.css` and `panel.js` — before
+  changing one panel. The conventions there are the repo's.
+- Read `recadro.json` if there is one: it says where the captures are.
+- A `vite.config.*` beside `panels/`, if present, is merged into the server; it
+  cannot move the root.
 
 ## The contract
 
 ```
-tool → page:   ?panel=<slug>&device=<slot>&locale=<locale>
+tool → page:   ?panel=<slug>&device=<slot>&locale=<locale>&captures=<folder URL>
 page → tool:   nothing
 tool → disk:   <out>/<locale>/<device>/<slug>.png
 ```
@@ -31,11 +47,32 @@ tool → disk:   <out>/<locale>/<device>/<slug>.png
 The page is the viewport, `100vw × 100vh`. Those numbers are for your
 understanding; they belong in no panel.
 
+`captures` is a root-absolute folder URL ending in `/`, already resolved for
+this locale and slot. The page appends a filename: the slug plus `.png`, or
+whatever its strings map the slug to.
+
+## recadro.json
+
+Only when captures are not in `<set>/captures/<device>/`, or renders should not
+go to `<set>/out`:
+
+```json
+{ "captures": "../../e2e/screenshots/{locale}/{device}", "out": "out" }
+```
+
+- Paths are relative to the set, and captures must be inside the repository.
+- `{device}` is required: every slot has captures of its own. `{locale}` is
+  optional and makes the captures per locale.
+- Those two keys are all it takes; anything else is an error. Command-line
+  flags win over it.
+
 ## Don't
 
-- **Don't create a config, manifest or schema for recadro.** It would read
-  none of it. Data files a page fetches for itself are fine; they are the
-  page's.
+- **Don't add keys to `recadro.json` or create another config for recadro.**
+  Strings, tokens, which panel shows which capture — the page reads those from
+  its own files, and recadro would read none of them.
+- **Don't build capture paths in a panel.** Use `?captures=`. A path written
+  into `panel.js` breaks the moment captures move or become per locale.
 - **Don't write device dimensions into CSS or JS.** Size in `vw`, `vh` and
   `%`. Use `?device=` to fork a layout — set it as an attribute and select on
   it — never for pixel arithmetic.
@@ -51,6 +88,9 @@ understanding; they belong in no panel.
 
   `img.hidden = true` is not enough when any rule gives the image a `display`;
   the broken-image glyph shows through.
+- **Don't name strings files anything but locales.** Every entry in `strings/`
+  named like a locale is rendered; shared strings go elsewhere, such as
+  `strings-common.json` beside the folder.
 - **Don't animate on load.** The shot is taken once the network is idle and
   fonts are ready, not once motion stops; an entrance animation may be captured
   part-way.
@@ -61,42 +101,55 @@ understanding; they belong in no panel.
 ## Paths
 
 - Relative URLs in `fetch`, `src` and `href` resolve against the page,
-  `panels/<slug>.html` — even from a shared module script one directory up.
+  `panels/<slug>.html` — even from a shared module script one directory up. So
+  a panel's strings are `../strings/${locale}.json`.
 - The server's root is the repository: the nearest directory holding `.git`.
-  A root-absolute URL (`/fastlane/screenshots/…`) resolves from there, and a
+  A root-absolute URL (`/design/tokens.css`) resolves from there, and a
   relative one can climb to anywhere in the repo but no further.
 - Outside git the root is the nearest JS workspace or `package.json`, and
-  failing both the panel set itself — then nothing beside it is reachable.
+  failing both the set itself — then nothing beside it is reachable.
 - A panel reporting `no capture at <url>` for a file that exists is a wrong
-  path. The URL is what the page asked for; compare it with the file.
+  filename or a wrong `captures` in `recadro.json`. The URL is what the page
+  asked for; compare it with the file.
 
 ## Look at your work
 
 You have no browser, so the PNGs are your contact sheet. Shoot every panel,
-including ones whose capture does not exist yet, somewhere outside `out/`:
+including ones whose capture does not exist yet, somewhere outside the set's
+`out`:
 
 ```bash
-npx recadro render --panels <set> --out <scratch dir> --incomplete
+npx recadro render --out <scratch dir> --incomplete
 ```
 
 Then open `<scratch dir>/<locale>/<device>/<slug>.png` for every panel you
-touched, at every slot. Look for a headline that wraps badly or is cropped,
-text overflowing the frame, a fallback font, a capture that didn't load, and a
-layout that only works on one slot. Look at the first three panels together:
-they are all a search result shows. Don't assert image dimensions; they are
-exact by construction.
+touched, at every slot and locale. Look for a headline that wraps badly or is
+cropped, text overflowing the frame, a fallback font, a capture that didn't
+load, and a layout that only works on one slot or in one language. Look at the
+first three panels together: they are all a search result shows. Don't assert
+image dimensions; they are exact by construction.
 
 To produce what ships:
 
 ```bash
-npx recadro render --panels <set>
+npx recadro render
 ```
 
-It prints `wrote <locale>/<device>/<slug>.png` per shot and
+It first prints what it picked and why:
+
+```
+recadro  6 panels in store/screenshots
+         locales   de-DE, en-US  (strings/)
+         devices   6.9  (no captures folder for 13-iPad)
+         out       store/screenshots/out
+```
+
+Then `wrote <locale>/<device>/<slug>.png` per shot and
 `skipped <locale>/<device>/<slug> — no capture at <url>` per incomplete panel,
-and exits 0 either way — read the lines, not the exit code. `out/` is cleared
-per locale and slot first, so it only ever holds this run's complete panels.
-`--incomplete` refuses to write there.
+and it exits 0 either way — read the lines, not the exit code. A device missing
+from `devices` has no captures folder; pass `--devices` to render it anyway.
+Each `<out>/<locale>/<device>/` is cleared first, so it only ever holds this
+run's complete panels. `--incomplete` refuses to write into the set's `out`.
 
 `render` needs Playwright's chromium once. If it fails for want of a browser,
 the install is `npx playwright install chromium` — ask before downloading.
@@ -138,17 +191,46 @@ Shoot the panel before and after the change and look at that spot.
   the output filenames, and the upload order follows them.
 - **Text-only panel:** leave out `<img>` entirely. With nothing to fail it is
   complete and ships.
-- **New locale:** pass `--locales en-US,de-DE`. The page gets `?locale=de-DE`
-  and must find its own strings; a different type stack is `:root:lang(de)`
-  once the page sets `lang`.
-- **New device:** not a panel change. Slots are recadro's table; the two above
-  are what App Store Connect needs, since it derives the smaller iPhone sizes
-  from 6.9".
+- **New locale:** add its strings file to `strings/`, named for the locale and
+  in the same format as the others — `strings/de-DE.json`. That is the whole
+  change; recadro renders it from the name. A different type stack is
+  `:root:lang(de)` once the page sets `lang`.
+- **New device:** captures for it appear in their own folder, named for the
+  slot. Slots are recadro's table; the two above are what App Store Connect
+  needs, since it derives the smaller iPhone sizes from 6.9".
+- **Captures move:** change `captures` in `recadro.json`, or create the file.
+  No panel changes.
+
+## Moving an existing set onto this layout
+
+A set made before this layout — or by hand — typically fetches strings from
+somewhere outside it and builds capture paths itself. Move it in this order,
+and shoot it with `--incomplete` before you start so you have something to
+compare against:
+
+1. **Strings.** Put one file per locale in `strings/`, named for the locale,
+   holding only what the panels read. When the panels' strings are a section
+   of a larger file — a table inside a store listing — move that section out
+   on its own and leave the rest where it is. Symlink a file into `strings/`
+   only when the panels read it whole and other tooling reads it too. Point the
+   panels' fetch at `../strings/${locale}.<ext>`.
+2. **Captures.** If the capture flow writes somewhere other than
+   `<set>/captures/<device>/`, write `recadro.json` with a `captures` pattern
+   for that folder. Its folders must be named for the slots, `6.9` and
+   `13-iPad`; if they are not, rename them in the capture flow.
+3. **Panels.** Replace every capture path the page builds with `?captures=`
+   plus the filename. Keep whatever maps a slug to a capture filename.
+4. **Commands.** Drop `--panels`, `--locales` and `--devices` from the repo's
+   scripts where the set now says the same thing; keep a flag only where it
+   overrides the set on purpose.
+5. **Compare.** Shoot again with `--incomplete` into a second folder and look
+   at the two sets side by side. Nothing should have changed.
 
 ## Why it is shaped this way
 
-A tool that parses a panel's tokens has to learn that one key is the ground and
-another the frame radius, and every such key is a layout concept it then owns.
-Keeping the contract to three params is what keeps the layout yours.
+A tool that parses a panel's strings or tokens has to learn that one key is the
+headline and another the ground, and every such key is a layout concept it then
+owns. Reading names and four params, and nothing a page wrote, is what keeps the
+layout yours.
 [docs/design.md](https://github.com/jslakva/recadro/blob/main/docs/design.md)
 has the full reasoning.

@@ -31,9 +31,7 @@
     "ios",
     "aso",
     "playwright",
-    "fastlane",
-    "app-store-connect",
-    "deliver"
+    "app-store-connect"
   ],
   "scripts": {
     "dev": "tsx src/cli.ts dev",

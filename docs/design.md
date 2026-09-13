@@ -24,32 +24,72 @@ and never sees a device dimension. The exact pixels come out by construction,
 the slot table stays inside the tool where a layout cannot depend on it, and a
 new device is a row in that table.
 
-## The contract is three query params
+## The contract is four query params
 
 ```
-tool → page:   ?panel=<slug>&device=<slot>&locale=<locale>
+tool → page:   ?panel=<slug>&device=<slot>&locale=<locale>&captures=<folder URL>
 page → tool:   nothing
-tool → disk:   out/<locale>/<device>/<NN-slug>.png
+tool → disk:   <out>/<locale>/<device>/<NN-slug>.png
 ```
 
-The page fetches its own strings, captures and tokens, at paths it chooses. The
-tool opens none of them. This is the line that keeps recadro from growing a
-schema: the moment the tool parses a token file it has to know that one key is
-the ground and another the frame radius, and every token added is one more
-layout concept it understands — which is how a tool with your layout becomes a
-tool with its own.
+The tool reads what a set's files are called and where they are. It never
+reads what they say: not a panel's markup, not its strings, not its tokens.
+This is the line that keeps recadro from growing a schema: the moment the tool
+parses a strings or token file it has to know that one key is the headline and
+another the ground, and every key added is one more layout concept it
+understands — which is how a tool with your layout becomes a tool with its own.
 
-## No manifest, no config
+`captures` is a param and strings are not because of who decides where they
+live. Strings sit at a fixed place in the set that a page can name itself.
+Captures land wherever the repo's capture flow writes them, per slot and
+sometimes per locale, so the tool resolves that folder once and hands it to
+every panel. The page still chooses the filename in it: a capture named after
+the slug, or whatever its strings map the slug to.
 
-Convention carries what a config would. Panels are files in `panels/`, found by
-glob and ordered by filename — the number prefix is the order and the rest is
-the slug, which is also the output basename. The headline is an `<h1>` because
-the file is HTML. A panel wanting its own ground is a `<style>` block in that
-panel. A locale wanting a different type stack is `:root:lang(xx)`.
+## The set: conventions first, one optional file
 
-The one extension point is a `vite.config.*` beside the panels, merged when
-present. It is a format the world already knows, so someone who wants Tailwind
-or Sass adds it themselves and the tool learns nothing.
+A set is a folder holding `panels/`. Everything else about it is read from
+names, and the one file that exists is optional:
+
+```
+<set>/
+  panels/NN-slug.html     the panels; the number prefix is the order
+  strings/<locale>.*      one entry per locale; the names are the locales
+  captures/<device>/      where captures are, unless recadro.json says otherwise
+  recadro.json            optional: "captures" and "out"
+  out/                    renders, unless recadro.json or --out says otherwise
+  panel.css, panel.js     the page's own; recadro never reads them
+```
+
+- **Found, not flagged.** With no `--panels`, a command uses the folder it runs
+  in, or the nearest set above it within the repository, or the one set below
+  it. A repository with several sets names one. The goal is that a set runs
+  with `recadro dev` and nothing else.
+- **Locales are the names in `strings/`.** `en-US.json`, `de-DE.md`, `zh-Hans`
+  as a folder: the extension and the contents are the page's. Adding a language
+  is adding its strings, and nothing else changes. A strings file that other
+  tooling reads where it is can be symlinked in. A set with no `strings/`
+  renders `en-US`.
+- **Devices are the captures folders that exist.** An iPhone-only app has no
+  `13-iPad` folder and renders no iPad panels without saying so anywhere. A set
+  with no captures folder at all — text-only, or not captured yet — renders
+  every slot.
+- **`recadro.json` holds the two facts names cannot.** Where the capture flow
+  writes (`"captures": "../../maestro/{locale}/{device}"`, where `{locale}`
+  makes captures per locale) and, rarely, where renders go. It sits in the set,
+  so its paths are relative to the set and a repository can hold several sets.
+  It is strict: a mistyped key or placeholder is an error, because one quietly
+  ignored looks exactly like captures that do not exist yet.
+
+Flags win over `recadro.json`, which wins over the conventions. What never
+becomes a key is anything a page lays out with: the strings format, the tokens,
+capture filenames, which panel shows which capture. A panel wanting its own
+ground is a `<style>` block in that panel; a locale wanting a different type
+stack is `:root:lang(xx)`.
+
+The extension point for the page side is a `vite.config.*` beside the panels,
+merged when present. It is a format the world already knows, so someone who
+wants Tailwind or Sass adds it themselves and the tool learns nothing.
 
 ## One server, two commands
 
@@ -61,6 +101,11 @@ enough to be the only check.
 The server is what makes `file://` unnecessary, and `file://` was the problem:
 `fetch()` is blocked there, so a page could not read its own captions without a
 build step between every edit and every look.
+
+`dev` also watches the captures folder and reloads the panels when a capture
+appears or changes. vite reloads a page for the files it imports, and a capture
+is an image a page asks for by URL, so without this a capture flow running
+beside the open sheet would change nothing on screen.
 
 ## The contact sheet is the check
 
@@ -85,7 +130,7 @@ The tool never learns which capture a panel wants, so it cannot check the
 filesystem for it. It asks the rendered page instead: after `networkidle` and
 `document.fonts.ready`, any `<img>` with `naturalWidth === 0` means the panel
 is not ready, and `render` skips it. `out/` then only ever holds complete
-panels, so an upload lane can read it wholesale.
+panels, so whatever uploads from it can take it wholesale.
 
 A panel with no image at all is complete by construction — text-only story
 panels are common in six-panel sets and they have nothing to fail. The
@@ -99,7 +144,7 @@ A skipped panel is still worth looking at — its empty frame is designed too �
 and `dev` shows it only to a browser. An agent or a CI job has pixels to read
 and no browser, so `render --incomplete` shoots every panel. It refuses the
 default `out/`: the flag is for looking, and an incomplete shot in the
-directory an upload lane reads would ship an empty frame.
+directory an upload reads would ship an empty frame.
 
 ## The root is the repository
 
@@ -107,7 +152,9 @@ The vite root is the nearest directory holding `.git`, not the nearest
 `package.json`: a panel reaches for captures and stylesheets wherever the repo
 keeps them, a URL cannot climb above root, and a native iOS repo has no
 `package.json` at all. Outside git, vite's own workspace search is the
-fallback.
+fallback. The same limit is why captures must resolve inside the root: a
+`recadro.json` pointing above it is an error at startup rather than a set of
+panels that can never load their captures.
 
 ## Agents get a document, not a skill
 
