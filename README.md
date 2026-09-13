@@ -255,4 +255,14 @@ design loop's.
 
 ## License
 
-FSL-1.1-ALv2.
+**Free for any app, paid or free.** Making screenshots with recadro asks
+nothing of you or your app. The screenshots are yours, and so is a set you
+start from a starter: `starters/` is [MIT-0](starters/LICENSE), with no notice
+to keep.
+
+recadro itself is [FSL-1.1-ALv2](LICENSE), the Functional Source License. Use
+it, change it and share it for any purpose except a commercial product or
+service that does what recadro does; free tools may build on it. Each version
+becomes Apache 2.0 two years after its release. A commercial product built on a
+version younger than that needs a license from
+[Johnny Slakva](https://slakva.me/).

@@ -86,6 +86,11 @@ words in `strings/en-US.json`, any regions the panels enlarge or lift
 (`"detail"`, `"layers"`, in percent of the capture) to the app's screens, and a
 `{capture:N}` left over to the capture still to take.
 
+The copy belongs to the repo. Starters are MIT-0, so it keeps no notice, and
+recadro's own license (FSL-1.1-ALv2) covers the tool, not the set, the app or
+the renders: composing screenshots for any app, paid or free, is a permitted
+use. There is no license question to raise about using it.
+
 ## Don't
 
 - **Don't add keys to `recadro.json` or create another config for recadro.**
