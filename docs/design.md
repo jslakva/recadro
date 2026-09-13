@@ -95,6 +95,12 @@ distinction is present-but-broken, not absent.
 captions it fetched has no image request yet when `load` fires, and checking
 then would call an unfinished panel complete.
 
+A skipped panel is still worth looking at — its empty frame is designed too —
+and `dev` shows it only to a browser. An agent or a CI job has pixels to read
+and no browser, so `render --incomplete` shoots every panel. It refuses the
+default `out/`: the flag is for looking, and an incomplete shot in the
+directory an upload lane reads would ship an empty frame.
+
 ## The sheet is the tool's UI, not a panel
 
 The contact sheet is served by the tool at `/`, from its own files, raw and

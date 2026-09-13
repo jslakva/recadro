@@ -22,18 +22,27 @@ export interface RenderOptions {
   panels: Panel[];
   /** Slots to render each panel into. */
   slots: Slot[];
-  /** Locale codes, matching the listing Markdown filenames. */
+  /** Locale codes: the output directory names, and the page's `?locale=`. */
   locales: string[];
   /** Absolute path of the output directory; `<out>/<locale>/<device>/`. */
   outDir: string;
+  /**
+   * Shoot incomplete panels too, instead of skipping them. For looking, never
+   * for shipping: the caller keeps this away from the directory an upload lane
+   * reads.
+   */
+  incomplete?: boolean;
 }
 
 /** What a pass produced, for the caller's summary line. */
 export interface RenderResult {
   /** Files written, as paths relative to `outDir`. */
   written: string[];
-  /** Panels skipped for want of a capture, as `locale/device/slug` with the src. */
-  skipped: { where: string; missing: string[] }[];
+  /**
+   * Panels with an image that resolved to nothing, as `locale/device/slug` with
+   * the srcs. Skipped, or written anyway under `incomplete`.
+   */
+  incomplete: { where: string; missing: string[] }[];
 }
 
 /**
@@ -67,15 +76,16 @@ async function settle(page: import("playwright").Page): Promise<string[]> {
 }
 
 /**
- * Renders every locale x slot x panel whose capture exists.
+ * Renders every locale x slot x panel whose capture exists, or every panel at
+ * all under `incomplete`.
  *
  * Each `<out>/<locale>/<device>/` directory is cleared first, so a panel
  * deleted from the directory cannot survive as a stale PNG that the upload lane
  * would still find and ship.
  */
 export async function render(options: RenderOptions): Promise<RenderResult> {
-  const { origin, panels, slots, locales, outDir } = options;
-  const result: RenderResult = { written: [], skipped: [] };
+  const { origin, panels, slots, locales, outDir, incomplete = false } = options;
+  const result: RenderResult = { written: [], incomplete: [] };
   const browser = await chromium.launch();
 
   try {
@@ -102,8 +112,8 @@ export async function render(options: RenderOptions): Promise<RenderResult> {
 
           const missing = await settle(page);
           if (missing.length) {
-            result.skipped.push({ where: `${locale}/${slot.id}/${panel.slug}`, missing });
-            continue;
+            result.incomplete.push({ where: `${locale}/${slot.id}/${panel.slug}`, missing });
+            if (!incomplete) continue;
           }
 
           const shot = await page.screenshot({ type: "png" });

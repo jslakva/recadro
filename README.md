@@ -45,7 +45,7 @@ rather than preferences — the slot geometry table and the output naming
 
 ```
 recadro dev    [--panels <dir>] [--port <n>]
-recadro render [--panels <dir>] [--out <dir>] [--devices 6.9,13-iPad] [--locales en-US]
+recadro render [--panels <dir>] [--out <dir>] [--devices 6.9,13-iPad] [--locales en-US] [--incomplete]
 ```
 
 `--panels` defaults to the current directory; `--out` to `<panels>/out`.
@@ -81,6 +81,10 @@ and ships. The distinction is present-but-broken, not absent.
 
 The resulting gap in the numbering is harmless: `deliver` uploads what it finds
 in filename order.
+
+To look at incomplete panels without a browser — in CI, or from an agent —
+`render --incomplete --out <dir>` shoots every panel. It refuses to write into
+`<panels>/out`, where an empty frame would ship.
 
 ## With fastlane
 

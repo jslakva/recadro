@@ -7,7 +7,7 @@
  * only inputs are flags; there is no manifest and no config file.
  */
 import { mkdirSync } from "node:fs";
-import { isAbsolute, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { startServer } from "./server.ts";
 import { SLOTS, selectSlots } from "./slots.ts";
@@ -15,12 +15,14 @@ import { SLOTS, selectSlots } from "./slots.ts";
 const USAGE = `recadro — App Store screenshots as code
 
   recadro dev    [--panels <dir>] [--port <n>]
-  recadro render [--panels <dir>] [--out <dir>] [--devices 6.9,13-iPad] [--locales en-US]
+  recadro render [--panels <dir>] [--out <dir>] [--devices 6.9,13-iPad] [--locales en-US] [--incomplete]
 
-  --panels   directory holding panels/ and, after a render, out/  (default: .)
-  --out      output directory                     (default: <panels>/out)
-  --devices  slots to render        (default: ${SLOTS.map((s) => s.id).join(",")})
-  --locales  locales to render                    (default: en-US)
+  --panels      directory holding panels/ and, after a render, out/  (default: .)
+  --out         output directory                     (default: <panels>/out)
+  --devices     slots to render        (default: ${SLOTS.map((s) => s.id).join(",")})
+  --locales     locales to render                    (default: en-US)
+  --incomplete  shoot panels missing a capture too, to look at them;
+                needs an --out other than <panels>/out
 `;
 
 /** Splits a comma-separated flag, dropping empty entries. */
@@ -43,15 +45,13 @@ async function main(): Promise<void> {
       port: { type: "string" },
       devices: { type: "string", default: SLOTS.map((s) => s.id).join(",") },
       locales: { type: "string", default: "en-US" },
+      incomplete: { type: "boolean", default: false },
     },
   });
 
   const panelsDir = resolve(values.panels);
-  const outDir = values.out
-    ? isAbsolute(values.out)
-      ? values.out
-      : resolve(values.out)
-    : join(panelsDir, "out");
+  // `resolve` normalises absolute paths too, so `out/` and `out` compare equal.
+  const outDir = values.out ? resolve(values.out) : join(panelsDir, "out");
 
   if (command === "dev") {
     const { origin, panels } = await startServer(panelsDir, values.port ? Number(values.port) : undefined);
@@ -64,6 +64,11 @@ async function main(): Promise<void> {
   if (command === "render") {
     const slots = selectSlots(list(values.devices));
     const locales = list(values.locales);
+    // `out/` only ever holds complete panels, so an upload lane can read it
+    // wholesale. An incomplete shot landing there would ship an empty frame.
+    if (values.incomplete && (!values.out || outDir === join(panelsDir, "out"))) {
+      throw new Error("--incomplete shoots panels that must not ship; pass an --out other than <panels>/out");
+    }
     mkdirSync(outDir, { recursive: true });
 
     // Imported here rather than at the top so `dev` runs before anyone has
@@ -78,12 +83,14 @@ async function main(): Promise<void> {
         slots,
         locales,
         outDir,
+        incomplete: values.incomplete,
       });
+      const verb = values.incomplete ? "incomplete" : "skipped";
       for (const file of result.written) console.log(`  wrote   ${file}`);
-      for (const { where, missing } of result.skipped) {
-        console.log(`  skipped ${where} — no capture at ${missing.join(", ")}`);
+      for (const { where, missing } of result.incomplete) {
+        console.log(`  ${verb} ${where} — no capture at ${missing.join(", ")}`);
       }
-      console.log(`\n${result.written.length} written, ${result.skipped.length} skipped → ${outDir}`);
+      console.log(`\n${result.written.length} written, ${result.incomplete.length} ${verb} → ${outDir}`);
     } finally {
       await server.vite.close();
     }
