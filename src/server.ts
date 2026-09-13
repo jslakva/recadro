@@ -3,7 +3,7 @@
  * `render` points Playwright at the identical URLs, so there is no second code
  * path that can disagree with the preview.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import type { ServerResponse } from "node:http";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -130,15 +130,33 @@ function recadroPlugin(panelsDir: string, root: string): Plugin {
 }
 
 /**
- * Starts the server on the workspace root that contains `panelsDir`.
+ * The vite root for `panelsDir`: the repository it sits in.
  *
- * The root is derived rather than flagged: vite's own `searchForWorkspaceRoot`
- * walks up to the lockfile/`.git` boundary, which puts the panels, the raw
- * captures and any stylesheet they link inside root in any repo, so nothing
+ * Derived rather than flagged, and it has to be the repository rather than
+ * anything narrower, because a panel reaches for captures and stylesheets
+ * wherever the repo keeps them — `../../fastlane/screenshots`, a web app's
+ * tokens — and a URL cannot climb above root. The nearest `.git` (a directory,
+ * or a file in a worktree or submodule) marks it.
+ *
+ * vite's `searchForWorkspaceRoot` alone is not enough: it stops at a JS
+ * workspace or the nearest `package.json`, and a native iOS repo has neither,
+ * so it fell back to the panels directory and every capture outside it read as
+ * missing. It remains the fallback outside git.
+ */
+function rootFor(panelsDir: string): string {
+  for (let dir = panelsDir; ; dir = dirname(dir)) {
+    if (existsSync(join(dir, ".git"))) return dir;
+    if (dirname(dir) === dir) return searchForWorkspaceRoot(panelsDir);
+  }
+}
+
+/**
+ * Starts the server on the repository that contains `panelsDir`, so the panels,
+ * the raw captures and any stylesheet they link are all inside root and nothing
  * needs `server.fs.allow`.
  */
 export async function startServer(panelsDir: string, port?: number): Promise<PanelServer> {
-  const root = searchForWorkspaceRoot(panelsDir);
+  const root = rootFor(panelsDir);
   const ours: InlineConfig = {
     root,
     configFile: false,
