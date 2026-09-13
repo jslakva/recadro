@@ -1,5 +1,10 @@
 <!doctype html>
-<!-- What only this app does. -->
+<!--
+  What only this app does, with a round magnifier over part of the screen. The
+  region is "detail" in strings/, in percent of the capture: x and y its top
+  left corner, w and h its size. Give one per slot, keyed "6.9" and "13-iPad",
+  when the screen lays out differently on iPad; the magnifier sits over its centre.
+-->
 <html>
   <head>
     <meta charset="utf-8" />
@@ -7,6 +12,7 @@
   </head>
   <body>
     <img class="capture" alt="" />
+    <figure class="detail loupe"><img class="detail-capture" alt="" /></figure>
     <header class="band">
       <h1 data-string="headline"></h1>
       <p data-string="subline"></p>

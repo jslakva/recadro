@@ -1,11 +1,15 @@
 {
   "01-promise": {
-    "headline": "Say what it does.",
+    "headline": "Say what it *does*.",
     "subline": "One line on who it is for.",
     "capture": "{capture:1}"
   },
   "02-moment": { "headline": "Show it working.", "capture": "{capture:2}" },
-  "03-difference": { "headline": "Name what only it does.", "capture": "{capture:3}" },
-  "04-everyday": { "headline": "Make the daily part easy.", "capture": "{capture:4}" },
+  "03-difference": {
+    "headline": "Name what only it does.",
+    "capture": "{capture:3}",
+    "detail": { "x": 20, "y": 54, "w": 36, "h": 16 }
+  },
+  "04-everyday": { "headline": "Make the daily part *easy*.", "capture": "{capture:4}" },
   "05-start": { "headline": "End on how to start.", "capture": "{capture:5}" }
 }

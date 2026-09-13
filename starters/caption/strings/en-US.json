@@ -1,6 +1,6 @@
 {
   "01-promise": {
-    "headline": "Say what it does.",
+    "headline": "Say what it *does*.",
     "subline": "One line on who it is for and why it matters.",
     "capture": "{capture:1}"
   },
@@ -11,8 +11,9 @@
   },
   "03-difference": {
     "headline": "Name what only it does.",
-    "subline": "The feature no one else can claim.",
-    "capture": "{capture:3}"
+    "subline": "Then zoom in on the detail that proves it.",
+    "capture": "{capture:3}",
+    "detail": { "x": 4, "y": 58, "w": 92, "h": 14 }
   },
   "04-review": {
     "headline": "Let a real review speak.",
@@ -22,7 +23,8 @@
   },
   "05-start": {
     "headline": "End on how to start.",
-    "subline": "Free to try, no account — whatever is true.",
-    "capture": "{capture:4}"
+    "subline": "No account, nothing to set up — whatever is true.",
+    "capture": "{capture:4}",
+    "badge": "Free"
   }
 }

@@ -1,7 +1,9 @@
 /*
  * The caption starter: a headline and a subline over the screen, framed in a
  * device that rises from the bottom edge, and one review panel with no screen.
- * The six variables are the look —
+ * Along the way it shows what a panel can add: a highlighted word, a sparkle,
+ * a blurred backdrop, an enlarged detail, a background image, a sticker. The
+ * variables are the look —
  * point them at the app's own colours and fonts. Sizes are in vw/vh and the
  * iPad forks on [data-device], so no device size appears here.
  */
@@ -12,6 +14,7 @@
   --accent: #e8912d;
   --font-display: ui-serif, "New York", Georgia, "Times New Roman", serif;
   --font-text: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --ground-image: url("assets/ground.svg");
 }
 
 html,
@@ -29,8 +32,28 @@ body {
   align-items: center;
   gap: 4.5vh;
   padding: 7.5vh 7vw 0;
+  position: relative;
+  isolation: isolate;
   background: var(--ground);
   color: var(--ink);
+}
+
+/*
+ * Decoration is CSS and content is <img>: a missing background falls back to
+ * the ground colour, while a missing capture holds the panel back from render.
+ */
+body[data-ground="image"] {
+  background: var(--ground-image) center / cover no-repeat, var(--ground);
+}
+
+body[data-ground="blur"]::before {
+  content: "";
+  position: absolute;
+  inset: -12vw;
+  z-index: -1;
+  background: var(--capture) center / cover no-repeat;
+  filter: blur(10vw) saturate(1.5);
+  opacity: 0.65;
 }
 
 .copy {
@@ -42,6 +65,22 @@ body {
   font: 700 9vw/1.08 var(--font-display);
   letter-spacing: -0.01em;
   text-wrap: balance;
+}
+
+.copy h1 em {
+  color: var(--accent);
+  font-style: italic;
+}
+
+[data-decor="sparkle"] .copy h1::after {
+  content: "";
+  display: inline-block;
+  width: 6.5vw;
+  height: 6.5vw;
+  margin-left: 1.2vw;
+  vertical-align: 0.55em;
+  background: var(--accent);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0c.7 6.3 5.7 11.3 12 12-6.3.7-11.3 5.7-12 12-.7-6.3-5.7-11.3-12-12 6.3-.7 11.3-5.7 12-12z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .copy p {
@@ -57,6 +96,7 @@ body {
  * proportions are a modern phone's screen, and the island is drawn over it.
  */
 .device {
+  position: relative;
   flex: none;
   box-sizing: border-box;
   height: 80vh;
@@ -94,6 +134,57 @@ img.capture {
   height: 100%;
   object-fit: cover;
   object-position: top;
+}
+
+/*
+ * The enlarged detail: a strip across the whole panel, over the device, showing
+ * a region of the capture given in strings/ as percent of the capture and
+ * handed over as --x --y --w --h. The image is scaled so the region's width
+ * fills the strip and moved so the region's centre sits in the strip's centre.
+ */
+.detail {
+  position: absolute;
+  z-index: 2;
+  overflow: hidden;
+  margin: 0;
+  background: #fff;
+}
+
+.detail img {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: block;
+  width: calc(100% * 100 / var(--w, 100));
+  transform: translate(calc(var(--x, 0) * -1%), calc((var(--y, 0) + var(--h, 100) / 2) * -1%));
+}
+
+.strip {
+  left: 0;
+  bottom: 18vh;
+  box-sizing: border-box;
+  width: 100vw;
+  aspect-ratio: 3 / 1;
+  border-block: 0.7vw solid var(--accent);
+  box-shadow: 0 2.5vh 5vh rgb(0 0 0 / 0.3);
+}
+
+/* A sticker on the device's corner, with its word from strings/. */
+.badge {
+  position: absolute;
+  z-index: 2;
+  top: 5vh;
+  right: -4vw;
+  display: grid;
+  place-items: center;
+  width: 23vw;
+  aspect-ratio: 1;
+  rotate: 12deg;
+  color: #fff;
+  background: var(--accent);
+  clip-path: polygon(50.0% 0.0%, 60.6% 10.4%, 75.0% 6.7%, 79.0% 21.0%, 93.3% 25.0%, 89.6% 39.4%, 100.0% 50.0%, 89.6% 60.6%, 93.3% 75.0%, 79.0% 79.0%, 75.0% 93.3%, 60.6% 89.6%, 50.0% 100.0%, 39.4% 89.6%, 25.0% 93.3%, 21.0% 79.0%, 6.7% 75.0%, 10.4% 60.6%, 0.0% 50.0%, 10.4% 39.4%, 6.7% 25.0%, 21.0% 21.0%, 25.0% 6.7%, 39.4% 10.4%);
+  font: 800 5.4vw/1 var(--font-text);
+  letter-spacing: 0.02em;
 }
 
 /*
@@ -173,6 +264,24 @@ img.capture {
 
 [data-device="13-iPad"] .copy p {
   font-size: 2.5vw;
+}
+
+[data-device="13-iPad"] .strip {
+  bottom: 14vh;
+  aspect-ratio: 5 / 1;
+  border-block-width: 0.45vw;
+}
+
+[data-device="13-iPad"] .badge {
+  top: 4vh;
+  right: -3vw;
+  width: 13vw;
+  font-size: 3vw;
+}
+
+[data-device="13-iPad"] [data-decor="sparkle"] .copy h1::after {
+  width: 3.8vw;
+  height: 3.8vw;
 }
 
 [data-device="13-iPad"] .stars {

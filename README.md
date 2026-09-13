@@ -138,14 +138,17 @@ npx recadro init store/screenshots --starter overlay --captures "../../e2e/scree
 ```
 
 - **`overlay`** — the capture fills the panel, and a band of colour over its
-  top carries the headline.
+  top carries the headline, with highlighted words; one panel magnifies part
+  of the screen.
 - **`caption`** — a headline and a subline over the screen, framed in a device,
-  and one review panel with no screen.
+  and one review panel with no screen. Along the way it shows a highlighted
+  word, a sparkle, a blurred copy of the capture as the background, an enlarged
+  detail, a background image from the set's `assets/`, and a sticker.
 
 The copy is plain except for `{capture:N}` in its strings, which is filled with
 the Nth capture already taken, in filename order, so the panels open showing
 the app. A placeholder with no capture yet stays as it is until one is taken.
-From there the set is yours: the six variables at the top of `panel.css` are
+From there the set is yours: the variables at the top of `panel.css` are
 the look, `strings/en-US.json` the words. `--captures` is written to
 `recadro.json`; leave it out when captures go in the set's own `captures/`.
 

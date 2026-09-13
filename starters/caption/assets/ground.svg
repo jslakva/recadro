@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 956" preserveAspectRatio="xMidYMid slice">
+  <!-- The set's own background: soft rings in the starter's accent and ink. Replace freely. -->
+  <g fill="none" stroke-width="2">
+    <circle cx="380" cy="120" r="150" stroke="#e8912d" stroke-opacity="0.18" />
+    <circle cx="380" cy="120" r="210" stroke="#e8912d" stroke-opacity="0.12" />
+    <circle cx="380" cy="120" r="270" stroke="#e8912d" stroke-opacity="0.07" />
+    <circle cx="40" cy="860" r="170" stroke="#1c2733" stroke-opacity="0.08" />
+    <circle cx="40" cy="860" r="240" stroke="#1c2733" stroke-opacity="0.05" />
+  </g>
+  <circle cx="380" cy="120" r="90" fill="#e8912d" fill-opacity="0.08" />
+</svg>

@@ -1,6 +1,7 @@
 /*
  * The overlay starter: the capture fills the panel edge to edge, and a band of
- * colour over its top carries the headline. The six variables are the look —
+ * colour over its top carries the headline, with a highlighted word and, on one
+ * panel, a magnifier over part of the screen. The variables are the look —
  * point them at the app's own colours and fonts. Sizes are in vw/vh and the
  * iPad forks on [data-device], so no device size appears here.
  */
@@ -9,6 +10,7 @@
   --ink: #ffffff;
   --ink-soft: rgb(255 255 255 / 0.88);
   --accent: #c8372d;
+  --highlight: #ffd84d;
   --font-display: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   --font-text: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
 }
@@ -38,6 +40,7 @@ img.capture {
 /* The band: over the top fifth, with a bottom edge that falls to the left. */
 .band {
   position: absolute;
+  z-index: 2;
   top: 0;
   left: 0;
   right: 0;
@@ -65,11 +68,49 @@ img.capture {
   text-shadow: 0 0.6vh 0 rgb(0 0 0 / 0.22);
 }
 
+.band h1 em {
+  color: var(--highlight);
+  font-style: normal;
+}
+
 .band p {
   margin: 1.6vh 0 0;
   color: var(--ink-soft);
   font: 700 5vw/1.2 var(--font-text);
   text-wrap: balance;
+}
+
+/*
+ * The magnifier: a round window over the region given in strings/ as percent of
+ * the capture, handed over as --x --y --w --h. The capture fills the panel, so
+ * the region's percent is the panel's too: the window centres on the region and
+ * shows it with its width filling the window.
+ */
+.detail {
+  position: absolute;
+  z-index: 1;
+  overflow: hidden;
+  margin: 0;
+  background: #fff;
+}
+
+.detail img {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: block;
+  width: calc(100% * 100 / var(--w, 100));
+  transform: translate(calc(var(--x, 0) * -1%), calc((var(--y, 0) + var(--h, 100) / 2) * -1%));
+}
+
+.loupe {
+  left: calc((var(--x, 0) + var(--w, 100) / 2) * 1%);
+  top: calc((var(--y, 0) + var(--h, 100) / 2) * 1%);
+  width: 54vw;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.4vw #fff, 0 3vh 6vh rgb(0 0 0 / 0.45);
 }
 
 /* No capture yet: still a designed panel, and render skips it. */
@@ -90,6 +131,11 @@ img.capture {
 
 [data-device="13-iPad"] .band {
   padding: 5vh 6vw 7vh;
+}
+
+[data-device="13-iPad"] .loupe {
+  width: 36vw;
+  box-shadow: 0 0 0 0.9vw #fff, 0 3vh 6vh rgb(0 0 0 / 0.45);
 }
 
 [data-device="13-iPad"] .band h1 {

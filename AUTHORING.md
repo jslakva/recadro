@@ -79,7 +79,7 @@ slug (`01-hero.png`) unless the page maps it. Per-locale captures go in
 `recadro init <dir> --starter overlay|caption [--captures <pattern>]` copies a
 starter into a new folder, fills its `{capture:N}` placeholders with the
 captures already taken, in filename order, and writes `--captures` to
-`recadro.json`. Then adapt the copy: the six variables at the top of
+`recadro.json`. Then adapt the copy: the variables at the top of
 `panel.css` to the app's colours and fonts, the words in `strings/en-US.json`,
 and a `{capture:N}` left over to the capture still to take.
 
@@ -105,6 +105,11 @@ and a `{capture:N}` left over to the capture still to take.
 
   `img.hidden = true` is not enough when any rule gives the image a `display`;
   the broken-image glyph shows through.
+- **Don't put decoration in an `<img>`.** Every `<img>` counts toward whether a
+  panel is complete, so a missing background or sparkle in one holds the panel
+  back. Captures and crops of them are `<img>`; backgrounds, textures and
+  ornaments are CSS, which falls back quietly when a file is missing. In CSS,
+  `url()` is relative to the stylesheet, not the page.
 - **Don't name strings files anything but locales.** Every entry in `strings/`
   named like a locale is rendered; shared strings go elsewhere, such as
   `strings-common.json` beside the folder.
