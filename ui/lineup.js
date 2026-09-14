@@ -10,7 +10,17 @@
  * their HMR.
  */
 
-const manifest = await fetch("/__recadro/panels.json").then((r) => r.json());
+/**
+ * Where the panel list comes from: the tool's own `/__recadro/panels.json`, or
+ * the path `?manifest=` names, so one site can show several sets beside a single
+ * copy of the lineup. Only a path on this origin is taken.
+ */
+function manifestUrl() {
+  const named = new URLSearchParams(location.search).get("manifest");
+  return named?.startsWith("/") && !named.startsWith("//") ? named : "/__recadro/panels.json";
+}
+
+const manifest = await fetch(manifestUrl()).then((r) => r.json());
 const el = (id) => document.getElementById(id);
 const deviceSel = el("device");
 
