@@ -142,9 +142,10 @@ use. There is no license question to raise about using it.
   relative one can climb to anywhere in the repo but no further.
 - Outside git the root is the nearest JS workspace or `package.json`, and
   failing both the set itself — then nothing beside it is reachable.
-- A panel reporting `no capture at <url>` for a file that exists is a wrong
-  filename or a wrong `captures` in `recadro.json`. The URL is what the page
-  asked for; compare it with the file.
+- A panel reporting `no capture at <path>` for a file that exists is a wrong
+  filename or a wrong `captures` in `recadro.json`. The path is what the page
+  asked for, from the repository root; compare it with the file. A
+  `{capture:N}` in it is a placeholder `init` left for a capture not yet taken.
 
 ## Look at your work
 
@@ -179,7 +180,7 @@ recadro  6 panels in store/screenshots
 ```
 
 Then `wrote <device>/<locale>/<slug>.png` per shot and
-`skipped <device>/<locale>/<slug> — no capture at <url>` per incomplete panel,
+`skipped <device>/<locale>/<slug> — no capture at <path>` per incomplete panel,
 and it exits 0 either way — read the lines, not the exit code. A device missing
 from `devices` has no captures folder; pass `--devices` to render it anyway.
 Each `<out>/<device>/<locale>/` is cleared first, so it only ever holds this

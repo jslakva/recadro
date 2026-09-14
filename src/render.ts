@@ -58,6 +58,10 @@ export interface RenderResult {
  * panel wanted.
  *
  * Fonts are awaited here too, or the first panel ships in a fallback face.
+ *
+ * A missing image is reported as a path in the repository, decoded, the way the
+ * lineup's pointer names one: the server's origin and port mean nothing to the
+ * reader, and `%7Bcapture%3A5%7D` hides a placeholder nobody filled.
  */
 async function settle(page: import("playwright").Page): Promise<string[]> {
   return page.evaluate(async () => {
@@ -73,7 +77,17 @@ async function settle(page: import("playwright").Page): Promise<string[]> {
           }),
       ),
     );
-    return images.filter((img) => img.naturalWidth === 0).map((img) => img.currentSrc || img.src);
+    return images
+      .filter((img) => img.naturalWidth === 0)
+      .map((img) => {
+        const src = new URL(img.currentSrc || img.src, document.baseURI);
+        if (src.origin !== location.origin) return src.href;
+        try {
+          return decodeURIComponent(src.pathname).slice(1);
+        } catch {
+          return src.pathname.slice(1);
+        }
+      });
   });
 }
 
