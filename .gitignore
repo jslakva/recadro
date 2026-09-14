@@ -1,6 +1,7 @@
 node_modules/
 dist/
 out/
+.astro/
 .DS_Store
 .idea/
 CLAUDE.local.md
