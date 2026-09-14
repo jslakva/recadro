@@ -199,6 +199,10 @@ contents of `out/` on a toggle, so a rendered set can be compared against the
 design. When a capture, a strings file or anything else a panel fetches
 changes, the panels reload.
 
+The ground behind them switches between the App Store's light and dark
+backgrounds, starting from your system's appearance. The store shows each
+screenshot on both, and an edge that holds on one can vanish on the other.
+
 Click a panel to see it alone, as large as the window allows; the arrow keys
 step through the set and Esc comes back to the lineup.
 

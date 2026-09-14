@@ -387,6 +387,19 @@ for (const id of ["device", "locale", "mode", "wrap"]) {
 }
 el("zoom").addEventListener("input", resize);
 window.addEventListener("resize", resize);
+
+/**
+ * Paints the ground behind the panels as the App Store's in light or dark
+ * appearance. Only the ground: a screenshot is the same image in both, which is
+ * why both are worth a look. No rebuild, so no panel reloads.
+ */
+function applyStore() {
+  document.body.dataset.store = el("store").value;
+}
+
+el("store").value = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+applyStore();
+el("store").addEventListener("input", applyStore);
 window.addEventListener("hashchange", applyFocus);
 
 /** Turns pointer mode on or off; while on, every frame's overlay takes the mouse. */

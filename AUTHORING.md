@@ -124,6 +124,10 @@ use. There is no license question to raise about using it.
 - **Don't animate on load.** The shot is taken once the network is idle and
   fonts are ready, not once motion stops; an entrance animation may be captured
   part-way.
+- **Don't make a panel follow the system's light or dark appearance.** `render`
+  shoots in the light one, so a panel using `prefers-color-scheme` ships its
+  light version whatever the lineup showed, and the store shows that one image
+  in both appearances. Make one panel that holds on both of the lineup's grounds.
 - **Don't keep the network busy.** Polling, analytics or a long-lived request
   holds off `networkidle`, which delays the render or times it out.
 - **Don't hardcode an origin or port.** Use relative or root-absolute URLs.

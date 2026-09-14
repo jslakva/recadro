@@ -28,11 +28,16 @@
     <title>recadro — lineup</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/__recadro/favicon.png" />
     <style>
-      :root { color-scheme: light dark; --chrome: #1c1c1e; --ink: #f2f2f7; --dim: #8e8e93; }
+      :root { color-scheme: light dark; --chrome: #1c1c1e; --ink: #f2f2f7; --dim: #8e8e93;
+              --ground: #000; --ground-ink: #f2f2f7; --ground-dim: #8e8e93; --hole: #1c1c1e; --hole-alt: #2c2c2e; }
+      /* The store's ground behind the panels: iOS's system background in each
+         appearance. Only the ground changes; a screenshot is one image in both. */
+      body[data-store="light"] { --ground: #fff; --ground-ink: #1c1c1e; --ground-dim: #6c6c70;
+                                 --hole: #f2f2f7; --hole-alt: #e5e5ea; }
       * { box-sizing: border-box; }
       body { margin: 0; font: 13px/1.4 ui-sans-serif, -apple-system, system-ui, sans-serif;
-             background: var(--chrome); color: var(--ink); padding-bottom: 40px; }
-      header { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 18px;
+             background: var(--ground); color: var(--ground-ink); padding-bottom: 40px; }
+      header { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 18px; color: var(--ink);
                align-items: center; padding: 12px 20px; background: #000; border-bottom: 1px solid #333; }
       h1 { display: inline-flex; align-items: center; gap: 9px; margin: 0 10px 0 0; }
       h1 img { display: block; width: auto; }
@@ -45,11 +50,13 @@
       input[type="checkbox"] { padding: 0; }
       input:disabled { opacity: .4; }
       .group { margin: 26px 0 0; padding: 0 20px; font-size: 11px; font-weight: 500;
-               letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+               letter-spacing: .08em; text-transform: uppercase; color: var(--ground-dim); }
       .strip { display: flex; gap: 20px; padding: 12px 20px 0; overflow-x: auto; align-items: flex-start; }
       figure { margin: 0; flex: 0 0 auto; }
-      .frame { position: relative; overflow: hidden; border-radius: 10px; background: #000;
-               box-shadow: 0 6px 24px rgba(0,0,0,.5); width: var(--thumb-w); height: var(--frame-h); }
+      /* No shadow: it would draw an edge the store doesn't, and a panel's edge
+         against the ground is what the two grounds are for. */
+      .frame { position: relative; overflow: hidden; border-radius: calc(var(--thumb-w) * .045);
+               background: var(--ground); width: var(--thumb-w); height: var(--frame-h); }
       iframe { border: 0; display: block; transform-origin: top left; transform: scale(var(--k)); }
       .frame img { display: block; width: 100%; height: 100%; object-fit: contain; }
       button { font: inherit; background: #2c2c2e; color: var(--ink); border: 1px solid #3a3a3c;
@@ -78,13 +85,13 @@
       .focusing .nav { display: flex; }
       /* The hole. A panel with no render, which is expected for the two still
          waiting on capture flows and is the only signal for one that failed. */
-      .hole { display: grid; place-items: center; color: var(--dim); text-align: center; padding: 12px;
-              background: repeating-linear-gradient(45deg, #2c2c2e 0 8px, #242426 8px 16px); }
-      figcaption { margin-top: 8px; font-size: 11px; color: var(--dim);
+      .hole { display: grid; place-items: center; color: var(--ground-dim); text-align: center; padding: 12px;
+              background: repeating-linear-gradient(45deg, var(--hole-alt) 0 8px, var(--hole) 8px 16px); }
+      figcaption { margin-top: 8px; font-size: 11px; color: var(--ground-dim);
                    display: flex; justify-content: space-between; gap: 10px; }
-      a { color: var(--dim); text-decoration: none; border-bottom: 1px solid transparent; }
-      a:hover { color: var(--ink); border-bottom-color: var(--dim); }
-      a.slug { color: var(--ink); }
+      a { color: var(--ground-dim); text-decoration: none; border-bottom: 1px solid transparent; }
+      a:hover { color: var(--ground-ink); border-bottom-color: var(--ground-dim); }
+      a.slug { color: var(--ground-ink); }
     </style>
   </head>
   <body>
@@ -99,6 +106,12 @@
         <select id="mode">
           <option value="live">live panels</option>
           <option value="out">rendered out/</option>
+        </select>
+      </label>
+      <label title="The App Store's background in light or dark appearance">store
+        <select id="store">
+          <option value="dark">dark</option>
+          <option value="light">light</option>
         </select>
       </label>
       <label>size <input id="zoom" type="range" min="120" max="420" step="10" value="220" /></label>

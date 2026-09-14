@@ -132,6 +132,11 @@ because that is all a search result shows. It shows the live panels, or the
 rendered `out/` on a toggle, where an unrendered panel is a hole — the one
 signal there is for a render that failed.
 
+The ground is the store's, white or black. The store shows one image in both
+appearances, and a panel's edge is judged against whichever the customer has.
+Frames carry no shadow for the same reason: a shadow draws an edge the store
+doesn't.
+
 What look like the two surviving checks are unconditional processing instead:
 every write is flattened and stamped sRGB, because an alpha channel is never
 wanted, so there is nothing to test for.
