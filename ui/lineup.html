@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  The contact sheet: every panel side by side, which is how a customer meets
+  The lineup: every panel side by side, which is how a customer meets
   them in a search result and the only view in which the *story* can be judged
   rather than the layout. Served by recadro at `/` so the panels directory holds
   panels and nothing that knows about the tool.
@@ -25,7 +25,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>recadro — contact sheet</title>
+    <title>recadro — lineup</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/__recadro/favicon.png" />
     <style>
       :root { color-scheme: light dark; --chrome: #1c1c1e; --ink: #f2f2f7; --dim: #8e8e93; }
@@ -107,8 +107,8 @@
               title="Point at a spot to copy a reference for a coding agent (P, Esc)">pointer</button>
       <span id="status" style="color: var(--dim)"></span>
     </header>
-    <div id="sheet"></div>
+    <div id="lineup"></div>
 
-    <script type="module" src="/__recadro/sheet.js"></script>
+    <script type="module" src="/__recadro/lineup.js"></script>
   </body>
 </html>

@@ -41,17 +41,17 @@ export interface ServerOptions {
 }
 
 /**
- * What the contact sheet needs and cannot glob for itself. Served at
+ * What the lineup needs and cannot glob for itself. Served at
  * `/__recadro/panels.json`; the flow is one-way — no page ever reports back.
  */
-interface SheetManifest {
+interface LineupManifest {
   panels: { slug: string; urlPath: string }[];
   slots: typeof SLOTS;
   /** Locales `strings/` names, or the default one. */
   locales: string[];
-  /** The `?captures=` URL with `{locale}` and `{device}` left for the sheet to fill. */
+  /** The `?captures=` URL with `{locale}` and `{device}` left for the lineup to fill. */
   capturesUrl: string;
-  /** Slots with a captures folder, so the sheet can say which have none. */
+  /** Slots with a captures folder, so the lineup can say which have none. */
   devicesWithCaptures: string[];
   /** Root-absolute URL of the output folder, or null when it lies outside the root and cannot be shown. */
   outUrl: string | null;
@@ -71,7 +71,7 @@ async function loadPanelConfig(panelsDir: string): Promise<InlineConfig> {
 
 /** The tool's own files, by request path: what to read and how to label it. */
 const OWN_FILES: Record<string, { file: string; type: string }> = {
-  "/__recadro/sheet.js": { file: "ui/sheet.js", type: "text/javascript" },
+  "/__recadro/lineup.js": { file: "ui/lineup.js", type: "text/javascript" },
   "/__recadro/mark.png": { file: "assets/mark.png", type: "image/png" },
   "/__recadro/wordmark.png": { file: "assets/wordmark.png", type: "image/png" },
   "/__recadro/favicon.png": { file: "assets/favicon.png", type: "image/png" },
@@ -80,7 +80,7 @@ const OWN_FILES: Record<string, { file: string; type: string }> = {
 /**
  * Sends one of the tool's own files, read fresh and never cached.
  *
- * `no-store` because the sheet is edited while the server is up and a stale
+ * `no-store` because the lineup is edited while the server is up and a stale
  * copy is indistinguishable from a broken one.
  */
 function sendOwnFile(res: ServerResponse, file: string, type: string): void {
@@ -90,10 +90,10 @@ function sendOwnFile(res: ServerResponse, file: string, type: string): void {
 }
 
 /**
- * The sheet's manifest, from the set as it is on disk now. Read per request, so
+ * The lineup's manifest, from the set as it is on disk now. Read per request, so
  * a panel or a strings file added while the server runs shows on reload.
  */
-function manifestFor(set: PanelSet): SheetManifest {
+function manifestFor(set: PanelSet): LineupManifest {
   const current = loadSet(set.dir);
   const locales = current.locales.length ? current.locales : [DEFAULT_LOCALE];
   const outUrl = urlPathFor(current.root, current.outDir);
@@ -114,7 +114,7 @@ function manifestFor(set: PanelSet): SheetManifest {
  * outside its module graph, so an edit to them would otherwise change nothing
  * on screen. Files vite does track — the panels themselves, their stylesheet
  * and script — are left to it, and out/ is skipped, since render writes there.
- * Debounced, because a capture flow or an editor writes in bursts. The sheet
+ * Debounced, because a capture flow or an editor writes in bursts. The lineup
  * itself has no vite client and stays; the panels inside it reload.
  */
 function watchFetched(server: ViteDevServer, set: PanelSet): void {
@@ -136,18 +136,18 @@ function watchFetched(server: ViteDevServer, set: PanelSet): void {
 }
 
 /**
- * Serves the contact sheet at `/`, its script, and its manifest.
+ * Serves the lineup at `/`, its script, and its manifest.
  *
  * Registered from the `configureServer` body rather than its returned hook, so
- * it runs before vite's own middlewares and `/` is the sheet rather than a root
+ * it runs before vite's own middlewares and `/` is the lineup rather than a root
  * `index.html` that has nothing to do with panels.
  *
- * None of these go through vite. The sheet is the tool's own UI and wants no
+ * None of these go through vite. The lineup is the tool's own UI and wants no
  * transform — and running it through `transformIndexHtml` actively broke it:
  * vite extracted the inline module into an html-proxy entry and cached it in the
- * module graph, which nothing invalidated because `sheet.html` lives outside the
- * vite root, so an edited sheet silently ran the previous version's JavaScript.
- * Hence a separate `sheet.js` under `ui/` and raw sends. The panels are real
+ * module graph, which nothing invalidated because `lineup.html` lives outside the
+ * vite root, so an edited lineup silently ran the previous version's JavaScript.
+ * Hence a separate `lineup.js` under `ui/` and raw sends. The panels are real
  * files under root and keep vite's transform and HMR.
  */
 function recadroPlugin(set: PanelSet, options: ServerOptions): Plugin {
@@ -173,7 +173,7 @@ function recadroPlugin(set: PanelSet, options: ServerOptions): Plugin {
         }
 
         if (path === "/" || path === "/index.html") {
-          sendOwnFile(res, "ui/sheet.html", "text/html");
+          sendOwnFile(res, "ui/lineup.html", "text/html");
           return;
         }
 

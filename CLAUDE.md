@@ -62,5 +62,5 @@ Before publishing, test the *built* form — `node dist/cli.js dev …` and
   the file exists.
 - Don't install, publish or download anything on your own — hand over the
   command.
-- Verify visually. The contact sheet is the check, and a claim that something
+- Verify visually. The lineup is the check, and a claim that something
   renders correctly should come from having looked at the pixels.

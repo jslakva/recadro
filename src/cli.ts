@@ -3,7 +3,7 @@
  * recadro — App Store screenshots as code.
  *
  * `init` copies a starter into a new set. `dev` and `render` drive one vite
- * server: `dev` opens the contact sheet and watches, `render` shoots the same
+ * server: `dev` opens the lineup and watches, `render` shoots the same
  * URLs at slot pixels. Flags win over the set's `recadro.json`, which wins over
  * the set's conventions.
  */
@@ -138,7 +138,7 @@ async function main(): Promise<void> {
     console.log(`recadro  ${counted(panels.length, "panel")} in ${shown(set.dir)}`);
     console.log(`         locales   ${locales.join(", ")}  (${localesFrom})`);
     console.log(`         captures  ${shown(resolve(set.dir, set.captures))}/`);
-    console.log(`         sheet     ${origin}/`);
+    console.log(`         lineup    ${origin}/`);
     return;
   }
 

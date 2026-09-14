@@ -208,7 +208,7 @@ export function capturesDir(set: PanelSet, device: string, locale: string): stri
 /**
  * The captures folder as the URL a page is given in `?captures=`, root-absolute
  * with a trailing slash so a page appends a filename. Left with `{device}` and
- * `{locale}` in it when no slot and locale are given, for the contact sheet
+ * `{locale}` in it when no slot and locale are given, for the lineup
  * to fill.
  */
 export function capturesUrl(set: PanelSet, device = "{device}", locale = "{locale}"): string {

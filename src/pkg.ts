@@ -1,6 +1,6 @@
 /**
  * Where the package itself is on disk, for the files that ship beside `src/`
- * and `dist/` — the sheet, its assets and the starters — so tsx and the
+ * and `dist/` — the lineup, its assets and the starters — so tsx and the
  * published build find them without a copy step.
  */
 import { dirname, join } from "node:path";

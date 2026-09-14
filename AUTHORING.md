@@ -144,7 +144,7 @@ use. There is no license question to raise about using it.
 
 ## Look at your work
 
-You have no browser, so the PNGs are your contact sheet. Shoot every panel,
+You have no browser, so the PNGs are your lineup. Shoot every panel,
 including ones whose capture does not exist yet, somewhere outside the set's
 `out`:
 
@@ -184,14 +184,14 @@ run's complete panels. `--incomplete` refuses to write into the set's `out`.
 `render` needs Playwright's chromium once. If it fails for want of a browser,
 the install is `npx playwright install chromium` — ask before downloading.
 
-`recadro dev` starts a server and does not exit; it is the contact sheet for a
-person with a browser, at `/`. If you start it, run it in the background and
-stop it when you are done.
+`recadro dev` starts a server and does not exit; it serves the lineup — every
+panel side by side — to a person with a browser, at `/`. If you start it, run
+it in the background and stop it when you are done.
 
-## References from the contact sheet
+## References from the lineup
 
-A person at the contact sheet may paste you what its pointer copies — one spot
-on one panel:
+A person looking at the lineup may paste you what its pointer copies — one
+spot on one panel:
 
 ```
 02-voices · 6.9 · en-US

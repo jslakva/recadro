@@ -5,7 +5,7 @@ sizes out.
 
 ```bash
 npx recadro init store/screenshots --starter caption   # a new set from a starter
-npx recadro dev      # vite + contact sheet, live
+npx recadro dev      # vite + the lineup: every panel side by side, live
 npx recadro render   # serve, shoot, tear down
 ```
 
@@ -189,7 +189,7 @@ defaults to the set found from the working directory, `--locales` to the names
 in `strings/` (or `en-US`), `--devices` to the slots with a captures folder (or
 all), `--out` to `<set>/out`. Both commands print what they picked and why.
 
-## The contact sheet is the check
+## The lineup is the check
 
 `dev` serves every panel side by side at `/`, which is how a customer meets them
 in a search result and the only view in which the *story* can be judged rather
@@ -200,7 +200,7 @@ design. When a capture, a strings file or anything else a panel fetches
 changes, the panels reload.
 
 Click a panel to see it alone, as large as the window allows; the arrow keys
-step through the set and Esc comes back to the sheet.
+step through the set and Esc comes back to the lineup.
 
 The pointer (`P`) copies a reference to one spot on one panel — its file, the
 point in viewport units and delivered pixels, the element there — for pasting

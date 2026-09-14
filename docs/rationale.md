@@ -116,10 +116,10 @@ build step between every edit and every look.
 `dev` also reloads the panels when a file they ask for by URL changes: a
 capture, a strings file, anything else in the set a page fetches. vite reloads
 a page for the files it imports, and these are outside its module graph, so
-without this a capture flow running beside the open sheet, or an edit to a
+without this a capture flow running beside the open lineup, or an edit to a
 headline, would change nothing on screen.
 
-## The contact sheet is the check
+## The lineup is the check
 
 There is no validation, because the failure modes are visual: overflow, a
 cropped headline, a panel that shot before its capture loaded, the wrong face.
@@ -176,17 +176,17 @@ would stop tracking the installed version, and it would serve one agent where a
 document serves all of them. What a skill adds is being loaded unasked, and the
 one line in the consumer's agent file does that.
 
-## The sheet is the tool's UI, not a panel
+## The lineup is the tool's UI, not a panel
 
-The contact sheet is served by the tool at `/`, from its own files, raw and
+The lineup is served by the tool at `/`, from its own files, raw and
 uncached — never through vite's HTML transform. Running it through the transform
-once broke it: vite extracted the sheet's inline module into a proxy module and
-cached it, and since the sheet lives outside the vite root nothing invalidated
-the cache, so an edited sheet silently ran the previous version's JavaScript.
+once broke it: vite extracted the lineup's inline module into a proxy module and
+cached it, and since the lineup lives outside the vite root nothing invalidated
+the cache, so an edited lineup silently ran the previous version's JavaScript.
 The panels are real files under root and keep vite's transform and HMR, which is
 the part that needs it.
 
-The sheet's pointer is the one place the tool looks inside a rendered panel, and
+The lineup's pointer is the one place the tool looks inside a rendered panel, and
 it does so the way DevTools does: it names the element under the cursor, gives
 the spot in viewport units and delivered pixels, and writes that to the
 clipboard for a person to paste to an agent. It names and never judges. A

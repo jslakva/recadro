@@ -27,7 +27,7 @@ export function urlPathFor(root: string, file: string): string {
  *
  * `root` is the vite root the server was started on; the returned `urlPath` is
  * relative to it, so callers can navigate without knowing where on disk the
- * panels live. Throws when the directory is missing — an empty contact sheet is
+ * panels live. Throws when the directory is missing — an empty lineup is
  * indistinguishable from a mistyped `--panels`.
  */
 export function discoverPanels(panelsDir: string, root: string): Panel[] {

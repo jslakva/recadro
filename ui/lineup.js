@@ -1,11 +1,11 @@
 /**
- * The contact sheet's behaviour, in its own file under ui/ on purpose.
+ * The lineup's behaviour, in its own file under ui/ on purpose.
  *
  * Served raw by recadro at a fixed path, never through vite's HTML pipeline. An
  * inline `<script type="module">` here was extracted by vite into an html-proxy
  * module and cached in its module graph — and because this file lives outside
- * the vite root, nothing ever invalidated it, so an edited sheet silently ran
- * the previous version's JavaScript. The sheet is the tool's own UI; it wants no
+ * the vite root, nothing ever invalidated it, so an edited lineup silently ran
+ * the previous version's JavaScript. The lineup is the tool's own UI; it wants no
  * transform. The panels inside the iframes are real files under root and keep
  * their HMR.
  */
@@ -101,7 +101,7 @@ function visibleRect(node) {
 
 /**
  * Builds the pointer overlay for one frame. It covers the frame only while the
- * sheet is pointing, so the iframe below neither swallows the mouse nor loses the
+ * lineup is pointing, so the iframe below neither swallows the mouse nor loses the
  * listener when its panel reloads. Hover outlines the element under the cursor;
  * a click copies its reference.
  */
@@ -165,7 +165,7 @@ function aimFor(panel, context, frame) {
   return aim;
 }
 
-/** Builds one panel's figure in the current mode; its size comes from the sheet's CSS variables. */
+/** Builds one panel's figure in the current mode; its size comes from the lineup's CSS variables. */
 function figureFor(panel, context) {
   const { slot, locale, mode, logicalW, logicalH } = context;
   const figure = document.createElement("figure");
@@ -185,7 +185,7 @@ function figureFor(panel, context) {
     iframe.src = panelUrl;
     iframe.width = logicalW;
     iframe.height = logicalH;
-    // Keys pressed with focus inside a panel still reach the sheet, on every
+    // Keys pressed with focus inside a panel still reach the lineup, on every
     // load, since a panel reloading under HMR is a fresh window.
     iframe.addEventListener("load", () => iframe.contentWindow.addEventListener("keydown", onKey));
     frame.append(iframe);
@@ -199,7 +199,7 @@ function figureFor(panel, context) {
     });
     frame.append(img);
   }
-  // Clicking a frame in the sheet shows that panel alone. A hole replaces the
+  // Clicking a frame in the lineup shows that panel alone. A hole replaces the
   // frame's children, both overlays included: nothing to enlarge or point at.
   const open = document.createElement("a");
   open.className = "open";
@@ -269,7 +269,7 @@ function fitWidth(figure, logicalW, logicalH) {
 }
 
 /**
- * Sizes every frame by setting three CSS variables on the sheet, leaving the
+ * Sizes every frame by setting three CSS variables on the lineup, leaving the
  * frames themselves untouched: from the size slider, or fitted to the window
  * when one panel is shown alone.
  */
@@ -277,13 +277,13 @@ function resize() {
   const slot = manifest.slots.find((s) => s.id === deviceSel.value);
   const logicalW = slot.width / slot.scale;
   const logicalH = slot.height / slot.scale;
-  const focused = el("sheet").querySelector("figure.focused");
+  const focused = el("lineup").querySelector("figure.focused");
   const thumbW = focused ? fitWidth(focused, logicalW, logicalH) : Number(el("zoom").value);
   const k = thumbW / logicalW;
-  const sheet = el("sheet").style;
-  sheet.setProperty("--thumb-w", `${thumbW}px`);
-  sheet.setProperty("--frame-h", `${Math.round(logicalH * k)}px`);
-  sheet.setProperty("--k", String(k));
+  const lineup = el("lineup").style;
+  lineup.setProperty("--thumb-w", `${thumbW}px`);
+  lineup.setProperty("--frame-h", `${Math.round(logicalH * k)}px`);
+  lineup.setProperty("--k", String(k));
 }
 
 /** The panel the URL's hash names, if it names one. */
@@ -292,36 +292,36 @@ function focusedSlug() {
   return manifest.panels.some((p) => p.slug === slug) ? slug : null;
 }
 
-/** Where the sheet was scrolled before a panel was shown alone, to return to. */
-let sheetScroll = 0;
-// The sheet restores its own scroll. Left to the browser, Back would scroll to
+/** Where the lineup was scrolled before a panel was shown alone, to return to. */
+let lineupScroll = 0;
+// The lineup restores its own scroll. Left to the browser, Back would scroll to
 // the entry's old position before the hash change could record the current one.
 history.scrollRestoration = "manual";
 
 /**
- * Shows the panel the hash names alone, fitted to the window, or the whole sheet
+ * Shows the panel the hash names alone, fitted to the window, or the whole lineup
  * when it names none. The other figures are hidden rather than removed, so going
- * in and out reloads no panel and the sheet comes back scrolled where it was.
+ * in and out reloads no panel and the lineup comes back scrolled where it was.
  */
 function applyFocus() {
   const slug = focusedSlug();
   const was = document.body.classList.contains("focusing");
-  if (slug && !was) sheetScroll = scrollY;
+  if (slug && !was) lineupScroll = scrollY;
   document.body.classList.toggle("focusing", Boolean(slug));
-  for (const figure of el("sheet").querySelectorAll("figure")) {
+  for (const figure of el("lineup").querySelectorAll("figure")) {
     figure.classList.toggle("focused", figure.dataset.slug === slug);
   }
   el("zoom").disabled = Boolean(slug);
   resize();
   if (slug) scrollTo(0, 0);
-  else if (was) scrollTo(0, sheetScroll);
+  else if (was) scrollTo(0, lineupScroll);
   // Leaving through `#` would keep a bare `#` in the address; drop it.
   if (!slug && location.href.endsWith("#")) history.replaceState(null, "", location.pathname + location.search);
 }
 
 /**
  * Shows the panel `delta` places along from the one shown alone. It replaces the
- * history entry rather than adding one, so Back leads to the sheet, not through
+ * history entry rather than adding one, so Back leads to the lineup, not through
  * every panel stepped past.
  */
 function step(delta) {
@@ -329,7 +329,7 @@ function step(delta) {
   if (next) location.replace(`#${encodeURIComponent(next.slug)}`);
 }
 
-/** Rebuilds the sheet from the current controls. */
+/** Rebuilds the lineup from the current controls. */
 function draw() {
   const slot = manifest.slots.find((s) => s.id === deviceSel.value);
   const locale = el("locale").value;
@@ -339,7 +339,7 @@ function draw() {
   const context = { slot, locale, mode, logicalW, logicalH };
 
   // A slot with no captures is still worth designing, but render skips it by
-  // default, so the sheet says so while it is the one shown.
+  // default, so the lineup says so while it is the one shown.
   const bare = manifest.devicesWithCaptures.length && !manifest.devicesWithCaptures.includes(slot.id);
   el("status").textContent =
     `${manifest.panels.length} panels · ${logicalW}×${logicalH} logical${bare ? " · no captures for this slot" : ""}`;
@@ -351,8 +351,8 @@ function draw() {
       ]
     : [{ label: null, panels: manifest.panels }];
 
-  const sheet = el("sheet");
-  sheet.replaceChildren();
+  const lineup = el("lineup");
+  lineup.replaceChildren();
 
   for (const group of groups) {
     if (!group.panels.length) continue;
@@ -360,12 +360,12 @@ function draw() {
       const heading = document.createElement("h2");
       heading.className = "group";
       heading.textContent = group.label;
-      sheet.append(heading);
+      lineup.append(heading);
     }
     const strip = document.createElement("div");
     strip.className = "strip";
     for (const panel of group.panels) strip.append(figureFor(panel, context));
-    sheet.append(strip);
+    lineup.append(strip);
   }
   applyFocus();
 }
@@ -386,7 +386,7 @@ function setPointing(on) {
 }
 
 /**
- * The sheet's keys: P toggles the pointer, the arrows step through panels shown
+ * The lineup's keys: P toggles the pointer, the arrows step through panels shown
  * alone, and Esc leaves the pointer first and then the single panel.
  */
 function onKey(event) {

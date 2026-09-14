@@ -2,7 +2,7 @@
  * The render pass: Playwright drives the same server and the same URLs the
  * browser shows, at the slot's scale factor, and writes exact App Store pixels.
  *
- * There is no validation here beyond the completeness check — the contact sheet
+ * There is no validation here beyond the completeness check — the lineup
  * is the check. What looks like the two survivors is unconditional processing:
  * every write is flattened and stamped sRGB, because an alpha channel is never
  * wanted (ASC rejects transparency) and so there is nothing to test for.
