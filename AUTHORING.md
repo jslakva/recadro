@@ -262,5 +262,5 @@ A tool that parses a panel's strings or tokens has to learn that one key is the
 headline and another the ground, and every such key is a layout concept it then
 owns. Reading names and four params, and nothing a page wrote, is what keeps the
 layout yours.
-[docs/design.md](https://github.com/jslakva/recadro/blob/main/docs/design.md)
+[docs/rationale.md](https://github.com/jslakva/recadro/blob/main/docs/rationale.md)
 has the full reasoning.

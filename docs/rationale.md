@@ -1,4 +1,4 @@
-# Design
+# Rationale
 
 Why recadro is shaped the way it is. Short, because most of the shape is the
 absence of things.

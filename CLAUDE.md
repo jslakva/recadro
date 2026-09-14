@@ -2,7 +2,7 @@
 
 App Store screenshots as code: compose store panels from raw simulator captures,
 plain HTML in, exact slot sizes out. `packages/recadro` is the npm package;
-`site/` is the website; `docs/design.md` is the design record — read it before
+`site/` is the website; `docs/rationale.md` is the design record — read it before
 changing the tool's shape, because most of the shape is deliberate absence.
 
 ## The invariant
@@ -54,7 +54,7 @@ Before publishing, test the *built* form — `node dist/cli.js dev …` and
 
 ## Conventions
 
-- No ticket system. Reasoning lives in commit bodies and in `docs/design.md`;
+- No ticket system. Reasoning lives in commit bodies and in `docs/rationale.md`;
   GitHub Issues hold the backlog. A commit subject is prose, no prefixes, no
   attribution trailers. Commit to `main`.
 - Every exported function, interface, type and constant has a JSDoc comment
