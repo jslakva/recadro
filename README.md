@@ -204,7 +204,8 @@ backgrounds, starting from your system's appearance. The store shows each
 screenshot on both, and an edge that holds on one can vanish on the other.
 
 Click a panel to see it alone, as large as the window allows; the arrow keys
-step through the set and Esc comes back to the lineup.
+or a swipe step through the set and Esc comes back to the lineup. On a phone,
+the first three sit across the screen, as a search result shows them there.
 
 The pointer (`P`) copies a reference to one spot on one panel — its file, the
 point in viewport units and delivered pixels, the element there — for pasting

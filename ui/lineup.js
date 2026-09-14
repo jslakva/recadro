@@ -192,6 +192,8 @@ function figureFor(panel, context) {
 
   if (mode === "live") {
     const iframe = document.createElement("iframe");
+    // A long set, or several on one page, loads only the panels near the screen.
+    iframe.loading = "lazy";
     iframe.src = panelUrl;
     iframe.width = logicalW;
     iframe.height = logicalH;
@@ -215,6 +217,24 @@ function figureFor(panel, context) {
   open.className = "open";
   open.href = alone;
   open.setAttribute("aria-label", `show ${panel.slug} alone`);
+  // Shown alone, the frame is already open, and a sideways swipe of 40px or
+  // more steps to the neighbour, as a phone pages. Scrolling cancels it.
+  let swipeFrom = null;
+  open.addEventListener("pointerdown", (event) => {
+    swipeFrom = focusedSlug() ? event.clientX : null;
+  });
+  open.addEventListener("pointercancel", () => {
+    swipeFrom = null;
+  });
+  open.addEventListener("pointerup", (event) => {
+    if (swipeFrom === null) return;
+    const dx = event.clientX - swipeFrom;
+    swipeFrom = null;
+    if (Math.abs(dx) >= 40) step(dx < 0 ? 1 : -1);
+  });
+  open.addEventListener("click", (event) => {
+    if (focusedSlug()) event.preventDefault();
+  });
   frame.append(open, aimFor(panel, context, frame));
 
   // The slug shows the panel alone too — not the bare panel URL, which only
@@ -274,8 +294,25 @@ function fitWidth(figure, logicalW, logicalH) {
   const below = figure.getBoundingClientRect().bottom - frame.bottom;
   const padding = parseFloat(getComputedStyle(document.body).paddingBottom);
   const height = Math.floor(innerHeight - (frame.top + scrollY) - below - padding);
-  const width = document.documentElement.clientWidth - 40;
+  const strip = getComputedStyle(figure.closest(".strip"));
+  const width = document.documentElement.clientWidth - parseFloat(strip.paddingLeft) - parseFloat(strip.paddingRight);
   return Math.max(120, Math.floor(Math.min(width, (height * logicalW) / logicalH)));
+}
+
+/** Whether the size slider has been moved; until then its size follows the window. */
+let zoomMoved = false;
+
+/**
+ * The frame width that puts three panels side by side across a phone-sized
+ * window, from the strip's own gutters, as a search result shows them there.
+ * Null on a wider window.
+ */
+function threeAcross() {
+  const strip = el("lineup").querySelector(".strip");
+  if (!strip || !matchMedia("(max-width: 600px)").matches) return null;
+  const style = getComputedStyle(strip);
+  const inner = document.documentElement.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  return Math.floor((inner - 2 * parseFloat(style.columnGap)) / 3);
 }
 
 /**
@@ -288,6 +325,7 @@ function resize() {
   const logicalW = slot.width / slot.scale;
   const logicalH = slot.height / slot.scale;
   const focused = el("lineup").querySelector("figure.focused");
+  if (!focused && !zoomMoved) el("zoom").value = String(threeAcross() ?? el("zoom").defaultValue);
   const thumbW = focused ? fitWidth(focused, logicalW, logicalH) : Number(el("zoom").value);
   const k = thumbW / logicalW;
   const lineup = el("lineup").style;
@@ -385,7 +423,10 @@ function draw() {
 for (const id of ["device", "locale", "mode", "wrap"]) {
   el(id).addEventListener("input", draw);
 }
-el("zoom").addEventListener("input", resize);
+el("zoom").addEventListener("input", () => {
+  zoomMoved = true;
+  resize();
+});
 window.addEventListener("resize", resize);
 
 /**

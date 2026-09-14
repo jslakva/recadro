@@ -25,6 +25,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>recadro — lineup</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/__recadro/favicon.png" />
     <style>
@@ -76,7 +77,10 @@
       /* A click on a frame shows that panel alone; over the iframe, since the
          iframe would take the click itself. */
       .frame .open { position: absolute; inset: 0; border: 0; cursor: zoom-in; }
-      .pointing .open, .focusing .open { display: none; }
+      .pointing .open { display: none; }
+      /* Shown alone, the same overlay takes a sideways swipe to the neighbour
+         and leaves vertical scrolling to the page. */
+      .focusing .open { cursor: default; touch-action: pan-y; }
       /* One panel alone: the rest hidden, not removed, so nothing reloads. */
       body.focusing { padding-bottom: 20px; }
       .focusing .group, .focusing figure:not(.focused), .focusing .strip:not(:has(.focused)) { display: none; }
@@ -92,6 +96,18 @@
       a { color: var(--ground-dim); text-decoration: none; border-bottom: 1px solid transparent; }
       a:hover { color: var(--ground-ink); border-bottom-color: var(--ground-dim); }
       a.slug { color: var(--ground-ink); }
+      /* A phone. The controls keep one row and scroll sideways instead of
+         stacking over the panels; the gutters tighten so the first three fit
+         across the width, as a search result shows them there. */
+      @media (max-width: 600px) {
+        header { flex-wrap: nowrap; overflow-x: auto; gap: 12px; padding: 10px 12px; scrollbar-width: none; }
+        header > * { flex: none; white-space: nowrap; }
+        .group { margin-top: 18px; padding: 0 12px; }
+        .strip { gap: 8px; padding: 10px 12px 0; }
+      }
+      /* The pointer copies a spot for pasting into an agent; a touch screen
+         has neither the hover nor, usually, the agent. P still toggles it. */
+      @media (pointer: coarse) { #point { display: none; } }
     </style>
   </head>
   <body>
@@ -114,7 +130,7 @@
           <option value="light">light</option>
         </select>
       </label>
-      <label>size <input id="zoom" type="range" min="120" max="420" step="10" value="220" /></label>
+      <label>size <input id="zoom" type="range" min="80" max="420" step="1" value="220" /></label>
       <label><input id="wrap" type="checkbox" checked /> wrap three</label>
       <button id="point" type="button" aria-pressed="false"
               title="Point at a spot to copy a reference for a coding agent (P, Esc)">pointer</button>
