@@ -72,8 +72,6 @@ async function loadPanelConfig(panelsDir: string): Promise<InlineConfig> {
 /** The tool's own files, by request path: what to read and how to label it. */
 const OWN_FILES: Record<string, { file: string; type: string }> = {
   "/__recadro/lineup.js": { file: "ui/lineup.js", type: "text/javascript" },
-  "/__recadro/mark.png": { file: "assets/mark.png", type: "image/png" },
-  "/__recadro/wordmark.png": { file: "assets/wordmark.png", type: "image/png" },
   "/__recadro/favicon.png": { file: "assets/favicon.png", type: "image/png" },
 };
 

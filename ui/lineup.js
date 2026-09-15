@@ -24,12 +24,16 @@ const manifest = await fetch(manifestUrl()).then((r) => r.json());
 const el = (id) => document.getElementById(id);
 const deviceSel = el("device");
 
-for (const slot of manifest.slots) {
-  deviceSel.append(new Option(`${slot.id} · ${slot.width}×${slot.height}`, slot.id));
-}
+for (const slot of manifest.slots) deviceSel.append(new Option(slot.name ?? slot.id, slot.id));
 for (const locale of manifest.locales) el("locale").append(new Option(locale, locale));
 if (manifest.locales.includes("en-US")) el("locale").value = "en-US";
-if (!manifest.outUrl) el("mode").querySelector('option[value="out"]').disabled = true;
+// A set in one language has nothing to choose; the status names the locale instead.
+el("locale").hidden = manifest.locales.length < 2;
+
+/** The radio button in the group `name` holding `value`, or the checked one. */
+const radio = (name, value) =>
+  document.querySelector(`input[name="${name}"]${value ? `[value="${value}"]` : ":checked"}`);
+if (!manifest.outUrl) radio("mode", "out").disabled = true;
 
 /**
  * A selector for `node` inside its panel: the path from `<body>`, stopping at the
@@ -381,30 +385,43 @@ function step(delta) {
 function draw() {
   const slot = manifest.slots.find((s) => s.id === deviceSel.value);
   const locale = el("locale").value;
-  const mode = el("mode").value;
+  const mode = radio("mode").value;
   const logicalW = slot.width / slot.scale;
   const logicalH = slot.height / slot.scale;
   const context = { slot, locale, mode, logicalW, logicalH };
 
-  // A slot with no captures is still worth designing, but render skips it by
-  // default, so the lineup says so while it is the one shown.
+  // What the frames are: the locale when there is no choice of one, the sizes a
+  // panel is written and delivered at, and the count. A slot with no captures
+  // is still worth designing, but render skips it by default, so the lineup
+  // says so while it is the one shown.
   const bare = manifest.devicesWithCaptures.length && !manifest.devicesWithCaptures.includes(slot.id);
-  el("status").textContent =
-    `${manifest.panels.length} panels · ${logicalW}×${logicalH} logical${bare ? " · no captures for this slot" : ""}`;
+  el("status").textContent = [
+    el("locale").hidden && locale,
+    `${logicalW}×${logicalH} logical`,
+    `${slot.width}×${slot.height} px`,
+    `${manifest.panels.length} panels`,
+    bare && "no captures for this slot",
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const groups = el("wrap").checked
     ? [
-        { label: "first three — all a search result shows", panels: manifest.panels.slice(0, 3) },
-        { label: "the rest — only on the product page", panels: manifest.panels.slice(3) },
+        { label: "First three — all a search result shows", panels: manifest.panels.slice(0, 3) },
+        { label: "The rest — only on the product page", panels: manifest.panels.slice(3) },
       ]
     : [{ label: null, panels: manifest.panels }];
+
+  // The first heading shares its row with the status, above the panels.
+  el("first-group").textContent = groups[0].label ?? "";
+  el("first-group").hidden = !groups[0].label;
 
   const lineup = el("lineup");
   lineup.replaceChildren();
 
-  for (const group of groups) {
+  for (const [i, group] of groups.entries()) {
     if (!group.panels.length) continue;
-    if (group.label) {
+    if (group.label && i > 0) {
       const heading = document.createElement("h2");
       heading.className = "group";
       heading.textContent = group.label;
@@ -455,13 +472,13 @@ const SETTINGS = {
     valid: (v) => manifest.locales.includes(v),
   },
   show: {
-    read: () => el("mode").value,
-    write: (v) => (el("mode").value = v),
+    read: () => radio("mode").value,
+    write: (v) => (radio("mode", v).checked = true),
     valid: (v) => v === "live" || (v === "out" && Boolean(manifest.outUrl)),
   },
   store: {
-    read: () => el("store").value,
-    write: (v) => (el("store").value = v),
+    read: () => radio("store").value,
+    write: (v) => (radio("store", v).checked = true),
     valid: (v) => v === "dark" || v === "light",
     kept: true,
   },
@@ -509,8 +526,9 @@ function keepSetting(name) {
 
 // Size alone never rebuilds: a rebuild makes fresh iframes, every live panel
 // loads again from blank, and dragging the slider turns that into a flicker.
+// The radio groups report a change from whichever button was chosen.
 for (const [id, name] of [["device", "device"], ["locale", "locale"], ["mode", "show"], ["wrap", "wrap"]]) {
-  el(id).addEventListener("input", () => {
+  el(id).addEventListener("change", () => {
     keepSetting(name);
     draw();
   });
@@ -530,13 +548,13 @@ window.addEventListener("resize", resize);
  * why both are worth a look. No rebuild, so no panel reloads.
  */
 function applyStore() {
-  document.body.dataset.store = el("store").value;
+  document.body.dataset.store = radio("store").value;
 }
 
-el("store").value = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+radio("store", matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark").checked = true;
 restoreSettings();
 applyStore();
-el("store").addEventListener("input", () => {
+el("store").addEventListener("change", () => {
   keepSetting("store");
   applyStore();
 });
