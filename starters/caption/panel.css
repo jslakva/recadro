@@ -56,13 +56,22 @@ body[data-ground="blur"]::before {
   opacity: 0.65;
 }
 
+/*
+ * The words take the same height on every panel — two lines of headline and two
+ * of subline, however many these words use — so the devices under them start
+ * at one height across the set, which is how the first three read as a row.
+ * Longer words still push the device down.
+ */
 .copy {
+  --headline-size: 9vw;
+  --subline-size: 4.4vw;
+  min-height: calc(2 * 1.08 * var(--headline-size) + 1.8vh + 2 * 1.35 * var(--subline-size));
   text-align: center;
 }
 
 .copy h1 {
   margin: 0;
-  font: 700 9vw/1.08 var(--font-display);
+  font: 700 var(--headline-size)/1.08 var(--font-display);
   letter-spacing: -0.01em;
   text-wrap: balance;
 }
@@ -86,7 +95,7 @@ body[data-ground="blur"]::before {
 .copy p {
   margin: 1.8vh 0 0;
   color: var(--ink-soft);
-  font: 400 4.4vw/1.35 var(--font-text);
+  font: 400 var(--subline-size)/1.35 var(--font-text);
   text-wrap: balance;
 }
 
@@ -258,12 +267,11 @@ img.capture {
   padding-top: 6vh;
 }
 
-[data-device="iPad"] .copy h1 {
-  font-size: 5.6vw;
-}
-
-[data-device="iPad"] .copy p {
-  font-size: 2.5vw;
+/* On iPad the words fit one line each, so the room is one of each. */
+[data-device="iPad"] .copy {
+  --headline-size: 5.6vw;
+  --subline-size: 2.5vw;
+  min-height: calc(1.08 * var(--headline-size) + 1.8vh + 1.35 * var(--subline-size));
 }
 
 [data-device="iPad"] .strip {
