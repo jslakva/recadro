@@ -124,6 +124,12 @@ body[data-swatch="5"] {
   background: var(--paper);
   box-shadow: 2.6vw 2.6vw 0 var(--ink);
   rotate: calc(var(--r) * 1deg);
+  /*
+   * Its own compositing layer, so the browser draws the capture upright and
+   * then turns the whole phone: shrunk while turned, as in the lineup, a
+   * capture's one-pixel lines otherwise break into dashes.
+   */
+  backface-visibility: hidden;
 }
 
 .screen {
