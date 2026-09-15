@@ -1,0 +1,180 @@
+/*
+ * The poster starter: type first. A heavy condensed headline fills the top of
+ * each panel, set left on a flat colour that changes from panel to panel, over
+ * phones drawn in a thick outline with a hard shadow; one panel fans two
+ * screens. The variables are the look: the swatches are the panels' colours,
+ * picked by data-swatch on each panel's <body>. Sizes are in vw/vh and the iPad
+ * forks on [data-device], so no device size appears here.
+ */
+:root {
+  --ink: #141414;
+  --paper: #fffdf6;
+  --swatch-1: #ff8f3f;
+  --swatch-2: #7cc6fe;
+  --swatch-3: #ff9ecd;
+  --swatch-4: #c2f261;
+  --swatch-5: #b8a6ff;
+  /* A condensed face macOS ships; elsewhere the fallback is wider and wraps sooner. */
+  --font-display: "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-text: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+body {
+  --ground: var(--swatch-1);
+  position: relative;
+  background: var(--ground);
+  color: var(--ink);
+}
+
+body[data-swatch="2"] {
+  --ground: var(--swatch-2);
+}
+
+body[data-swatch="3"] {
+  --ground: var(--swatch-3);
+}
+
+body[data-swatch="4"] {
+  --ground: var(--swatch-4);
+}
+
+body[data-swatch="5"] {
+  --ground: var(--swatch-5);
+}
+
+.copy {
+  position: relative;
+  z-index: 2;
+  padding: 6vh 7vw 0;
+}
+
+.copy h1 {
+  margin: 0;
+  font: 800 16vw/0.9 var(--font-display);
+  font-stretch: condensed;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+/*
+ * A highlighted word is cut out of an ink band, in the panel's own colour. The
+ * band is drawn only as tall as the capitals: the whole line box would reach
+ * into the lines above and below at this line height, and paint over them.
+ */
+.copy h1 em {
+  padding: 0 0.07em;
+  color: var(--ground);
+  background: linear-gradient(var(--ink) 0 0) 0 52% / 100% 0.86em no-repeat;
+  font-style: normal;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* The subline is a sticker slapped on under the headline. */
+.copy p {
+  display: inline-block;
+  margin: 2.2vh 0 0;
+  padding: 1vh 3.6vw;
+  border-radius: 99vw;
+  color: var(--paper);
+  background: var(--ink);
+  font: 700 4.2vw/1.2 var(--font-text);
+  rotate: -3deg;
+}
+
+/*
+ * A phone: a thick ink outline around a paper bezel, and a hard shadow, placed
+ * by --x and --y (its top left corner, in vw and vh), --h its height in vh and
+ * --r its tilt in degrees. The defaults sit in :where(), which weighs nothing,
+ * so a panel's own rule for a phone always wins over them, device fork or not.
+ */
+:where(.phone) {
+  --x: 17;
+  --y: 35;
+  --h: 74;
+  --r: 0;
+}
+
+:where([data-device="iPad"] .phone) {
+  --x: 19;
+  --y: 33;
+  --h: 70;
+}
+
+.phone {
+  position: absolute;
+  z-index: 1;
+  left: calc(var(--x) * 1vw);
+  top: calc(var(--y) * 1vh);
+  box-sizing: border-box;
+  height: calc(var(--h) * 1vh);
+  aspect-ratio: 9 / 19.5;
+  padding: 1.5vw;
+  border: 0.9vw solid var(--ink);
+  border-radius: 11vw;
+  background: var(--paper);
+  box-shadow: 2.6vw 2.6vw 0 var(--ink);
+  rotate: calc(var(--r) * 1deg);
+}
+
+.screen {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 0.5vw solid var(--ink);
+  border-radius: 8.4vw;
+  background: color-mix(in srgb, var(--ink) 8%, var(--paper));
+}
+
+img.capture {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* No capture yet: the phone is still drawn, and render skips the panel. */
+.phone[data-empty] .screen {
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--ink) 6%, var(--paper)) 0 2.5vw,
+    color-mix(in srgb, var(--ink) 14%, var(--paper)) 2.5vw 5vw
+  );
+}
+
+[data-device="iPad"] .copy {
+  padding: 5vh 6vw 0;
+}
+
+[data-device="iPad"] .copy h1 {
+  font-size: 10vw;
+}
+
+[data-device="iPad"] .copy p {
+  padding: 0.9vh 2.2vw;
+  font-size: 2.6vw;
+}
+
+[data-device="iPad"] .phone {
+  aspect-ratio: 3 / 4;
+  padding: 1vw;
+  border-width: 0.55vw;
+  border-radius: 3.4vw;
+  box-shadow: 1.6vw 1.6vw 0 var(--ink);
+}
+
+[data-device="iPad"] .screen {
+  border-width: 0.3vw;
+  border-radius: 2.2vw;
+}

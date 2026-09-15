@@ -1,0 +1,32 @@
+<!doctype html>
+<!--
+  What only this app does, on two screens fanned out. Each phone stands where
+  its rule below puts it: --x and --y its top left corner in vw and vh, --h its
+  height in vh, --r its tilt. iPad phones are wider, so they fork on
+  [data-device="iPad"]; fork a language the same way with :lang(de).
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../panel.css" />
+    <style>
+      .back { --x: 5; --y: 41; --h: 62; --r: -8; }
+      .front { --x: 41; --y: 35; --h: 66; --r: 5; }
+      [data-device="iPad"] .back { --x: 3; --y: 38; --h: 56; --r: -6; }
+      [data-device="iPad"] .front { --x: 42; --y: 32; --h: 62; --r: 4; }
+    </style>
+  </head>
+  <body data-swatch="3">
+    <header class="copy">
+      <h1 data-string="headline"></h1>
+      <p data-string="subline"></p>
+    </header>
+    <div class="phone back">
+      <div class="screen"><img class="capture" data-capture="{capture:3}" alt="" /></div>
+    </div>
+    <div class="phone front">
+      <div class="screen"><img class="capture" data-capture="{capture:4}" alt="" /></div>
+    </div>
+    <script type="module" src="../panel.js"></script>
+  </body>
+</html>

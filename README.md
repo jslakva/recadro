@@ -161,6 +161,9 @@ to the set.
 - **`callouts`** — the phone straight on, with notes pinned to points on its
   screen: a label at the panel's edge, a leader line, and a dot where the line
   lands. One panel lights a region of the screen and dims the rest.
+- **`poster`** — type first: a heavy condensed headline set left on a flat
+  colour that changes from panel to panel, phones in a thick outline with a
+  hard shadow, a sticker for the subline, and one panel fanning two screens.
 
 The copy is plain except for `{capture:N}` placeholders, each filled with
 the Nth capture already taken, in filename order, so the panels open showing
