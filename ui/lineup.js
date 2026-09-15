@@ -209,14 +209,31 @@ function figureFor(panel, context) {
     const img = document.createElement("img");
     img.src = pngUrl;
     img.alt = "";
+    // The hole names the file it looked for, as a path in the repo rather than a
+    // URL: a render that never ran and an out/ written in another layout look
+    // the same, and only the path tells them apart. It still opens alone; there
+    // is nothing in it to point at, and no PNG to link to.
     img.addEventListener("error", () => {
       frame.classList.add("hole");
-      frame.replaceChildren(document.createTextNode("not rendered"));
+      const note = document.createElement("p");
+      note.className = "hole-note";
+      // One piece per folder, so a narrow frame wraps the path at its slashes
+      // rather than inside a name.
+      const path = document.createElement("code");
+      const parts = decodeURI(pngUrl).slice(1).split("/");
+      for (const [i, part] of parts.entries()) {
+        const piece = document.createElement("span");
+        piece.textContent = i < parts.length - 1 ? `${part}/` : part;
+        path.append(piece);
+      }
+      note.append("not rendered", path);
+      img.replaceWith(note);
+      frame.querySelector(".aim")?.remove();
+      figure.querySelector("a.png")?.remove();
     });
     frame.append(img);
   }
-  // Clicking a frame in the lineup shows that panel alone. A hole replaces the
-  // frame's children, both overlays included: nothing to enlarge or point at.
+  // Clicking a frame in the lineup shows that panel alone.
   const open = document.createElement("a");
   open.className = "open";
   open.href = alone;
@@ -278,8 +295,10 @@ function figureFor(panel, context) {
 
   if (mode === "out") {
     const pngLink = document.createElement("a");
+    pngLink.className = "png";
     pngLink.href = pngUrl;
     pngLink.target = "_blank";
+    pngLink.rel = "noopener";
     pngLink.textContent = "png";
     caption.append(pngLink);
   }

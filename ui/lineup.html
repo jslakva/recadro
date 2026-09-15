@@ -47,12 +47,13 @@
         --control: #1c1c1e; --control-edge: #636366; --control-on: #6c6c70;
         --focus: #0a84ff; --pressed: #0071e3; --mark: #78e2c2;
         /* The ground behind the panels, dark by default. */
-        --ground: #000; --ground-ink: #f2f2f7; --ground-dim: #8e8e93; --hole: #1c1c1e; --hole-alt: #2c2c2e;
+        --ground: #000; --ground-ink: #f2f2f7; --ground-dim: #8e8e93;
+        --hole: #1c1c1e; --hole-edge: #3a3a3c; --hole-ink: #aeaeb2;
       }
       /* The store's ground behind the panels: iOS's system background in each
          appearance. Only the ground changes; a screenshot is one image in both. */
       body[data-store="light"] { --ground: #fff; --ground-ink: #1c1c1e; --ground-dim: #6c6c70;
-                                 --hole: #f2f2f7; --hole-alt: #e5e5ea; }
+                                 --hole: #f2f2f7; --hole-edge: #d1d1d6; --hole-ink: #48484a; }
       * { box-sizing: border-box; }
       body { margin: 0; font: 13px/1.4 ui-sans-serif, -apple-system, system-ui, sans-serif;
              background: var(--ground); color: var(--ground-ink); padding-bottom: 40px; }
@@ -127,10 +128,15 @@
       .focusing .lead { justify-content: center; }
       .nav { display: none; gap: 14px; margin-right: auto; margin-left: 14px; }
       .focusing .nav { display: flex; }
-      /* The hole. A panel with no render, which is expected for the two still
-         waiting on capture flows and is the only signal for one that failed. */
-      .hole { display: grid; place-items: center; color: var(--ground-dim); text-align: center; padding: 12px;
-              background: repeating-linear-gradient(45deg, var(--hole-alt) 0 8px, var(--hole) 8px 16px); }
+      /* The hole: a panel with no PNG in out/, expected for one still waiting on
+         its capture and the only signal for a render that failed. Flat, with a
+         hairline edge, so it reads as the tool's and never as a panel's own
+         empty frame, and it names the file it looked for. */
+      .hole { display: grid; place-items: center; padding: 12px; background: var(--hole);
+              box-shadow: inset 0 0 0 1px var(--hole-edge); }
+      .hole-note { display: grid; gap: 6px; margin: 0; text-align: center; color: var(--hole-ink); }
+      .hole-note code { font: 10px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+      .hole-note code span { display: inline-block; max-width: 100%; }
       figcaption { margin-top: 8px; font-size: 11px; color: var(--ground-dim);
                    display: flex; justify-content: space-between; gap: 10px; }
       a { color: var(--ground-dim); text-decoration: none; border-bottom: 1px solid transparent; }

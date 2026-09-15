@@ -196,7 +196,7 @@ in a search result and the only view in which the *story* can be judged rather
 than the layout. The first three are grouped on their own — all a search result
 shows — with the rest below. It shows the live panels by default and the
 contents of `out/` on a toggle, so a rendered set can be compared against the
-design. When a capture, a strings file or anything else a panel fetches
+design; a panel with no PNG there is a hole naming the file it looked for. When a capture, a strings file or anything else a panel fetches
 changes, the panels reload.
 
 The ground behind them switches between the App Store's light and dark
