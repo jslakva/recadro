@@ -146,8 +146,9 @@ to the set.
   of the screen.
 - **`caption`** — a headline and a subline over the screen, framed in a device,
   and one review panel with no screen. Along the way it shows a highlighted
-  word, a sparkle, a blurred copy of the capture as the background, an enlarged
-  detail, a background image from the set's `assets/`, and a sticker.
+  word with a stroke drawn under it, a blurred copy of the capture as the
+  background, an enlarged detail, a background image from the set's `assets/`,
+  and a sticker.
 - **`panorama`** — one scene as wide as the whole set, drawn once in
   `world.html`, with each panel showing its own stretch, so the panels read as
   one picture side by side: a phone that spills into the next panel, a panel

@@ -1,7 +1,7 @@
 /*
  * The caption starter: a headline and a subline over the screen, framed in a
  * device that rises from the bottom edge, and one review panel with no screen.
- * Along the way it shows what a panel can add: a highlighted word, a sparkle,
+ * Along the way it shows what a panel can add: a highlighted word, a stroke under it,
  * a blurred backdrop, an enlarged detail, a background image, a sticker. The
  * variables are the look —
  * point them at the app's own colours and fonts. Sizes are in vw/vh and the
@@ -81,15 +81,23 @@ body[data-ground="blur"]::before {
   font-style: italic;
 }
 
-[data-decor="sparkle"] .copy h1::after {
+/*
+ * A stroke drawn under the highlighted word, sized in em so it follows the type
+ * on every device: a mask over the accent, thick at its start and trailing off.
+ */
+[data-decor="underline"] .copy h1 em {
+  position: relative;
+}
+
+[data-decor="underline"] .copy h1 em::after {
   content: "";
-  display: inline-block;
-  width: 6.5vw;
-  height: 6.5vw;
-  margin-left: 1.2vw;
-  vertical-align: 0.55em;
+  position: absolute;
+  left: -0.02em;
+  right: -0.06em;
+  bottom: -0.16em;
+  height: 0.26em;
   background: var(--accent);
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0c.7 6.3 5.7 11.3 12 12-6.3.7-11.3 5.7-12 12-.7-6.3-5.7-11.3-12-12 6.3-.7 11.3-5.7 12-12z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 12' preserveAspectRatio='none'%3E%3Cpath d='M1 8.5C30 3.5 68 1 99 2.5 70 4.5 34 8 3 12 1.6 11.6.4 9.6 1 8.5z'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
 }
 
 .copy p {
@@ -285,11 +293,6 @@ img.capture {
   right: -3vw;
   width: 13vw;
   font-size: 3vw;
-}
-
-[data-device="iPad"] [data-decor="sparkle"] .copy h1::after {
-  width: 3.8vw;
-  height: 3.8vw;
 }
 
 [data-device="iPad"] .stars {
