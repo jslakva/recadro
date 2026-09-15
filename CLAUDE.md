@@ -1,9 +1,9 @@
 # recadro
 
 App Store screenshots as code: compose store panels from raw simulator captures,
-plain HTML in, exact slot sizes out. `packages/recadro` is the npm package;
-`site/` is the website; `docs/rationale.md` is the design record — read it before
-changing the tool's shape, because most of the shape is deliberate absence.
+plain HTML in, exact slot sizes out. This repository is the npm package;
+`docs/rationale.md` is the design record — read it before changing the tool's
+shape, because most of the shape is deliberate absence.
 
 ## The invariant
 
@@ -21,10 +21,8 @@ set layout and the output naming. Everything else is the page's, or the
 
 ## Layout rules
 
-- `packages/recadro` imports nothing from `site/`. The site may depend on the
-  tool (`workspace:*`); the tool never knows the site exists.
-- The package publishes from its own directory. `files` is a whitelist; check
-  what ships with `npm pack --dry-run` and expect exactly `dist`, `ui`,
+- The package publishes from the repository root. `files` is a whitelist;
+  check what ships with `npm pack --dry-run` and expect exactly `dist`, `ui`,
   `assets`, `starters`, README, AUTHORING, LICENSE.
 - `AUTHORING.md` is the package's instructions for coding agents in a
   consumer's repo, versioned with the tool on purpose. A change to the CLI's
@@ -32,21 +30,22 @@ set layout and the output naming. Everything else is the page's, or the
 - `ui/`, `assets/` and `starters/` sit beside `src/` and `dist/` on purpose: the
   tool resolves them from the package root, so `tsx src/cli.ts` and the published
   `dist/cli.js` find them without a copy step.
-- No screenshots of rendered panels in git. Demo imagery for the site is
-  produced at build time by the tool itself.
+- No screenshots of rendered panels in git. Imagery of rendered panels is
+  produced by the tool itself when it is needed.
+- Plain npm: `package-lock.json`, no workspace, no other package manager's files.
 
 ## Running
 
 ```bash
-pnpm -C packages/recadro dev    --panels <dir>   # from source, live
-pnpm -C packages/recadro render --panels <dir>
-pnpm -C packages/recadro build                    # tsc → dist/
+npm run dev    -- --panels <dir>   # from source, live
+npm run render -- --panels <dir>
+npm run build                      # tsc → dist/
 ```
 
-`pnpm -C` runs from the package directory, where there is no set to discover,
-so name one with `--panels`. To exercise discovery, run
-`packages/recadro/node_modules/.bin/tsx packages/recadro/src/cli.ts` from inside
-the repo that holds the set.
+`npm run` runs from this directory, where there is no set to discover, so name
+one with `--panels`; the `--` passes it through. To exercise discovery, run
+`<this repo>/node_modules/.bin/tsx <this repo>/src/cli.ts` from inside the repo
+that holds the set.
 
 Before publishing, test the *built* form — `node dist/cli.js dev …` and
 `render …` — not the tsx one; users get `npx recadro`. `render` asks to

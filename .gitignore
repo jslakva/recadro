@@ -1,11 +1,6 @@
 node_modules/
 dist/
 out/
-.astro/
-# The site's demo and render proof, generated from the tool at dev and build.
-site/public/lineup/
-site/public/__recadro/
-site/src/generated/
 .DS_Store
 .idea/
 CLAUDE.local.md

@@ -38,7 +38,7 @@ This folder is a set of App Store screenshot panels that
 in it, read \`AUTHORING.md\` in the installed recadro package, usually
 \`node_modules/recadro/AUTHORING.md\`: the instructions for coding agents,
 versioned with the tool. Where recadro is not installed, read it on GitHub:
-https://github.com/jslakva/recadro/blob/main/packages/recadro/AUTHORING.md
+https://github.com/jslakva/recadro/blob/main/AUTHORING.md
 
 \`recadro init\` wrote this file and \`CLAUDE.md\`; recadro never reads either.
 `,
