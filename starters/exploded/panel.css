@@ -11,9 +11,12 @@
   --accent: #4f46e5;
   --font-display: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   --font-text: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  /* How far the phone tips back and turns, in degrees; a panel can set either on its .stage. */
+  --tilt: 20;
+  --turn: 4;
   /* How far a layer rises off the screen, per step of its z, and how much larger it grows. */
-  --lift: 6vh;
-  --zoom: 1.25;
+  --lift: 10vh;
+  --zoom: 1.1;
 }
 
 html,
@@ -59,10 +62,11 @@ body {
 }
 
 /*
- * The stage: tipped back by --tilt and turned in its plane by --turn, in
- * degrees — set either on one panel's .stage to vary it. No perspective
- * anywhere above it, so the projection is orthographic, and preserve-3d lets
- * the layers inside rise out of the screen.
+ * The stage: tipped back by --tilt and turned in its plane by --turn. No
+ * perspective anywhere above it, so the projection is orthographic: a layer's
+ * lift shows only as far as the tilt turns it towards the eye, which is why the
+ * tilt is enough to see the gap under a layer and not so much that the screen
+ * stops reading. preserve-3d lets the layers inside rise out of the screen.
  */
 .stage {
   position: absolute;
@@ -71,7 +75,7 @@ body {
   height: 70vh;
   aspect-ratio: 9 / 19.5;
   translate: -50% -50%;
-  transform: rotateX(calc(var(--tilt, 12) * 1deg)) rotateZ(calc(var(--turn, 4) * 1deg));
+  transform: rotateX(calc(var(--tilt) * 1deg)) rotateZ(calc(var(--turn) * 1deg));
   transform-style: preserve-3d;
 }
 
@@ -128,7 +132,8 @@ body {
 }
 
 /*
- * Where a layer came from: a dimmed socket left on the screen. It carries the
+ * Where a layer came from: a hole left in the screen, solid so what the layer
+ * lifted does not show twice, and shaded at its top edge. It carries the
  * layer's classes, so the rule that places a layer places its socket.
  */
 .socket {
@@ -138,8 +143,8 @@ body {
   width: calc(var(--w) * 1%);
   height: calc(var(--h) * 1%);
   border-radius: 1.8vw;
-  background: rgb(17 24 39 / 0.18);
-  box-shadow: inset 0 0 0 0.3vw rgb(17 24 39 / 0.12);
+  background: color-mix(in srgb, var(--ink) 14%, var(--ground));
+  box-shadow: inset 0 0.6vh 1.2vh color-mix(in srgb, var(--ink) 22%, transparent);
 }
 
 /* The layers ride in their own box over the screen, unclipped, so they can leave it. */
