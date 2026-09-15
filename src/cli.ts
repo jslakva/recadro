@@ -29,7 +29,7 @@ const USAGE = `recadro — App Store screenshots as code
 
   recadro init   <dir> --starter <name> [--captures <pattern>]
   recadro dev    [--panels <dir>] [--port <n>]
-  recadro render [--panels <dir>] [--out <dir>] [--devices 6.9,13-iPad] [--locales en-US] [--incomplete]
+  recadro render [--panels <dir>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
 
   --starter     init: the starter to copy          (${listStarters().join(", ")})
   --captures    init: the folder holding a folder per device, from here (written to ${CONFIG_FILE})

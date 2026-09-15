@@ -40,10 +40,10 @@ page → tool:   nothing
 tool → disk:   <out>/<device>/<locale>/<slug>.png
 ```
 
-| slot      | delivered pixels | viewport (CSS px) | scale |
-|-----------|------------------|-------------------|-------|
-| `6.9`     | 1320 × 2868      | 440 × 956         | 3     |
-| `13-iPad` | 2048 × 2732      | 1024 × 1366       | 2     |
+| slot     | App Store Connect display | delivered pixels | viewport (CSS px) | scale |
+|----------|---------------------------|------------------|-------------------|-------|
+| `iPhone` | 6.9″                      | 1320 × 2868      | 440 × 956         | 3     |
+| `iPad`   | 13″                       | 2048 × 2732      | 1024 × 1366       | 2     |
 
 The page is the viewport, `100vw × 100vh`. Those numbers are for your
 understanding; they belong in no panel.
@@ -63,7 +63,7 @@ go to `<set>/out`:
 
 - Paths are relative to the set, and captures must be inside the repository.
 - Every slot has captures of its own. A folder without placeholders holds one
-  folder per slot (`"../../e2e/screenshots"` means `…/screenshots/6.9/`); put
+  folder per slot (`"../../e2e/screenshots"` means `…/screenshots/iPhone/`); put
   `{device}` in the pattern where the slot goes otherwise. `{locale}` is
   optional and makes the captures per locale.
 - Those two keys are all it takes; anything else is an error. Command-line
@@ -72,7 +72,7 @@ go to `<set>/out`:
 ## Captures
 
 Captures are full-screen simulator screenshots, one per panel and slot, at
-`captures/<slot>/<file>.png`: `<slot>` exactly `6.9`, plus `13-iPad` when the
+`captures/<slot>/<file>.png`: `<slot>` exactly `iPhone`, plus `iPad` when the
 app supports iPad (App Store Connect then requires it); `<file>` the panel's
 slug (`01-hero.png`) unless the page maps it. Per-locale captures go in
 `captures/<slot>/<locale>/`, with `"captures": "captures/{device}/{locale}"`.
@@ -181,7 +181,7 @@ It first prints what it picked and why:
 
 ```
 recadro  6 panels in store/screenshots
-         devices   6.9  (no captures folder for 13-iPad)
+         devices   iPhone  (no captures folder for iPad)
          locales   de-DE, en-US  (strings/)
          out       store/screenshots/out
 ```
@@ -211,7 +211,7 @@ A person looking at the lineup may paste you what its pointer copies — one
 spot on one panel:
 
 ```
-02-voices · 6.9 · en-US
+02-voices · iPhone · en-US
 file     store/screenshots/panels/02-voices.html
 point    48.2vw 40.6vh · px 636,1164 of 1320×2868
 element  main > header > p.sub "Each character in its own voice."
@@ -263,8 +263,8 @@ compare against:
    panels' fetch at `../strings/${locale}.<ext>`.
 2. **Captures.** If the capture flow writes somewhere other than
    `<set>/captures/<device>/`, write `recadro.json` with a `captures` pattern
-   for that folder. Its folders must be named for the slots, `6.9` and
-   `13-iPad`; if they are not, rename them in the capture flow.
+   for that folder. Its folders must be named for the slots, `iPhone` and
+   `iPad`; if they are not, rename them in the capture flow.
 3. **Panels.** Replace every capture path the page builds with `?captures=`
    plus the filename. Keep whatever maps a slug to a capture filename.
 4. **Commands.** Drop `--panels`, `--locales` and `--devices` from the repo's

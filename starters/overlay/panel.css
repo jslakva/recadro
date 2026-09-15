@@ -129,23 +129,23 @@ img.capture {
   font: 600 4vw var(--font-text);
 }
 
-[data-device="13-iPad"] .band {
+[data-device="iPad"] .band {
   padding: 5vh 6vw 7vh;
 }
 
-[data-device="13-iPad"] .loupe {
+[data-device="iPad"] .loupe {
   width: 36vw;
   box-shadow: 0 0 0 0.9vw #fff, 0 3vh 6vh rgb(0 0 0 / 0.45);
 }
 
-[data-device="13-iPad"] .band h1 {
+[data-device="iPad"] .band h1 {
   font-size: 7.4vw;
 }
 
-[data-device="13-iPad"] .band p {
+[data-device="iPad"] .band p {
   font-size: 2.8vw;
 }
 
-[data-device="13-iPad"][data-empty] body::after {
+[data-device="iPad"][data-empty] body::after {
   font-size: 2.4vw;
 }

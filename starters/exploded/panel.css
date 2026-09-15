@@ -180,33 +180,33 @@ body {
   background: #f3f5f9;
 }
 
-[data-device="13-iPad"] .copy {
+[data-device="iPad"] .copy {
   padding-top: 6vh;
 }
 
-[data-device="13-iPad"] .copy h1 {
+[data-device="iPad"] .copy h1 {
   font-size: 5.8vw;
 }
 
-[data-device="13-iPad"] .copy p {
+[data-device="iPad"] .copy p {
   font-size: 2.5vw;
 }
 
-[data-device="13-iPad"] .stage {
+[data-device="iPad"] .stage {
   height: 70vh;
   aspect-ratio: 3 / 4;
 }
 
-[data-device="13-iPad"] .screen {
+[data-device="iPad"] .screen {
   border-radius: 2.6vw;
 }
 
-[data-device="13-iPad"] .stage::before,
-[data-device="13-iPad"] .stage::after {
+[data-device="iPad"] .stage::before,
+[data-device="iPad"] .stage::after {
   border-radius: 4vw;
 }
 
-[data-device="13-iPad"] .socket,
-[data-device="13-iPad"] .layer {
+[data-device="iPad"] .socket,
+[data-device="iPad"] .layer {
   border-radius: 1vw;
 }

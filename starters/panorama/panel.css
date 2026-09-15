@@ -230,54 +230,54 @@ body {
   font-style: normal;
 }
 
-[data-device="13-iPad"] .points {
+[data-device="iPad"] .points {
   top: 12vh;
   left: 12vw;
   right: 10vw;
   gap: 4vh;
 }
 
-[data-device="13-iPad"] .points li {
+[data-device="iPad"] .points li {
   padding-left: 6.5vw;
   font-size: 3.8vw;
 }
 
-[data-device="13-iPad"] .points li::before {
+[data-device="iPad"] .points li::before {
   width: 4.4vw;
   height: 4.4vw;
 }
 
-[data-device="13-iPad"] .phone {
+[data-device="iPad"] .phone {
   aspect-ratio: 3 / 4;
   border-radius: 2vw;
 }
 
-[data-device="13-iPad"] .screen {
+[data-device="iPad"] .screen {
   border-radius: 2vw;
 }
 
-[data-device="13-iPad"] [data-frame="steel"] .phone {
+[data-device="iPad"] [data-frame="steel"] .phone {
   padding: 0.8vw;
   border-radius: 2.7vw;
 }
 
-[data-device="13-iPad"] [data-frame="steel"] .screen {
+[data-device="iPad"] [data-frame="steel"] .screen {
   border-width: 0.35vw;
   border-radius: 1.9vw;
 }
 
-[data-device="13-iPad"] .screen::before {
+[data-device="iPad"] .screen::before {
   display: none;
 }
 
-[data-device="13-iPad"] .copy {
+[data-device="iPad"] .copy {
   padding-top: 6vh;
 }
 
-[data-device="13-iPad"] .copy h1 {
+[data-device="iPad"] .copy h1 {
   font-size: 6vw;
 }
 
-[data-device="13-iPad"] .copy p {
+[data-device="iPad"] .copy p {
   font-size: 2.6vw;
 }

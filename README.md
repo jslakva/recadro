@@ -24,7 +24,7 @@ store/screenshots/          # the set, found from wherever you run recadro
   panels/01-hero.html       # the panels; the number prefix is the order
   panels/02-feature.html
   strings/en-US.json        # one per locale; the file names are the locales
-  captures/6.9/01-hero.png  # raw captures, one folder per device
+  captures/iPhone/01-hero.png  # raw captures, one folder per device
   panel.css, panel.js       # whatever the panels share; recadro never reads them
   recadro.json              # optional: only when captures live elsewhere
   out/                      # rendered: <device>/<locale>/<NN-slug>.png
@@ -33,7 +33,7 @@ store/screenshots/          # the set, found from wherever you run recadro
 The whole tool ↔ layout contract is four query params:
 
 ```
-tool → page:   ?panel=02-feature&device=6.9&locale=en-US&captures=/store/screenshots/captures/6.9/
+tool → page:   ?panel=02-feature&device=iPhone&locale=en-US&captures=/store/screenshots/captures/iPhone/
 page → tool:   nothing
 tool → disk:   out/<device>/<locale>/<NN-slug>.png, at exact slot pixels
 ```
@@ -45,7 +45,7 @@ preference — the slot geometry — and where a set keeps its pieces.
 
 - **Locales** are the names in `strings/`. Add `strings/de-DE.json` and
   `render` renders German too.
-- **Devices** are the folders in `captures/`. No `13-iPad` folder, no iPad
+- **Devices** are the folders in `captures/`. No `iPad` folder, no iPad
   panels; no captures at all yet, every slot.
 - **The set** is found: the folder you run in, the nearest set above it, or the
   one set below it.
@@ -69,7 +69,7 @@ complete working set:
 // store/screenshots/panel.js
 const params = new URLSearchParams(location.search);
 const panel = params.get("panel");       // "01-hero": the filename without .html
-const device = params.get("device");     // "6.9" or "13-iPad"
+const device = params.get("device");     // "iPhone" or "iPad"
 const locale = params.get("locale");     // "en-US"
 const captures = params.get("captures"); // this locale and device's captures folder
 
@@ -115,8 +115,8 @@ img.capture {
   background: rgb(255 255 255 / 0.1);
 }
 
-[data-device="13-iPad"] body { font-size: 5vw; }
-[data-device="13-iPad"] img.capture { aspect-ratio: 3 / 4; border-radius: 2vh; }
+[data-device="iPad"] body { font-size: 5vw; }
+[data-device="iPad"] img.capture { aspect-ratio: 3 / 4; border-radius: 2vh; }
 ```
 
 `strings/en-US.json` maps each slug to its headline. Its format is this
@@ -137,7 +137,7 @@ the set itself, where nothing beside it is reachable.
 npx recadro init store/screenshots --starter overlay --captures path/to/captures
 ```
 
-`--captures` is the folder holding a folder per device (`6.9/`, `13-iPad/`),
+`--captures` is the folder holding a folder per device (`iPhone/`, `iPad/`),
 from where you run the command; `init` writes it into `recadro.json` relative
 to the set.
 
@@ -186,7 +186,7 @@ other than `<set>/out`. Unknown keys are an error.
 ```
 recadro init   <dir> --starter <name> [--captures <pattern>]
 recadro dev    [--panels <dir>] [--port <n>]
-recadro render [--panels <dir>] [--out <dir>] [--devices 6.9,13-iPad] [--locales en-US] [--incomplete]
+recadro render [--panels <dir>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
 ```
 
 Flags win over `recadro.json`, which wins over the set's names. `--panels`
@@ -208,7 +208,7 @@ The ground behind them switches between the App Store's light and dark
 backgrounds, starting from your system's appearance. The store shows each
 screenshot on both, and an edge that holds on one can vanish on the other.
 
-The lineup keeps its settings in its address (`/?store=light&device=13-iPad`),
+The lineup keeps its settings in its address (`/?store=light&device=iPad`),
 so a reload keeps the view, two tabs can show two, and a link opens the same
 one. The ground, size and wrap are remembered too, for the next time you open
 it.

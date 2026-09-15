@@ -253,73 +253,73 @@ img.capture {
   font: 500 3.6vw var(--font-text);
 }
 
-[data-device="13-iPad"] body {
+[data-device="iPad"] body {
   gap: 4vh;
   padding-top: 6vh;
 }
 
-[data-device="13-iPad"] .copy h1 {
+[data-device="iPad"] .copy h1 {
   font-size: 5.6vw;
 }
 
-[data-device="13-iPad"] .copy p {
+[data-device="iPad"] .copy p {
   font-size: 2.5vw;
 }
 
-[data-device="13-iPad"] .strip {
+[data-device="iPad"] .strip {
   bottom: 14vh;
   aspect-ratio: 5 / 1;
   border-block-width: 0.45vw;
 }
 
-[data-device="13-iPad"] .badge {
+[data-device="iPad"] .badge {
   top: 4vh;
   right: -3vw;
   width: 13vw;
   font-size: 3vw;
 }
 
-[data-device="13-iPad"] [data-decor="sparkle"] .copy h1::after {
+[data-device="iPad"] [data-decor="sparkle"] .copy h1::after {
   width: 3.8vw;
   height: 3.8vw;
 }
 
-[data-device="13-iPad"] .stars {
+[data-device="iPad"] .stars {
   font-size: 5vw;
 }
 
-[data-device="13-iPad"] .review blockquote {
+[data-device="iPad"] .review blockquote {
   max-width: 72vw;
   font-size: 4.4vw;
 }
 
-[data-device="13-iPad"] .review blockquote::before {
+[data-device="iPad"] .review blockquote::before {
   font-size: 9vw;
 }
 
-[data-device="13-iPad"] .review .name {
+[data-device="iPad"] .review .name {
   font-size: 2.6vw;
 }
 
-[data-device="13-iPad"] .review .role {
+[data-device="iPad"] .review .role {
   font-size: 2.2vw;
 }
 
-[data-device="13-iPad"] .device {
+[data-device="iPad"] .device {
   height: 86vh;
   aspect-ratio: 3 / 4;
   padding: 1.4vw;
   border-radius: 3.6vw;
 }
 
-[data-device="13-iPad"] .screen {
+[data-device="iPad"] .screen {
   border-radius: 2.4vw;
 }
 
-[data-device="13-iPad"] .screen::before {
+[data-device="iPad"] .screen::before {
   display: none;
 }
 
-[data-device="13-iPad"][data-empty] .screen::after {
+[data-device="iPad"][data-empty] .screen::after {
   font-size: 2vw;
 }

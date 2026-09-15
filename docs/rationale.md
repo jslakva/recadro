@@ -24,6 +24,13 @@ and never sees a device dimension. The exact pixels come out by construction,
 the slot table stays inside the tool where a layout cannot depend on it, and a
 new device is a row in that table.
 
+A slot is named for its device, `iPhone` or `iPad`, not for its display size.
+The size is what App Store Connect requires today and sits in the table beside
+the pixels; the name is what a capture folder, an output folder and a page's
+`[data-device]` fork are written against, and those should outlive Apple moving
+the required size. A second slot for one device, a foldable say, gets a name of
+its own when it comes.
+
 ## The contract is four query params
 
 ```
@@ -71,7 +78,7 @@ names, and the one file that exists is optional:
   tooling reads where it is can be symlinked in. A set with no `strings/`
   renders `en-US`.
 - **Devices are the captures folders that exist.** An iPhone-only app has no
-  `13-iPad` folder and renders no iPad panels without saying so anywhere. A set
+  `iPad` folder and renders no iPad panels without saying so anywhere. A set
   with no captures folder at all — text-only, or not captured yet — renders
   every slot.
 - **`recadro.json` holds the two facts names cannot.** Where the capture flow

@@ -28,8 +28,8 @@ export interface Slot {
  * absent.
  */
 export const SLOTS: readonly Slot[] = [
-  { id: "6.9", device: "iPhone", display: "6.9″", width: 1320, height: 2868, scale: 3 },
-  { id: "13-iPad", device: "iPad", display: "13″", width: 2048, height: 2732, scale: 2 },
+  { id: "iPhone", device: "iPhone", display: "6.9″", width: 1320, height: 2868, scale: 3 },
+  { id: "iPad", device: "iPad", display: "13″", width: 2048, height: 2732, scale: 2 },
 ];
 
 /**
