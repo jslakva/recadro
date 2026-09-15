@@ -9,7 +9,9 @@
  */
 import { mkdirSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
+import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
+import type { Browser } from "playwright";
 import { initSet, listStarters } from "./init.ts";
 import { startServer } from "./server.ts";
 import {
@@ -74,6 +76,48 @@ function slotsFor(set: PanelSet, locales: string[], flag: string | undefined): {
   if (!found.length) return { ids: SLOTS.map((s) => s.id), from: "no captures folders yet" };
   const missing = SLOTS.filter((s) => !found.includes(s.id)).map((s) => s.id);
   return { ids: found, from: missing.length ? `no captures folder for ${missing.join(", ")}` : "captures folders" };
+}
+
+/** Asks a yes-or-no question on the terminal; Enter alone is yes, Ctrl+C quits. */
+async function confirm(question: string): Promise<boolean> {
+  const prompt = createInterface({ input: process.stdin, output: process.stdout });
+  prompt.on("SIGINT", () => {
+    process.stdout.write("\n");
+    process.exit(130);
+  });
+  try {
+    const answer = (await prompt.question(`${question} [Y/n] `)).trim().toLowerCase();
+    return answer === "" || answer === "y" || answer === "yes";
+  } finally {
+    prompt.close();
+  }
+}
+
+/**
+ * The browser for a render pass. Playwright's Chromium installs apart from the
+ * package, so it can be missing: at a terminal, render asks to install it;
+ * anywhere else — CI, an agent — it stops and names the command, since a
+ * download that size is not render's to start unasked.
+ *
+ * Imported here rather than at the top so `dev` never loads Playwright:
+ * it is the render pass's dependency, not the design loop's.
+ */
+async function openBrowser(): Promise<Browser> {
+  const { INSTALL_COMMAND, installBrowser, launchBrowser } = await import("./browser.ts");
+  const browser = await launchBrowser();
+  if (browser) return browser;
+
+  const missing = "render needs Playwright's Chromium, and the build it uses is not installed";
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    throw new Error(`${missing}; install it once with: ${INSTALL_COMMAND}`);
+  }
+  console.log(`${missing}.`);
+  if (!(await confirm("Install it now?"))) throw new Error(`not installed; to install it later: ${INSTALL_COMMAND}`);
+  await installBrowser();
+  console.log("");
+  const installed = await launchBrowser();
+  if (!installed) throw new Error(`installed, but Playwright still finds no browser; try: ${INSTALL_COMMAND}`);
+  return installed;
 }
 
 async function main(): Promise<void> {
@@ -154,12 +198,12 @@ async function main(): Promise<void> {
   }
   const { ids, from: devicesFrom } = slotsFor(set, locales, values.devices);
   const slots = selectSlots(ids);
-  mkdirSync(outDir, { recursive: true });
 
-  // Imported here rather than at the top so `dev` runs before anyone has
-  // installed a browser: Playwright is the render pass's dependency, not the
-  // design loop's.
+  // Before the server starts and anything is written, so a missing browser
+  // stops a render that has touched nothing.
+  const browser = await openBrowser();
   const { render } = await import("./render.ts");
+  mkdirSync(outDir, { recursive: true });
   const server = await startServer(set, { port });
   try {
     console.log(`recadro  ${counted(server.panels.length, "panel")} in ${shown(set.dir)}`);
@@ -168,6 +212,7 @@ async function main(): Promise<void> {
     console.log(`         out       ${shown(outDir)}\n`);
 
     const result = await render({
+      browser,
       origin: server.origin,
       panels: server.panels,
       slots,
@@ -184,6 +229,7 @@ async function main(): Promise<void> {
     console.log(`\n${result.written.length} written, ${result.incomplete.length} ${verb} → ${shown(outDir)}`);
   } finally {
     await server.vite.close();
+    await browser.close();
   }
 }
 

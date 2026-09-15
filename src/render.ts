@@ -9,13 +9,15 @@
  */
 import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { chromium } from "playwright";
+import type { Browser, Page } from "playwright";
 import sharp from "sharp";
 import type { Panel } from "./panels.ts";
 import { viewportFor, type Slot } from "./slots.ts";
 
 /** Everything one render pass needs. */
 export interface RenderOptions {
+  /** The browser to shoot in, from `launchBrowser`; the caller closes it. */
+  browser: Browser;
   /** Origin of the running server, from `startServer`. */
   origin: string;
   /** Panels to attempt, in filename order. */
@@ -63,7 +65,7 @@ export interface RenderResult {
  * lineup's pointer names one: the server's origin and port mean nothing to the
  * reader, and `%7Bcapture%3A5%7D` hides a placeholder nobody filled.
  */
-async function settle(page: import("playwright").Page): Promise<string[]> {
+async function settle(page: Page): Promise<string[]> {
   return page.evaluate(async () => {
     await document.fonts.ready;
     const images = Array.from(document.images);
@@ -100,56 +102,51 @@ async function settle(page: import("playwright").Page): Promise<string[]> {
  * would still find and ship.
  */
 export async function render(options: RenderOptions): Promise<RenderResult> {
-  const { origin, panels, slots, locales, capturesUrl, outDir, incomplete = false } = options;
+  const { browser, origin, panels, slots, locales, capturesUrl, outDir, incomplete = false } = options;
   const result: RenderResult = { written: [], incomplete: [] };
-  const browser = await chromium.launch();
 
-  try {
-    for (const slot of slots) {
-      for (const locale of locales) {
-        const dir = join(outDir, slot.id, locale);
-        rmSync(dir, { recursive: true, force: true });
-        mkdirSync(dir, { recursive: true });
+  for (const slot of slots) {
+    for (const locale of locales) {
+      const dir = join(outDir, slot.id, locale);
+      rmSync(dir, { recursive: true, force: true });
+      mkdirSync(dir, { recursive: true });
 
-        const context = await browser.newContext({
-          viewport: viewportFor(slot),
-          deviceScaleFactor: slot.scale,
-          locale,
-        });
-        const page = await context.newPage();
+      const context = await browser.newContext({
+        viewport: viewportFor(slot),
+        deviceScaleFactor: slot.scale,
+        locale,
+      });
+      const page = await context.newPage();
 
-        const captures = encodeURIComponent(capturesUrl(slot.id, locale));
-        for (const panel of panels) {
-          const query =
-            `?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}&locale=${locale}&captures=${captures}`;
-          // `networkidle` rather than `load`: a panel fetches its own captions and
-          // sets its capture from them, so the image request does not exist yet
-          // when `load` fires. Checking `document.images` before that would find
-          // an empty list and call an unfinished panel complete.
-          await page.goto(`${origin}${panel.urlPath}${query}`, { waitUntil: "networkidle" });
+      const captures = encodeURIComponent(capturesUrl(slot.id, locale));
+      for (const panel of panels) {
+        const query =
+          `?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}&locale=${locale}&captures=${captures}`;
+        // `networkidle` rather than `load`: a panel fetches its own captions and
+        // sets its capture from them, so the image request does not exist yet
+        // when `load` fires. Checking `document.images` before that would find
+        // an empty list and call an unfinished panel complete.
+        await page.goto(`${origin}${panel.urlPath}${query}`, { waitUntil: "networkidle" });
 
-          const missing = await settle(page);
-          if (missing.length) {
-            result.incomplete.push({ where: `${slot.id}/${locale}/${panel.slug}`, missing });
-            if (!incomplete) continue;
-          }
-
-          const shot = await page.screenshot({ type: "png" });
-          const file = join(dir, `${panel.slug}.png`);
-          await sharp(shot)
-            .flatten({ background: "#ffffff" })
-            .toColorspace("srgb")
-            .withIccProfile("srgb")
-            .png({ compressionLevel: 9 })
-            .toFile(file);
-          result.written.push(`${slot.id}/${locale}/${panel.slug}.png`);
+        const missing = await settle(page);
+        if (missing.length) {
+          result.incomplete.push({ where: `${slot.id}/${locale}/${panel.slug}`, missing });
+          if (!incomplete) continue;
         }
 
-        await context.close();
+        const shot = await page.screenshot({ type: "png" });
+        const file = join(dir, `${panel.slug}.png`);
+        await sharp(shot)
+          .flatten({ background: "#ffffff" })
+          .toColorspace("srgb")
+          .withIccProfile("srgb")
+          .png({ compressionLevel: 9 })
+          .toFile(file);
+        result.written.push(`${slot.id}/${locale}/${panel.slug}.png`);
       }
+
+      await context.close();
     }
-  } finally {
-    await browser.close();
   }
 
   return result;

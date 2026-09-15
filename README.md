@@ -261,14 +261,11 @@ read node_modules/recadro/AUTHORING.md.
 
 ## Requirements
 
-Node 20.11+, and Playwright's chromium, installed once:
-
-```bash
-npx playwright install chromium
-```
-
-`dev` does not need it — Playwright is the render pass's dependency, not the
-design loop's.
+Node 20.11+, and for `render`, Playwright's Chromium. It does not install with
+the package: it is about 200 MB that `dev` never uses. The first `render`
+without it asks to install it; where nobody is at a terminal to answer, it
+stops and prints the install command instead, pinned to the Playwright recadro
+uses. In CI, run that command before `render`, adding `--with-deps` on Linux.
 
 ## License
 

@@ -190,8 +190,13 @@ from `devices` has no captures folder; pass `--devices` to render it anyway.
 Each `<out>/<device>/<locale>/` is cleared first, so it only ever holds this
 run's complete panels. `--incomplete` refuses to write into the set's `out`.
 
-`render` needs Playwright's chromium once. If it fails for want of a browser,
-the install is `npx playwright install chromium` — ask before downloading.
+`render` needs Playwright's Chromium, which installs apart from the package.
+Where it is missing, `render` writes nothing, prints
+`render needs Playwright's Chromium, and the build it uses is not installed; install it once with: <command>`
+and exits 1. The command is pinned to the Playwright recadro uses; run that
+one, not a bare `npx playwright install`, and ask before running it: it
+downloads about 200 MB. At a terminal, `render` asks `Install it now? [Y/n]`
+instead, which is the person's to answer.
 
 `recadro dev` starts a server and does not exit; it serves the lineup — every
 panel side by side — to a person with a browser, at `/`. If you start it, run

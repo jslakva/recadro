@@ -222,6 +222,12 @@ Driving system Chrome over the DevTools protocol would keep all of that with no
 dependency; it is the option if the dependency ever matters more than the
 pinned browser does.
 
+The browser itself is not a dependency. A package that downloads it on install
+runs a script that pnpm skips unless allowed, would put at least 200 MB in front of
+`npx recadro init`, and would fetch it for `dev`, which never launches one. So
+`render` asks for it at the moment it needs it, which also covers the first
+render after an upgrade moves Playwright to a new build.
+
 ## The name
 
 *Recadrer* is French for to reframe or to crop; *recuadro* is Spanish for a

@@ -49,8 +49,9 @@ so name one with `--panels`. To exercise discovery, run
 the repo that holds the set.
 
 Before publishing, test the *built* form — `node dist/cli.js dev …` and
-`render …` — not the tsx one; users get `npx recadro`. `render` needs
-`npx playwright install chromium` once.
+`render …` — not the tsx one; users get `npx recadro`. `render` asks to
+install Playwright's Chromium when it finds none; to see that path without
+touching the real cache, point `PLAYWRIGHT_BROWSERS_PATH` at an empty folder.
 
 ## Conventions
 
