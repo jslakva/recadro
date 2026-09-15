@@ -61,7 +61,9 @@ go to `<set>/out`:
 ```
 
 - Paths are relative to the set, and captures must be inside the repository.
-- `{device}` is required: every slot has captures of its own. `{locale}` is
+- Every slot has captures of its own. A folder without placeholders holds one
+  folder per slot (`"../../e2e/screenshots"` means `…/screenshots/6.9/`); put
+  `{device}` in the pattern where the slot goes otherwise. `{locale}` is
   optional and makes the captures per locale.
 - Those two keys are all it takes; anything else is an error. Command-line
   flags win over it.
@@ -79,7 +81,9 @@ slug (`01-hero.png`) unless the page maps it. Per-locale captures go in
 `recadro init <dir> --starter <name> [--captures <pattern>]` copies a starter —
 `overlay`, `caption`, `panorama` or `exploded` — into a new folder, fills its
 `{capture:N}` placeholders with the captures already taken, in filename order,
-and writes `--captures` to `recadro.json`. In `panorama` the placeholders are
+and writes `--captures` to `recadro.json`. `--captures` is a path from where the
+command runs (`path/to/captures`), which `init` rewrites relative to the set
+for `recadro.json`. In `panorama` the placeholders are
 in `world.html`, the scene every panel shows a stretch of. Then adapt the copy:
 the variables at the top of `panel.css` to the app's colours and fonts, the
 words in `strings/en-US.json`, any regions the panels enlarge or lift

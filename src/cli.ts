@@ -8,7 +8,7 @@
  * the set's conventions.
  */
 import { mkdirSync } from "node:fs";
-import { relative, resolve } from "node:path";
+import { relative, resolve, sep } from "node:path";
 import { parseArgs } from "node:util";
 import { initSet, listStarters } from "./init.ts";
 import { startServer } from "./server.ts";
@@ -30,7 +30,7 @@ const USAGE = `recadro — App Store screenshots as code
   recadro render [--panels <dir>] [--out <dir>] [--devices 6.9,13-iPad] [--locales en-US] [--incomplete]
 
   --starter     init: the starter to copy          (${listStarters().join(", ")})
-  --captures    init: where captures are, relative to <dir>, as ${CONFIG_FILE} takes it
+  --captures    init: the folder holding a folder per device, from here (written to ${CONFIG_FILE})
 
   --panels      the set: a folder holding panels/       (default: found from here)
   --out         output directory       (default: ${CONFIG_FILE} "out", else <set>/out)
@@ -108,7 +108,10 @@ async function main(): Promise<void> {
       throw new Error(`init takes a folder and a starter: recadro init <dir> --starter ${listStarters().join("|")}`);
     }
     const dir = resolve(positionals[0]);
-    const result = initSet({ dir, starter: values.starter, captures: values.captures });
+    // Given from where the command runs, like --panels and --out; recadro.json
+    // holds it relative to the set, with forward slashes on every platform.
+    const captures = values.captures && relative(dir, resolve(values.captures)).split(sep).join("/");
+    const result = initSet({ dir, starter: values.starter, captures });
     const set = loadSet(dir);
     console.log(`recadro  ${shown(dir)} from the ${values.starter} starter`);
     console.log(`         captures  ${shown(resolve(set.dir, set.captures))}/`);

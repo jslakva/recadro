@@ -34,7 +34,8 @@ export const CONFIG_FILE = "recadro.json";
 /**
  * Every key `recadro.json` takes, with the value a set without it gets. Both are
  * paths relative to the set. `captures` is a pattern: `{device}` is the slot id
- * and `{locale}`, when present, makes the captures per locale.
+ * and `{locale}`, when present, makes the captures per locale. A pattern
+ * without `{device}` is a folder holding one folder per slot.
  */
 const DEFAULTS = { captures: "captures/{device}", out: "out" };
 
@@ -165,8 +166,10 @@ function readConfig(dir: string): { configured: boolean; captures: string; out: 
       throw new Error(`${file}: "captures" has ${placeholder}; the placeholders are ${PLACEHOLDERS.join(" and ")}`);
     }
   }
+  // Every slot has captures of its own; a folder named without {device} holds
+  // them one folder per slot, as the set's own captures/ does.
   if (!config.captures.includes("{device}")) {
-    throw new Error(`${file}: "captures" needs {device}, since every slot has captures of its own`);
+    config.captures = `${config.captures.replace(/\/+$/, "")}/{device}`;
   }
   return { configured: true, ...config };
 }

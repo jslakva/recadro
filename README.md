@@ -134,8 +134,12 @@ the set itself, where nothing beside it is reachable.
 `init` copies a premade set into a new folder:
 
 ```bash
-npx recadro init store/screenshots --starter overlay --captures "../../e2e/screenshots/{device}"
+npx recadro init store/screenshots --starter overlay --captures path/to/captures
 ```
+
+`--captures` is the folder holding a folder per device (`6.9/`, `13-iPad/`),
+from where you run the command; `init` writes it into `recadro.json` relative
+to the set.
 
 - **`overlay`** — the capture fills the panel, and a band of colour over its
   top carries the headline, with highlighted words; one panel magnifies part
@@ -171,8 +175,9 @@ A capture flow usually writes where it writes. Tell the set with
 { "captures": "../../e2e/screenshots/{device}/{locale}" }
 ```
 
-Paths are relative to the set. `{device}` is the slot id and is required;
-`{locale}`, when present, makes the captures per locale. The folder must be
+Paths are relative to the set. `{device}` is the slot id; a folder without it
+holds one folder per slot. `{locale}`, when present, makes the captures per
+locale. The folder must be
 inside the repository. The only other key is `out`, for renders somewhere
 other than `<set>/out`. Unknown keys are an error.
 
