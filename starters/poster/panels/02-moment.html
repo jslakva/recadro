@@ -1,11 +1,16 @@
 <!doctype html>
-<!-- The moment it works, the phone tipped toward the words. -->
+<!--
+  The moment it works, with no headline: the screen takes the panel, and the
+  sticker rides on its corner. Leave the headline out of strings/ and the
+  panel keeps only the sticker; give one and it sits over the phone.
+-->
 <html>
   <head>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../panel.css" />
     <style>
-      .phone { --r: -4; }
+      .phone { --x: 5; --y: 12; --h: 92; --r: -3; }
+      [data-device="iPad"] .phone { --x: 8; --y: 13; --h: 84; --r: -2; }
     </style>
   </head>
   <body data-swatch="2">
