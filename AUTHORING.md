@@ -18,6 +18,7 @@ A set is a folder holding `panels/`:
   recadro.json            optional: "captures" and "out", nothing else
   out/                    renders
   panel.css, panel.js     whatever the panels share
+  AGENTS.md, CLAUDE.md    written by init: point agents at this file
 ```
 
 - The filename without `.html` (`01-hero`) is the slug, the `?panel=` value and
@@ -81,7 +82,9 @@ slug (`01-hero.png`) unless the page maps it. Per-locale captures go in
 `recadro init <dir> --starter <name> [--captures <pattern>]` copies a starter —
 `overlay`, `caption`, `panorama` or `exploded` — into a new folder, fills its
 `{capture:N}` placeholders with the captures already taken, in filename order,
-and writes `--captures` to `recadro.json`. `--captures` is a path from where the
+writes `--captures` to `recadro.json`, and adds `AGENTS.md` and `CLAUDE.md`
+(which imports `AGENTS.md`) pointing at this file, for agents that load an
+instruction file in the folder they work in. `--captures` is a path from where the
 command runs (`path/to/captures`), which `init` rewrites relative to the set
 for `recadro.json`. In `panorama` the placeholders are
 in `world.html`, the scene every panel shows a stretch of. Then adapt the copy:
@@ -269,6 +272,9 @@ compare against:
    overrides the set on purpose.
 5. **Compare.** Shoot again with `--incomplete` into a second folder and look
    at the two sets side by side. Nothing should have changed.
+6. **Agent files.** If the set has no `AGENTS.md` and `CLAUDE.md`, add them as
+   `init` writes them: `CLAUDE.md` is the one line `@AGENTS.md`, and `AGENTS.md`
+   says to read this file before changing the set.
 
 ## Why it is shaped this way
 

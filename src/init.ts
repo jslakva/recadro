@@ -2,6 +2,7 @@
  * `init`: a new set copied from a starter. A starter is a premade set in the
  * package; the copy is plain except for `{capture:N}`, filled with the Nth
  * capture already taken, so the panels open showing the app's own screens.
+ * Beside it go two agent files pointing at the package's AUTHORING.md.
  */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { extname, join } from "node:path";
@@ -20,6 +21,29 @@ const TEXT_FILES = new Set([".html", ".css", ".js", ".json", ".md", ".txt"]);
 
 /** A file counted as a capture when listing the captures already taken. */
 const CAPTURE_FILE = /\.(png|jpe?g|webp)$/i;
+
+/**
+ * The agent files `init` writes into a set, by name. Agents that read an
+ * instruction file in a subfolder load one when they work in the set: Cursor
+ * reads `AGENTS.md`, Claude Code only `CLAUDE.md`, which imports it. They point
+ * at AUTHORING.md rather than import it, because where the package is
+ * installed relative to the set is unknown when `init` runs, and a wrong import
+ * loads nothing. recadro never reads them.
+ */
+export const AGENT_FILES: Record<string, string> = {
+  "AGENTS.md": `# A recadro panel set
+
+This folder is a set of App Store screenshot panels that
+[recadro](https://github.com/jslakva/recadro) renders. Before changing anything
+in it, read \`AUTHORING.md\` in the installed recadro package, usually
+\`node_modules/recadro/AUTHORING.md\`: the instructions for coding agents,
+versioned with the tool. Where recadro is not installed, read it on GitHub:
+https://github.com/jslakva/recadro/blob/main/packages/recadro/AUTHORING.md
+
+\`recadro init\` wrote this file and \`CLAUDE.md\`; recadro never reads either.
+`,
+  "CLAUDE.md": "@AGENTS.md\n",
+};
 
 /** What `init` was asked to make. */
 export interface InitOptions {
@@ -109,6 +133,7 @@ export function initSet(options: InitOptions): InitResult {
     const taken = capturesTaken(dir);
     const unfilled = new Set<number>();
     copyStarter(source, dir, taken.files, unfilled);
+    for (const [name, text] of Object.entries(AGENT_FILES)) writeFileSync(join(dir, name), text);
     return { captures: taken.files, capturesFrom: taken.from, unfilled: [...unfilled].sort((a, b) => a - b) };
   } catch (error) {
     rmSync(dir, { recursive: true, force: true });

@@ -12,7 +12,7 @@ import { relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 import type { Browser } from "playwright";
-import { initSet, listStarters } from "./init.ts";
+import { AGENT_FILES, initSet, listStarters } from "./init.ts";
 import { startServer } from "./server.ts";
 import {
   capturesUrl,
@@ -171,6 +171,7 @@ async function main(): Promise<void> {
       const left = result.unfilled.map((n) => `{capture:${n}}`).join(", ");
       console.log(`         left      ${left} in strings/, for captures still to take`);
     }
+    console.log(`         agents    ${Object.keys(AGENT_FILES).join(", ")}, pointing at recadro's AUTHORING.md`);
     console.log(`         next      recadro dev --panels ${shown(dir)}`);
     return;
   }

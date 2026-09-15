@@ -251,8 +251,14 @@ the set's own `out`, where an empty frame would ship.
 
 [`AUTHORING.md`](AUTHORING.md) ships in the package: the contract as
 instructions, the mistakes an agent reliably makes with a tool that reads names
-and not contents, and how to look at its own work without a browser. Point your
-agent file at it — one line in `CLAUDE.md` or `AGENTS.md`:
+and not contents, and how to look at its own work without a browser.
+
+`init` points agents at it from inside the set: an `AGENTS.md` that says to read
+it, and a `CLAUDE.md` that imports that. Claude Code and Cursor load them when
+they work in the set. Codex reads `AGENTS.md` only from the repository root
+down to the folder it was started in, and Copilot reads one in a subfolder only
+behind a setting; for those, or for a set `init` did not make, add one line to
+the root `AGENTS.md` or `CLAUDE.md`:
 
 ```md
 Store screenshots are composed with recadro. Before editing store/screenshots/,
