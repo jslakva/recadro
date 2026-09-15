@@ -5,10 +5,10 @@
  * vw/vh and the iPad forks on [data-device], so no device size appears here.
  */
 :root {
-  --ground: #eef1f7;
-  --ink: #111827;
-  --ink-soft: #4b5563;
-  --accent: #4f46e5;
+  --ground: #e8ebf0;
+  --ink: #161a21;
+  --ink-soft: #596170;
+  --accent: #2d4bf0;
   --font-display: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   --font-text: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   /* How far the phone tips back and turns, in degrees; a panel can set either on its .stage. */
@@ -93,13 +93,13 @@ body {
 
 .stage::before {
   inset: -7%;
-  background: radial-gradient(closest-side, rgb(17 24 39 / 0.32), transparent);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--ink) 32%, transparent), transparent);
   transform: translateZ(-5vh);
 }
 
 .stage::after {
   inset: 1%;
-  background: radial-gradient(closest-side, rgb(17 24 39 / 0.22), transparent 115%);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--ink) 22%, transparent), transparent 115%);
   transform: translateZ(-1.5vh);
 }
 
@@ -114,8 +114,8 @@ body {
   inset: 0;
   overflow: hidden;
   border-radius: 9vw;
-  background: #d7dce6;
-  box-shadow: 0 0 0 0.22vw rgb(17 24 39 / 0.22);
+  background: color-mix(in srgb, var(--ink) 10%, var(--ground));
+  box-shadow: 0 0 0 0.22vw color-mix(in srgb, var(--ink) 22%, transparent);
 }
 
 .screen img,
@@ -169,7 +169,7 @@ body {
   overflow: hidden;
   border-radius: 1.8vw;
   background: #fff;
-  box-shadow: 0 0 0 0.35vw #fff, 0 1.6vh 3.2vh rgb(17 24 39 / 0.28);
+  box-shadow: 0 0 0 0.35vw #fff, 0 1.6vh 3.2vh color-mix(in srgb, var(--ink) 28%, transparent);
   transform: translateZ(calc(var(--z, 1) * var(--lift))) scale(var(--zoom));
 }
 
@@ -182,11 +182,11 @@ body {
 
 /* No capture yet: still a designed panel, and render skips it. */
 [data-empty] .screen {
-  background: repeating-linear-gradient(45deg, #dfe3eb 0 2.5vw, #d3d8e2 2.5vw 5vw);
+  background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--ink) 6%, var(--ground)) 0 2.5vw, color-mix(in srgb, var(--ink) 11%, var(--ground)) 2.5vw 5vw);
 }
 
 [data-empty] .layer {
-  background: #f3f5f9;
+  background: color-mix(in srgb, white 60%, var(--ground));
 }
 
 [data-device="iPad"] .copy {
