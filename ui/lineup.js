@@ -141,6 +141,18 @@ function aimFor(panel, context, frame) {
     return { x, y, k, node };
   };
 
+  // The tag sits just below and right of the cursor, as DevTools' does, and
+  // flips to stay inside the frame, so it never covers a fixed strip of the
+  // panel and a click's answer appears where the eye already is.
+  const place = (event) => {
+    const box = aim.getBoundingClientRect();
+    const cx = event.clientX - box.left;
+    const cy = event.clientY - box.top;
+    const { offsetWidth: w, offsetHeight: h } = tag;
+    tag.style.left = `${Math.max(4, Math.min(cx + 12, box.width - w - 4))}px`;
+    tag.style.top = `${cy + 18 + h <= box.height - 4 ? cy + 18 : Math.max(4, cy - h - 8)}px`;
+  };
+
   aim.addEventListener("mousemove", (event) => {
     const { x, y, k, node } = probe(event);
     if (node) {
@@ -156,6 +168,7 @@ function aimFor(panel, context, frame) {
     const where = `${((x / context.logicalW) * 100).toFixed(0)}vw ${((y / context.logicalH) * 100).toFixed(0)}vh`;
     tag.textContent =
       Date.now() < flash.until ? flash.text : node ? `${selectorFor(node).split(" > ").pop()} · ${where}` : where;
+    place(event);
   });
 
   aim.addEventListener("mouseleave", () => {
@@ -171,9 +184,10 @@ function aimFor(panel, context, frame) {
       flash = { text: "copied", until: Date.now() + 1200 };
     } catch {
       console.log(text);
-      flash = { text: "copy failed — reference in console", until: Date.now() + 3000 };
+      flash = { text: "not copied — see console", until: Date.now() + 3000 };
     }
     tag.textContent = flash.text;
+    place(event);
     el("announce").textContent = flash.text === "copied" ? `reference to ${panel.slug} copied` : flash.text;
   });
 
@@ -188,7 +202,9 @@ function figureFor(panel, context) {
   // Named by its slug alone, not by every link in its caption.
   figure.setAttribute("aria-label", panel.slug);
   const frame = document.createElement("div");
-  frame.className = "frame";
+  // Loading until its panel or PNG arrives, so a frame has a footprint on the
+  // ground before then; a lazy one far down the page stays so until reached.
+  frame.className = "frame loading";
   const alone = `#${encodeURIComponent(panel.slug)}`;
 
   const captures = manifest.capturesUrl.replaceAll("{locale}", locale).replaceAll("{device}", slot.id);
@@ -209,7 +225,10 @@ function figureFor(panel, context) {
     iframe.tabIndex = -1;
     // Keys pressed with focus inside a panel still reach the lineup, on every
     // load, since a panel reloading under HMR is a fresh window.
-    iframe.addEventListener("load", () => iframe.contentWindow.addEventListener("keydown", onKey));
+    iframe.addEventListener("load", () => {
+      frame.classList.remove("loading");
+      iframe.contentWindow.addEventListener("keydown", onKey);
+    });
     frame.append(iframe);
   } else {
     const img = document.createElement("img");
@@ -219,8 +238,9 @@ function figureFor(panel, context) {
     // URL: a render that never ran and an out/ written in another layout look
     // the same, and only the path tells them apart. It still opens alone; there
     // is nothing in it to point at, and no PNG to link to.
+    img.addEventListener("load", () => frame.classList.remove("loading"));
     img.addEventListener("error", () => {
-      frame.classList.add("hole");
+      frame.classList.replace("loading", "hole");
       const note = document.createElement("p");
       note.className = "hole-note";
       // One piece per folder, so a narrow frame wraps the path at its slashes
@@ -298,7 +318,10 @@ function figureFor(panel, context) {
   const all = document.createElement("a");
   all.href = "#";
   all.textContent = "all";
-  nav.append(all);
+  const keys = document.createElement("span");
+  keys.className = "keys";
+  keys.textContent = "← → to step, Esc for all";
+  nav.append(all, keys);
   caption.append(nav);
 
   if (mode === "out") {
@@ -391,7 +414,9 @@ function applyFocus() {
   for (const figure of el("lineup").querySelectorAll("figure")) {
     figure.classList.toggle("focused", figure.dataset.slug === slug);
   }
+  // Neither size nor wrap has anything to change on one panel fitted to the window.
   el("zoom").disabled = Boolean(slug);
+  el("wrap").disabled = Boolean(slug);
   resize();
   if (slug) scrollTo(0, 0);
   else if (was) scrollTo(0, lineupScroll);
