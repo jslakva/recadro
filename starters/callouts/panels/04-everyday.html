@@ -1,0 +1,33 @@
+<!doctype html>
+<!--
+  The part people come back for, lit: .spot is the region --x --y --w --h below,
+  in percent of the capture, and everything else on the screen dims.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../panel.css" />
+    <style>
+      .spot { --x: 1; --y: 28; --w: 98; --h: 9.5; }
+      .first { --x: 50; --y: 37.5; }
+      [data-device="iPad"] .spot { --x: 0.5; --y: 16.8; --w: 99; --h: 5; }
+      [data-device="iPad"] .first { --x: 30; --y: 21.8; }
+    </style>
+  </head>
+  <body>
+    <header class="copy">
+      <h1 data-string="headline"></h1>
+      <p data-string="subline"></p>
+    </header>
+    <div class="device">
+      <div class="screen">
+        <img class="capture" data-capture="{capture:4}" alt="" />
+        <div class="spot"></div>
+      </div>
+      <div class="marks">
+        <div class="note left first"><span class="label" data-string="first"></span></div>
+      </div>
+    </div>
+    <script type="module" src="../panel.js"></script>
+  </body>
+</html>

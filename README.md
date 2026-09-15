@@ -158,6 +158,9 @@ to the set.
   picture.
 - **`exploded`** — each phone tipped back in an orthographic view, with parts
   of its own screen lifted straight up off it in layers.
+- **`callouts`** — the phone straight on, with notes pinned to points on its
+  screen: a label at the panel's edge, a leader line, and a dot where the line
+  lands. One panel lights a region of the screen and dims the rest.
 
 The copy is plain except for `{capture:N}` placeholders, each filled with
 the Nth capture already taken, in filename order, so the panels open showing

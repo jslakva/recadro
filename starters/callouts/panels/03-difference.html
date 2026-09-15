@@ -1,0 +1,33 @@
+<!doctype html>
+<!-- What only this app does, in three notes around the screen. -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../panel.css" />
+    <style>
+      .first { --x: 49; --y: 9; }
+      .second { --x: 42; --y: 65; }
+      .third { --x: 58; --y: 78; }
+      [data-device="iPad"] .first { --x: 16.5; --y: 4.1; }
+      [data-device="iPad"] .second { --x: 60; --y: 87.4; }
+      [data-device="iPad"] .third { --x: 23; --y: 93.7; }
+    </style>
+  </head>
+  <body>
+    <header class="copy">
+      <h1 data-string="headline"></h1>
+      <p data-string="subline"></p>
+    </header>
+    <div class="device">
+      <div class="screen">
+        <img class="capture" data-capture="{capture:3}" alt="" />
+      </div>
+      <div class="marks">
+        <div class="note right first"><span class="label" data-string="first"></span></div>
+        <div class="note right second"><span class="label" data-string="second"></span></div>
+        <div class="note left third"><span class="label" data-string="third"></span></div>
+      </div>
+    </div>
+    <script type="module" src="../panel.js"></script>
+  </body>
+</html>

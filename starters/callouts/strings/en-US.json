@@ -1,0 +1,26 @@
+{
+  "01-promise": {
+    "headline": "Say what it *does*.",
+    "subline": "One line on who it is for.",
+    "first": "Point at the part that *matters*.",
+    "second": "A few words each."
+  },
+  "02-moment": {
+    "headline": "Show it working.",
+    "first": "Name what happens *here*."
+  },
+  "03-difference": {
+    "headline": "Name what only it does.",
+    "first": "The first thing.",
+    "second": "The second, *on* the screen.",
+    "third": "A third, if it earns it."
+  },
+  "04-everyday": {
+    "headline": "Make the daily part easy.",
+    "first": "Light the one part people come back for."
+  },
+  "05-start": {
+    "headline": "End on how to start.",
+    "first": "Show where to *begin*."
+  }
+}

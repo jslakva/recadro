@@ -1,0 +1,265 @@
+/*
+ * The callouts starter: the phone straight on, with notes pinned to points on
+ * its screen — a label, a leader line and a dot where the line lands — and a
+ * spotlight that dims everything but one region. For an app whose screens need
+ * a word of explanation. The variables are the look. Sizes are in vw/vh and the
+ * iPad forks on [data-device], so no device size appears here.
+ */
+:root {
+  --ground: #123b33;
+  --ink: #f5efe3;
+  --ink-soft: rgb(245 239 227 / 0.74);
+  --accent: #f7c548;
+  --frame: #0a211c;
+  --font-display: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-text: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+body {
+  position: relative;
+  background:
+    radial-gradient(circle at 50% 64%, color-mix(in srgb, var(--accent) 16%, transparent) 0, transparent 58%),
+    var(--ground);
+  color: var(--ink);
+}
+
+.copy {
+  position: relative;
+  z-index: 3;
+  padding: 7vh 8vw 0;
+  text-align: center;
+}
+
+.copy h1 {
+  margin: 0;
+  font: 800 10vw/1.02 var(--font-display);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.copy h1 em {
+  color: var(--accent);
+  font-style: normal;
+}
+
+.copy p {
+  margin: 1.6vh 0 0;
+  color: var(--ink-soft);
+  font: 500 4.4vw/1.35 var(--font-text);
+  text-wrap: balance;
+}
+
+/*
+ * The phone: whole, centred under the words, so a note can land anywhere on
+ * its screen. .marks is a box exactly over the screen and not clipped by it,
+ * so notes are placed in percent of the capture and can reach past the frame.
+ * --edge is how far the screen starts from the panel's side, which is what
+ * lets every label start the same distance from the panel's edge.
+ */
+body {
+  --device-h: 66vh;
+  --device-w: calc(var(--device-h) * 9 / 19.5);
+  --bezel: 1.8vw;
+  --edge: calc(50vw - var(--device-w) / 2 + var(--bezel));
+}
+
+.device {
+  position: absolute;
+  left: 50%;
+  top: 27vh;
+  box-sizing: border-box;
+  width: var(--device-w);
+  height: var(--device-h);
+  padding: var(--bezel);
+  translate: -50% 0;
+  border-radius: 10.5vw;
+  background: var(--frame);
+  box-shadow: 0 0 0 0.3vw color-mix(in srgb, var(--ink) 16%, transparent), 0 4vh 8vh rgb(0 0 0 / 0.4);
+}
+
+.screen,
+.marks {
+  position: absolute;
+  inset: var(--bezel);
+  border-radius: 8.7vw;
+}
+
+.screen {
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ink) 12%, var(--ground));
+}
+
+img.capture {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+/*
+ * The spotlight: the region --x --y --w --h, in percent of the capture, ringed
+ * in the accent, with everything else on the screen dimmed by its shadow.
+ */
+.spot {
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  top: calc(var(--y) * 1%);
+  width: calc(var(--w) * 1%);
+  height: calc(var(--h) * 1%);
+  box-sizing: border-box;
+  border: 0.6vw solid var(--accent);
+  border-radius: 2vw;
+  box-shadow: 0 0 0 200vmax color-mix(in srgb, var(--frame) 58%, transparent);
+}
+
+/*
+ * A note: its label at the panel's side, a line to --x --y on the screen, and a
+ * dot there. .left puts the label at the panel's left edge, .right at its
+ * right; the line takes whatever length is left between them. A label is up to
+ * 32vw wide, so a .left note wants its point past about 40% of the screen's
+ * width on iPhone and a .right one short of 60%; past that the label runs into
+ * its own dot, so point at the far side's things with the other side's note.
+ */
+.note {
+  position: absolute;
+  top: calc(var(--y) * 1%);
+  display: flex;
+  align-items: center;
+  translate: 0 -50%;
+}
+
+.note.left {
+  left: calc(5vw - var(--edge));
+  right: calc((100 - var(--x)) * 1%);
+}
+
+.note.right {
+  left: calc(var(--x) * 1%);
+  right: calc(5vw - var(--edge));
+  flex-direction: row-reverse;
+}
+
+.note .label {
+  flex: none;
+  max-width: 32vw;
+  padding: 1.1vh 3vw;
+  border-radius: 99vw;
+  color: var(--ground);
+  background: var(--ink);
+  box-shadow: 0 1vh 2.4vh rgb(0 0 0 / 0.3);
+  font: 650 3.7vw/1.2 var(--font-text);
+  text-wrap: balance;
+}
+
+.note .label em {
+  font-style: normal;
+  box-shadow: inset 0 -0.45em 0 color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.note::before {
+  content: "";
+  flex: 1;
+  order: 1;
+  min-width: 4vw;
+  height: 0.55vw;
+  background: var(--accent);
+  box-shadow: 0 0 0 0.25vw color-mix(in srgb, var(--frame) 45%, transparent);
+}
+
+.note::after {
+  content: "";
+  flex: none;
+  order: 2;
+  width: 3.4vw;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0.7vw var(--frame), 0 0 0 1.3vw var(--accent);
+}
+
+.note.left::after {
+  margin-right: -1.7vw;
+}
+
+.note.right::after {
+  margin-left: -1.7vw;
+}
+
+/* No capture yet: still a designed panel, and render skips it. */
+[data-empty] .screen {
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--ink) 10%, var(--ground)) 0 2.5vw,
+    color-mix(in srgb, var(--ink) 6%, var(--ground)) 2.5vw 5vw
+  );
+}
+
+[data-empty] .spot {
+  box-shadow: none;
+}
+
+[data-device="iPad"] .copy {
+  padding-top: 6vh;
+}
+
+[data-device="iPad"] .copy h1 {
+  font-size: 5.8vw;
+}
+
+[data-device="iPad"] .copy p {
+  font-size: 2.5vw;
+}
+
+[data-device="iPad"] body {
+  --device-h: 64vh;
+  --device-w: calc(var(--device-h) * 3 / 4);
+  --bezel: 1.1vw;
+}
+
+[data-device="iPad"] .device {
+  top: 25vh;
+  border-radius: 3vw;
+}
+
+[data-device="iPad"] .screen,
+[data-device="iPad"] .marks {
+  border-radius: 2vw;
+}
+
+[data-device="iPad"] .spot {
+  border-width: 0.35vw;
+  border-radius: 1vw;
+}
+
+[data-device="iPad"] .note .label {
+  max-width: 24vw;
+  padding: 1vh 1.8vw;
+  font-size: 2.2vw;
+}
+
+[data-device="iPad"] .note::before {
+  min-width: 2.5vw;
+  height: 0.32vw;
+}
+
+[data-device="iPad"] .note::after {
+  width: 1.9vw;
+  box-shadow: 0 0 0 0.4vw var(--frame), 0 0 0 0.75vw var(--accent);
+}
+
+[data-device="iPad"] .note.left::after {
+  margin-right: -0.95vw;
+}
+
+[data-device="iPad"] .note.right::after {
+  margin-left: -0.95vw;
+}

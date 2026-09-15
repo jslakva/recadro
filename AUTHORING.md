@@ -80,7 +80,8 @@ slug (`01-hero.png`) unless the page maps it. Per-locale captures go in
 ## Starting a set
 
 `recadro init <dir> --starter <name> [--captures <pattern>]` copies a starter —
-`overlay`, `caption`, `panorama` or `exploded` — into a new folder, fills its
+`overlay`, `caption`, `panorama`, `exploded` or `callouts` — into a new
+folder, fills its
 `{capture:N}` placeholders with the captures already taken, in filename order,
 writes `--captures` to `recadro.json`, and adds `AGENTS.md` and `CLAUDE.md`
 (which imports `AGENTS.md`) pointing at this file, for agents that load an
