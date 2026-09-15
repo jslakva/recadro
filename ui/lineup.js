@@ -22,18 +22,38 @@ function manifestUrl() {
 
 const manifest = await fetch(manifestUrl()).then((r) => r.json());
 const el = (id) => document.getElementById(id);
-const deviceSel = el("device");
-
-for (const slot of manifest.slots) deviceSel.append(new Option(slot.name ?? slot.id, slot.id));
-for (const locale of manifest.locales) el("locale").append(new Option(locale, locale));
-if (manifest.locales.includes("en-US")) el("locale").value = "en-US";
-// A set in one language has nothing to choose; the status names the locale instead.
-el("locale").hidden = manifest.locales.length < 2;
 
 /** The radio button in the group `name` holding `value`, or the checked one. */
 const radio = (name, value) =>
   document.querySelector(`input[name="${name}"]${value ? `[value="${value}"]` : ":checked"}`);
+
+// The device switch: one segment per slot, named by the kind of device; the
+// display size and pixels are in its tooltip and in the status.
+for (const slot of manifest.slots) {
+  const segment = document.createElement("label");
+  segment.title = `${slotName(slot)} · ${slot.width}×${slot.height}`;
+  const input = Object.assign(document.createElement("input"), { type: "radio", name: "device", value: slot.id });
+  segment.append(input, slot.device ?? slot.id);
+  el("device").append(segment);
+}
+radio("device", manifest.slots[0].id).checked = true;
+
+for (const locale of manifest.locales) el("locale").append(new Option(locale, locale));
+if (manifest.locales.includes("en-US")) el("locale").value = "en-US";
+// A set in one language has nothing to choose, but still says which it is,
+// in the same place a choice would be.
+el("locale").hidden = manifest.locales.length < 2;
+el("locale-only").hidden = manifest.locales.length > 1;
+el("locale-only").textContent = el("locale").value;
 if (!manifest.outUrl) radio("mode", "out").disabled = true;
+
+/** A slot as a person names it: "6.9″ iPhone". */
+function slotName(slot) {
+  return slot.device ? `${slot.display} ${slot.device}` : slot.id;
+}
+
+/** Whether a toggle button is pressed. */
+const pressed = (id) => el(id).getAttribute("aria-pressed") === "true";
 
 /**
  * A selector for `node` inside its panel: the path from `<body>`, stopping at the
@@ -255,7 +275,7 @@ function figureFor(panel, context) {
       note.append("not rendered", path);
       img.replaceWith(note);
       frame.querySelector(".aim")?.remove();
-      figure.querySelector("a.png")?.remove();
+      for (const link of figure.querySelectorAll("a.png")) link.remove();
     });
     frame.append(img);
   }
@@ -267,6 +287,8 @@ function figureFor(panel, context) {
   // Shown alone, the frame is already open, and a sideways swipe of 40px or
   // more steps to the neighbour, as a phone pages. Scrolling cancels it.
   let swipeFrom = null;
+  // A swipe that stepped also ends in a click, which must not step again.
+  let swiped = false;
   open.addEventListener("pointerdown", (event) => {
     swipeFrom = focusedSlug() ? event.clientX : null;
   });
@@ -277,10 +299,18 @@ function figureFor(panel, context) {
     if (swipeFrom === null) return;
     const dx = event.clientX - swipeFrom;
     swipeFrom = null;
-    if (Math.abs(dx) >= 40) step(dx < 0 ? 1 : -1);
+    if (Math.abs(dx) < 40) return;
+    swiped = true;
+    step(dx < 0 ? 1 : -1);
   });
+  // Shown alone, the frame is already open; a neighbour beside it steps there,
+  // replacing the history entry as the arrows do.
   open.addEventListener("click", (event) => {
-    if (focusedSlug()) event.preventDefault();
+    const shown = focusedSlug();
+    if (!shown) return;
+    event.preventDefault();
+    if (shown !== panel.slug && !swiped) location.replace(alone);
+    swiped = false;
   });
   frame.append(open, aimFor(panel, context, frame));
 
@@ -291,48 +321,68 @@ function figureFor(panel, context) {
   slugLink.className = "slug";
   slugLink.href = alone;
   slugLink.textContent = panel.slug;
-  // The frame's link goes to the same place, so Tab stops there only.
+  // The frame's link goes to the same place, so Tab stops there only. Under a
+  // neighbour of the panel shown alone, it steps, as the frame does.
   slugLink.tabIndex = -1;
+  slugLink.addEventListener("click", (event) => {
+    if (!focusedSlug()) return;
+    event.preventDefault();
+    location.replace(alone);
+  });
   caption.append(slugLink);
 
-  // Seen only when the panel is shown alone: where it sits in the set, its
-  // neighbours, and the way back.
+  // The rendered file itself, beside the slug in the lineup and on the way back
+  // when the panel is shown alone.
+  const pngLink = () => {
+    const link = document.createElement("a");
+    link.className = "png";
+    link.href = pngUrl;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = "png";
+    return link;
+  };
+  if (mode === "out") caption.append(pngLink());
+
+  // Seen only when the panel is shown alone: a pager as wide as the frame, the
+  // neighbours at its edges in the direction a swipe or an arrow goes, this
+  // panel and its place in the set between them, and the way back beneath.
   const index = manifest.panels.indexOf(panel);
-  const nav = document.createElement("span");
-  nav.className = "nav";
+  const pager = document.createElement("nav");
+  pager.className = "pager";
+  pager.setAttribute("aria-label", "panels");
+  const here = document.createElement("span");
+  here.className = "here";
   const count = document.createElement("span");
-  count.textContent = `${index + 1} of ${manifest.panels.length}`;
-  nav.append(count);
-  for (const [delta, label] of [[-1, (s) => `‹ ${s}`], [1, (s) => `${s} ›`]]) {
+  count.className = "count";
+  count.textContent = `${index + 1}/${manifest.panels.length}`;
+  here.append(panel.slug, " ", count);
+  pager.append(here);
+  for (const [delta, side, label] of [[-1, "prev", (s) => `‹ ${s}`], [1, "next", (s) => `${s} ›`]]) {
     const neighbour = manifest.panels[index + delta];
     if (!neighbour) continue;
     const link = document.createElement("a");
+    link.className = side;
     link.href = `#${encodeURIComponent(neighbour.slug)}`;
     link.textContent = label(neighbour.slug);
     link.addEventListener("click", (event) => {
       event.preventDefault();
       step(delta);
     });
-    nav.append(link);
+    if (delta < 0) here.before(link);
+    else pager.append(link);
   }
+  const back = document.createElement("span");
+  back.className = "back";
   const all = document.createElement("a");
   all.href = "#";
-  all.textContent = "all";
+  all.textContent = "all panels";
   const keys = document.createElement("span");
   keys.className = "keys";
-  keys.textContent = "← → to step, Esc for all";
-  nav.append(all, keys);
-  caption.append(nav);
-
-  if (mode === "out") {
-    const pngLink = document.createElement("a");
-    pngLink.className = "png";
-    pngLink.href = pngUrl;
-    pngLink.target = "_blank";
-    pngLink.rel = "noopener";
-    pngLink.textContent = "png";
-    caption.append(pngLink);
-  }
+  keys.textContent = "← → to step, Esc to go back";
+  back.append(all, ...(mode === "out" ? [pngLink()] : []), keys);
+  pager.append(back);
+  caption.append(pager);
 
   figure.append(frame, caption);
   return figure;
@@ -375,7 +425,7 @@ function threeAcross() {
  * when one panel is shown alone.
  */
 function resize() {
-  const slot = manifest.slots.find((s) => s.id === deviceSel.value);
+  const slot = manifest.slots.find((s) => s.id === radio("device").value);
   const logicalW = slot.width / slot.scale;
   const logicalH = slot.height / slot.scale;
   const focused = el("lineup").querySelector("figure.focused");
@@ -411,8 +461,12 @@ function applyFocus() {
   const previous = el("lineup").querySelector("figure.focused")?.dataset.slug;
   if (slug && !was) lineupScroll = scrollY;
   document.body.classList.toggle("focusing", Boolean(slug));
+  const at = manifest.panels.findIndex((p) => p.slug === slug);
   for (const figure of el("lineup").querySelectorAll("figure")) {
+    const i = manifest.panels.findIndex((p) => p.slug === figure.dataset.slug);
     figure.classList.toggle("focused", figure.dataset.slug === slug);
+    figure.classList.toggle("before", at >= 0 && i === at - 1);
+    figure.classList.toggle("after", at >= 0 && i === at + 1);
   }
   // Neither size nor wrap has anything to change on one panel fitted to the window.
   el("zoom").disabled = Boolean(slug);
@@ -443,20 +497,20 @@ function step(delta) {
 
 /** Rebuilds the lineup from the current controls. */
 function draw() {
-  const slot = manifest.slots.find((s) => s.id === deviceSel.value);
+  const slot = manifest.slots.find((s) => s.id === radio("device").value);
   const locale = el("locale").value;
   const mode = radio("mode").value;
   const logicalW = slot.width / slot.scale;
   const logicalH = slot.height / slot.scale;
   const context = { slot, locale, mode, logicalW, logicalH };
 
-  // What the frames are: the locale when there is no choice of one, the sizes a
-  // panel is written and delivered at, and the count. A slot with no captures
-  // is still worth designing, but render skips it by default, so the lineup
-  // says so while it is the one shown.
+  // What the frames are: the slot by name, the sizes a panel is written and
+  // delivered at, and the count. A slot with no captures is still worth
+  // designing, but render skips it by default, so the lineup says so while it
+  // is the one shown.
   const bare = manifest.devicesWithCaptures.length && !manifest.devicesWithCaptures.includes(slot.id);
   el("status").textContent = [
-    el("locale").hidden && locale,
+    slotName(slot),
     `${logicalW}×${logicalH} logical`,
     `${slot.width}×${slot.height} px`,
     `${manifest.panels.length} panels`,
@@ -465,7 +519,7 @@ function draw() {
     .filter(Boolean)
     .join(" · ");
 
-  const groups = el("wrap").checked
+  const groups = pressed("wrap")
     ? [
         { label: "First three — all a search result shows", panels: manifest.panels.slice(0, 3) },
         { label: "The rest — only on the product page", panels: manifest.panels.slice(3) },
@@ -522,13 +576,16 @@ const remembered = {
  */
 const SETTINGS = {
   device: {
-    read: () => deviceSel.value,
-    write: (v) => (deviceSel.value = v),
+    read: () => radio("device").value,
+    write: (v) => (radio("device", v).checked = true),
     valid: (v) => manifest.slots.some((s) => s.id === v),
   },
   locale: {
     read: () => el("locale").value,
-    write: (v) => (el("locale").value = v),
+    write: (v) => {
+      el("locale").value = v;
+      el("locale-only").textContent = v;
+    },
     valid: (v) => manifest.locales.includes(v),
   },
   show: {
@@ -552,8 +609,8 @@ const SETTINGS = {
     kept: true,
   },
   wrap: {
-    read: () => (el("wrap").checked ? "on" : "off"),
-    write: (v) => (el("wrap").checked = v === "on"),
+    read: () => (pressed("wrap") ? "on" : "off"),
+    write: (v) => el("wrap").setAttribute("aria-pressed", String(v === "on")),
     valid: (v) => v === "on" || v === "off",
     kept: true,
   },
@@ -587,12 +644,17 @@ function keepSetting(name) {
 // Size alone never rebuilds: a rebuild makes fresh iframes, every live panel
 // loads again from blank, and dragging the slider turns that into a flicker.
 // The radio groups report a change from whichever button was chosen.
-for (const [id, name] of [["device", "device"], ["locale", "locale"], ["mode", "show"], ["wrap", "wrap"]]) {
+for (const [id, name] of [["device", "device"], ["locale", "locale"], ["mode", "show"]]) {
   el(id).addEventListener("change", () => {
     keepSetting(name);
     draw();
   });
 }
+el("wrap").addEventListener("click", () => {
+  el("wrap").setAttribute("aria-pressed", String(!pressed("wrap")));
+  keepSetting("wrap");
+  draw();
+});
 el("zoom").addEventListener("input", () => {
   zoomMoved = true;
   resize();
@@ -636,7 +698,7 @@ function onKey(event) {
     else if (focusedSlug()) location.hash = "";
     return;
   }
-  const typing = event.target.matches?.("input:not([type=checkbox]):not([type=range]), select");
+  const typing = event.target.matches?.("input:not([type=range]), select");
   if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.key === "p") setPointing(!document.body.classList.contains("pointing"));
   else if (event.key === "ArrowLeft" && focusedSlug()) step(-1);

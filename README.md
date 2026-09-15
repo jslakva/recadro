@@ -208,8 +208,10 @@ so a reload keeps the view, two tabs can show two, and a link opens the same
 one. The ground, size and wrap are remembered too, for the next time you open
 it.
 
-Click a panel to see it alone, as large as the window allows; the arrow keys
-or a swipe step through the set and Esc comes back to the lineup. On a phone,
+Click a panel to see it alone, as large as the window allows, with its
+neighbours dimmed either side on a wide window, so an edge that has to carry
+into the next panel can still be judged; the arrow keys, a swipe or a click on
+a neighbour step through the set and Esc comes back to the lineup. On a phone,
 the first three sit across the screen, as a search result shows them there.
 
 The pointer (`P`) copies a reference to one spot on one panel — its file, the

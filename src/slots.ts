@@ -9,8 +9,10 @@
 export interface Slot {
   /** Directory name, matching the capture folders and the `--devices` flag. */
   id: string;
-  /** What a person calls it: the screen size and the device, as the lineup lists it. */
-  name: string;
+  /** The kind of device, as the lineup's device switch names it. */
+  device: string;
+  /** The display size App Store Connect lists the slot under. */
+  display: string;
   /** Delivered pixel width. */
   width: number;
   /** Delivered pixel height. */
@@ -26,8 +28,8 @@ export interface Slot {
  * absent.
  */
 export const SLOTS: readonly Slot[] = [
-  { id: "6.9", name: "6.9″ iPhone", width: 1320, height: 2868, scale: 3 },
-  { id: "13-iPad", name: "13″ iPad", width: 2048, height: 2732, scale: 2 },
+  { id: "6.9", device: "iPhone", display: "6.9″", width: 1320, height: 2868, scale: 3 },
+  { id: "13-iPad", device: "iPad", display: "13″", width: 2048, height: 2732, scale: 2 },
 ];
 
 /**

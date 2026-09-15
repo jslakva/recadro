@@ -28,10 +28,11 @@
   it. The ground, size and wrap are also remembered by the browser, for an
   address that doesn't name them.
 
-  The header is tool chrome and stays dark on either ground, in three clusters:
-  what is shown (device, locale), how (live or out/, the store's ground), and
-  the tools for looking (size, wrap, pointer). What can't be changed — a single
-  locale, the pixel sizes — is stated above the panels instead.
+  The header is tool chrome and stays dark on either ground, each control under
+  a caption, in three clusters: what is shown (device, locale), how (live or
+  out/, the store's ground), and the tools for looking (size, wrap three,
+  pointer). A set with one locale shows it where the choice would be; the
+  slot's name and pixel sizes are stated above the panels.
 -->
 <html lang="en">
   <head>
@@ -52,7 +53,7 @@
         /* The chrome, dark whatever the ground. */
         --chrome: #000; --chrome-edge: #2c2c2e; --ink: #f2f2f7; --dim: #8e8e93;
         --control: #1c1c1e; --control-edge: #636366; --control-on: #6c6c70;
-        --focus: #0a84ff; --pressed: #0071e3; --mark: #78e2c2;
+        --focus: #0a84ff; --mark: #78e2c2;
         /* The ground behind the panels, dark by default. */
         --ground: #000; --ground-ink: #f2f2f7; --ground-dim: #8e8e93;
         --hole: #1c1c1e; --hole-edge: #3a3a3c; --hole-ink: #aeaeb2;
@@ -62,33 +63,42 @@
       body[data-store="light"] { --ground: #fff; --ground-ink: #1c1c1e; --ground-dim: #6c6c70;
                                  --hole: #f2f2f7; --hole-edge: #d1d1d6; --hole-ink: #48484a; }
       * { box-sizing: border-box; }
+      /* hidden wins over any display a rule gives the element. */
+      [hidden] { display: none !important; }
       body { margin: 0; font: 13px/1.4 "Mona Sans", ui-sans-serif, -apple-system, system-ui, sans-serif;
              background: var(--ground); color: var(--ground-ink); padding-bottom: 40px; }
       .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-      header { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center;
-               column-gap: 24px; row-gap: 10px; padding: 12px 16px; color: var(--ink); background: var(--chrome);
+      /* The chrome. Each control sits under a caption naming it, so no label can
+         be read as its neighbour's, and the controls group by what they change:
+         what is shown, how, and the tools for looking. */
+      header { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: flex-end;
+               column-gap: 20px; row-gap: 10px; padding: 9px 16px 12px; color: var(--ink); background: var(--chrome);
                border-bottom: 1px solid var(--chrome-edge); color-scheme: dark; accent-color: var(--focus); }
-      h1 { display: flex; margin: 0 -8px 0 0; }
+      h1 { display: flex; margin: 0 -4px 4px 0; }
       h1 .mark { display: block; width: auto; height: 18px; color: var(--mark); }
-      .cluster { display: flex; align-items: center; gap: 8px; }
-      .field { display: inline-flex; align-items: center; gap: 6px; color: var(--dim); }
+      .cluster { display: flex; align-items: flex-end; gap: 12px; }
+      .field { display: grid; gap: 3px; justify-items: start; }
+      .caption { font-size: 11px; line-height: 13px; color: var(--dim); }
+      /* A value with nothing to choose, where the control would be. */
+      .only { display: flex; align-items: center; height: 26px; color: var(--ink); cursor: help; }
       header :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-      select, #point { height: 26px; font: inherit; color: var(--ink); background-color: var(--control);
-                       border: 1px solid var(--control-edge); border-radius: 7px; }
+      select, .toggle { height: 26px; font: inherit; color: var(--ink); background-color: var(--control);
+                        border: 1px solid var(--control-edge); border-radius: 7px; }
       select { appearance: none; padding: 0 24px 0 9px; cursor: pointer;
                background: var(--control) no-repeat right 9px center / 8px 5px
                  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 5'%3E%3Cpath d='M.75.75 4 4 7.25.75' fill='none' stroke='%238e8e93' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-      #point { padding: 0 10px; cursor: pointer; }
-      #point[aria-pressed="true"] { color: #fff; background: var(--pressed); border-color: var(--pressed); }
-      input[type="range"] { width: 80px; margin: 0; }
-      input[type="checkbox"] { margin: 0; }
-      .field:has(input:disabled) { opacity: .4; }
-      /* A choice between two, both always in sight: the store's ground and what
-         the frames show. Native radios under the labels keep the arrow keys. */
+      /* A setting that is on or off, pressed like a chosen segment. */
+      .toggle { padding: 0 10px; cursor: pointer; }
+      .toggle[aria-pressed="true"] { background: var(--control-on); }
+      .toggle:disabled { opacity: .4; cursor: default; }
+      input[type="range"] { display: block; width: 80px; height: 26px; margin: 0; }
+      .size:has(:disabled) { opacity: .4; }
+      /* A choice among a few, all always in sight: the device, what the frames
+         show, the store's ground. Native radios under the labels keep the arrow keys. */
       .seg { display: inline-flex; height: 26px; padding: 2px; gap: 2px; background: var(--control);
              border: 1px solid var(--control-edge); border-radius: 7px; }
-      .seg label { position: relative; display: grid; place-items: center; padding: 0 9px; border-radius: 5px;
+      .seg label { position: relative; display: grid; place-items: center; padding: 0 8px; border-radius: 5px;
                    color: var(--dim); cursor: pointer; }
       .seg label:hover { color: var(--ink); }
       .seg label:has(:checked) { color: var(--ink); background: var(--control-on); }
@@ -133,16 +143,52 @@
       .focusing .open { cursor: default; touch-action: pan-y; }
       /* One panel alone: the rest hidden, not removed, so nothing reloads. */
       body.focusing { padding-bottom: 20px; }
-      .focusing .group, .focusing figure:not(.focused), .focusing .strip:not(:has(.focused)) { display: none; }
+      .focusing .group, .focusing figure:not(.focused, .before, .after),
+      .focusing .strip:not(:has(.focused, .before, .after)) { display: none; }
       .focusing .strip { justify-content: center; }
       .focusing .lead { justify-content: center; }
-      .nav { display: none; gap: 14px; margin-right: auto; margin-left: 14px; }
-      .focusing .nav { display: flex; flex-wrap: wrap; align-items: baseline; }
-      /* Shown alone, the caption is the way around, so it reads at body size
-         and its links take a taller hit area than they show. */
+      /* Where the window is wide enough, its neighbours stand either side at the
+         same size, cut by the window's edge when they don't fit, as the next
+         screenshot peeks in the store's gallery: a little dimmed, named, and a
+         click away. The panel shown alone keeps the middle and its size. */
+      @media (min-width: 601px) {
+        .focusing #lineup { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+                            column-gap: 32px; align-items: start; padding-top: 12px; overflow: hidden; }
+        .focusing .strip { display: contents; }
+        .focusing figure.focused { grid-area: 1 / 2; }
+        .focusing figure.before { grid-area: 1 / 1; justify-self: end; }
+        .focusing figure.after { grid-area: 1 / 3; justify-self: start; }
+        .focusing figure:is(.before, .after) .frame { opacity: .45; }
+        .focusing figure:is(.before, .after):hover .frame { opacity: .8; }
+        .focusing figure:is(.before, .after) .open { cursor: pointer; }
+        /* Each neighbour names itself, pointing the way it lies; the pager under
+           the middle keeps this panel's place and the way back, on one line. */
+        .focusing figure:is(.before, .after) .pager { display: none; }
+        .focusing figure:is(.before, .after) figcaption > .slug { display: block; text-align: center; color: var(--ground-dim); }
+        .focusing figure.before figcaption > .slug::before { content: "‹ "; }
+        .focusing figure.after figcaption > .slug::after { content: " ›"; }
+        .focusing .pager :is(.prev, .next) { display: none; }
+        .focusing .pager .back { width: max-content; }
+      }
+      @media (max-width: 600px) {
+        .focusing figure:is(.before, .after), .focusing .strip:not(:has(.focused)) { display: none; }
+      }
+      /* Shown alone, the caption becomes a pager as wide as the frame: the
+         neighbours at its edges, this panel between them, the way back beneath.
+         It reads at body size, and its links take a taller hit area than they show. */
+      .pager { display: none; }
       .focusing figure { display: flex; flex-direction: column; align-items: center; max-width: 100%; }
-      .focusing figcaption { flex-wrap: wrap; max-width: 100%; font-size: 13px; }
-      .nav a { padding: 6px 4px; margin: -6px -4px; }
+      .focusing figcaption { display: block; width: var(--thumb-w); max-width: 100%; font-size: 13px; }
+      .focusing figcaption > a { display: none; }
+      .focusing .pager { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+                         align-items: baseline; column-gap: 12px; row-gap: 8px; }
+      .pager .prev { grid-area: 1 / 1; justify-self: start; }
+      .pager .here { grid-area: 1 / 2; color: var(--ground-ink); white-space: nowrap; }
+      .pager .next { grid-area: 1 / 3; justify-self: end; }
+      .pager .prev, .pager .next { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .pager .count { color: var(--ground-dim); font-variant-numeric: tabular-nums; }
+      .pager .back { grid-area: 2 / 1 / 3 / 4; justify-self: center; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; }
+      .pager a { padding: 6px 4px; margin: -6px -4px; }
       /* The hole: a panel with no PNG in out/, expected for one still waiting on
          its capture and the only signal for a render that failed. Flat, with a
          hairline edge, so it reads as the tool's and never as a panel's own
@@ -160,20 +206,22 @@
       a.slug { color: var(--ground-ink); }
       a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
       /* A phone. The clusters wrap into two rows rather than scrolling out of
-         sight; size gives way, since three frames already fit the width, as a
-         search result shows them there. */
+         sight, and the header scrolls away with the page rather than holding a
+         seventh of the screen; size gives way, since three frames already fit
+         the width, as a search result shows them there. */
       @media (max-width: 600px) {
-        header { column-gap: 16px; row-gap: 8px; padding: 10px 12px; }
-        .cluster { gap: 8px; }
+        header { position: static; column-gap: 16px; row-gap: 8px; padding: 8px 12px 10px; }
+        .cluster { gap: 10px; }
         .size { display: none; }
         .lead { margin-top: 16px; padding: 0 12px; }
         .group { margin-top: 32px; padding: 0 12px; }
         .strip { gap: 8px; padding: 10px 12px 0; }
+        .focusing .pager { column-gap: 8px; }
       }
       /* The pointer copies a spot for pasting into an agent; a touch screen
          has neither the hover nor, usually, the agent. P still toggles it. Nor
          does it have the keys the panel shown alone hints at. */
-      @media (pointer: coarse) { #point, .nav .keys { display: none; } }
+      @media (pointer: coarse) { #point, .pager .keys { display: none; } }
     </style>
   </head>
   <body>
@@ -188,26 +236,40 @@
         <span class="visually-hidden">recadro</span>
       </h1>
       <div class="cluster">
-        <select id="device" aria-label="device"></select>
-        <select id="locale" aria-label="locale"></select>
+        <div class="field">
+          <span class="caption" id="device-caption">device</span>
+          <span class="seg" id="device" role="radiogroup" aria-labelledby="device-caption"></span>
+        </div>
+        <div class="field">
+          <span class="caption" id="locale-caption">locale</span>
+          <select id="locale" aria-labelledby="locale-caption"></select>
+          <span class="only" id="locale-only" hidden title="The set's one language. Each file in strings/ is a locale."></span>
+        </div>
       </div>
       <div class="cluster">
-        <div class="seg" id="mode" role="radiogroup" aria-label="show">
-          <label><input type="radio" name="mode" value="live" checked />live</label>
-          <label title="The PNGs render wrote"><input type="radio" name="mode" value="out" />out/</label>
+        <div class="field">
+          <span class="caption" id="mode-caption">show</span>
+          <span class="seg" id="mode" role="radiogroup" aria-labelledby="mode-caption">
+            <label><input type="radio" name="mode" value="live" checked />live</label>
+            <label title="The PNGs render wrote"><input type="radio" name="mode" value="out" />out/</label>
+          </span>
         </div>
-        <span class="field" title="The App Store's background in light or dark appearance">
-          <span id="store-label">store</span>
-          <span class="seg" id="store" role="radiogroup" aria-labelledby="store-label">
+        <div class="field" title="The App Store's background in light or dark appearance">
+          <span class="caption" id="store-caption">store</span>
+          <span class="seg" id="store" role="radiogroup" aria-labelledby="store-caption">
             <label><input type="radio" name="store" value="dark" checked />dark</label>
             <label><input type="radio" name="store" value="light" />light</label>
           </span>
-        </span>
+        </div>
       </div>
       <div class="cluster">
-        <label class="field size">size <input id="zoom" type="range" min="80" max="420" step="1" value="220" /></label>
-        <label class="field"><input id="wrap" type="checkbox" checked /> <span>wrap three</span></label>
-        <button id="point" type="button" aria-pressed="false"
+        <div class="field size">
+          <label class="caption" for="zoom">size</label>
+          <input id="zoom" type="range" min="80" max="420" step="1" value="220" />
+        </div>
+        <button class="toggle" id="wrap" type="button" aria-pressed="true"
+                title="The first three on their own row, as a search result shows them">wrap three</button>
+        <button class="toggle" id="point" type="button" aria-pressed="false"
                 title="Point at a spot to copy a reference for a coding agent (P, Esc)">pointer</button>
       </div>
     </header>
