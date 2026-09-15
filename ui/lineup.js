@@ -174,6 +174,7 @@ function aimFor(panel, context, frame) {
       flash = { text: "copy failed — reference in console", until: Date.now() + 3000 };
     }
     tag.textContent = flash.text;
+    el("announce").textContent = flash.text === "copied" ? `reference to ${panel.slug} copied` : flash.text;
   });
 
   return aim;
@@ -184,6 +185,8 @@ function figureFor(panel, context) {
   const { slot, locale, mode, logicalW, logicalH } = context;
   const figure = document.createElement("figure");
   figure.dataset.slug = panel.slug;
+  // Named by its slug alone, not by every link in its caption.
+  figure.setAttribute("aria-label", panel.slug);
   const frame = document.createElement("div");
   frame.className = "frame";
   const alone = `#${encodeURIComponent(panel.slug)}`;
@@ -201,6 +204,9 @@ function figureFor(panel, context) {
     iframe.src = panelUrl;
     iframe.width = logicalW;
     iframe.height = logicalH;
+    // The frame's link is the one stop per panel; the panel's page is looked at, not used.
+    iframe.title = panel.slug;
+    iframe.tabIndex = -1;
     // Keys pressed with focus inside a panel still reach the lineup, on every
     // load, since a panel reloading under HMR is a fresh window.
     iframe.addEventListener("load", () => iframe.contentWindow.addEventListener("keydown", onKey));
@@ -265,6 +271,8 @@ function figureFor(panel, context) {
   slugLink.className = "slug";
   slugLink.href = alone;
   slugLink.textContent = panel.slug;
+  // The frame's link goes to the same place, so Tab stops there only.
+  slugLink.tabIndex = -1;
   caption.append(slugLink);
 
   // Seen only when the panel is shown alone: where it sits in the set, its
@@ -377,6 +385,7 @@ history.scrollRestoration = "manual";
 function applyFocus() {
   const slug = focusedSlug();
   const was = document.body.classList.contains("focusing");
+  const previous = el("lineup").querySelector("figure.focused")?.dataset.slug;
   if (slug && !was) lineupScroll = scrollY;
   document.body.classList.toggle("focusing", Boolean(slug));
   for (const figure of el("lineup").querySelectorAll("figure")) {
@@ -388,6 +397,13 @@ function applyFocus() {
   else if (was) scrollTo(0, lineupScroll);
   // Leaving through `#` would keep a bare `#` in the address; drop it.
   if (!slug && location.href.endsWith("#")) history.replaceState(null, "", location.pathname + location.search);
+  // Keyboard focus follows the panel shown: onto the next one after a step, and
+  // back onto the one that was alone on leaving, so it never falls to the page.
+  // Entering needs nothing, since the link that opened it keeps focus.
+  const target = was && slug !== previous ? (slug ?? previous) : null;
+  if (target && !document.activeElement?.closest("header")) {
+    el("lineup").querySelector(`figure[data-slug="${CSS.escape(target)}"] .open`)?.focus({ preventScroll: true });
+  }
 }
 
 /**

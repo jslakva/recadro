@@ -116,7 +116,9 @@
       .tag:empty { display: none; }
       /* A click on a frame shows that panel alone; over the iframe, since the
          iframe would take the click itself. */
-      .frame .open { position: absolute; inset: 0; border: 0; cursor: zoom-in; }
+      .frame .open { position: absolute; inset: 0; border: 0; border-radius: inherit; cursor: zoom-in; }
+      /* Drawn inside the frame, which clips anything outside its edge. */
+      .frame .open:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
       .pointing .open { display: none; }
       /* Shown alone, the same overlay takes a sideways swipe to the neighbour
          and leaves vertical scrolling to the page. */
@@ -142,6 +144,7 @@
       a { color: var(--ground-dim); text-decoration: none; border-bottom: 1px solid transparent; }
       a:hover { color: var(--ground-ink); border-bottom-color: var(--ground-dim); }
       a.slug { color: var(--ground-ink); }
+      a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
       /* A phone. The clusters wrap into two rows rather than scrolling out of
          sight; size gives way, since three frames already fit the width, as a
          search result shows them there. */
@@ -193,11 +196,14 @@
                 title="Point at a spot to copy a reference for a coding agent (P, Esc)">pointer</button>
       </div>
     </header>
-    <div class="lead">
-      <h2 class="group" id="first-group"></h2>
-      <p class="status" id="status" aria-live="polite"></p>
-    </div>
-    <div id="lineup"></div>
+    <main>
+      <div class="lead">
+        <h2 class="group" id="first-group"></h2>
+        <p class="status" id="status" aria-live="polite"></p>
+      </div>
+      <div id="lineup"></div>
+    </main>
+    <p class="visually-hidden" id="announce" aria-live="polite"></p>
 
     <script type="module" src="/__recadro/lineup.js"></script>
   </body>
