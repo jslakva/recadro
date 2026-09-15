@@ -12,7 +12,7 @@
   --ink: #1c2733;
   --ink-soft: #5b6571;
   --accent: #e8912d;
-  --font-display: ui-serif, "New York", Georgia, "Times New Roman", serif;
+  --font-display: Georgia, "Times New Roman", serif;
   --font-text: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   --ground-image: url("assets/ground.svg");
 }
