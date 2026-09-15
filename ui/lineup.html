@@ -40,6 +40,13 @@
     <title>recadro — lineup</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/__recadro/favicon.png" />
     <style>
+      /* Shipped with the tool, not fetched from a font service: the lineup works
+         offline and asks nothing of anyone. Latin, weight axis only; the
+         licences sit beside the files. */
+      @font-face { font-family: "Mona Sans"; font-weight: 200 900; font-display: swap;
+                   src: url("/__recadro/fonts/mona-sans-latin-wght-normal.woff2") format("woff2"); }
+      @font-face { font-family: "JetBrains Mono"; font-weight: 100 800; font-display: swap;
+                   src: url("/__recadro/fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2"); }
       :root {
         color-scheme: light dark;
         /* The chrome, dark whatever the ground. */
@@ -55,7 +62,7 @@
       body[data-store="light"] { --ground: #fff; --ground-ink: #1c1c1e; --ground-dim: #6c6c70;
                                  --hole: #f2f2f7; --hole-edge: #d1d1d6; --hole-ink: #48484a; }
       * { box-sizing: border-box; }
-      body { margin: 0; font: 13px/1.4 ui-sans-serif, -apple-system, system-ui, sans-serif;
+      body { margin: 0; font: 13px/1.4 "Mona Sans", ui-sans-serif, -apple-system, system-ui, sans-serif;
              background: var(--ground); color: var(--ground-ink); padding-bottom: 40px; }
       .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
@@ -112,7 +119,7 @@
              outline: 2px solid var(--focus); background: rgba(10, 132, 255, .12); }
       .tag { position: absolute; left: 0; top: 0; max-width: calc(100% - 8px); pointer-events: none;
              padding: 3px 6px; border-radius: 4px; background: rgba(0, 0, 0, .78); color: var(--ink);
-             font: 10px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+             font: 10px/1.3 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-ligatures: none;
              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .tag:empty { display: none; }
       /* A click on a frame shows that panel alone; over the iframe, since the
@@ -143,7 +150,8 @@
       .hole { display: grid; place-items: center; padding: 12px; background: var(--hole);
               box-shadow: inset 0 0 0 1px var(--hole-edge); }
       .hole-note { display: grid; gap: 6px; margin: 0; text-align: center; color: var(--hole-ink); }
-      .hole-note code { font: 10px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+      .hole-note code { font: 10px/1.35 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+                        font-variant-ligatures: none; overflow-wrap: anywhere; }
       .hole-note code span { display: inline-block; max-width: 100%; }
       figcaption { margin-top: 8px; font-size: 11px; color: var(--ground-dim);
                    display: flex; justify-content: space-between; gap: 10px; }

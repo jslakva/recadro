@@ -73,6 +73,14 @@ async function loadPanelConfig(panelsDir: string): Promise<InlineConfig> {
 const OWN_FILES: Record<string, { file: string; type: string }> = {
   "/__recadro/lineup.js": { file: "ui/lineup.js", type: "text/javascript" },
   "/__recadro/favicon.png": { file: "assets/favicon.png", type: "image/png" },
+  "/__recadro/fonts/mona-sans-latin-wght-normal.woff2": {
+    file: "assets/fonts/mona-sans-latin-wght-normal.woff2",
+    type: "font/woff2",
+  },
+  "/__recadro/fonts/jetbrains-mono-latin-wght-normal.woff2": {
+    file: "assets/fonts/jetbrains-mono-latin-wght-normal.woff2",
+    type: "font/woff2",
+  },
 };
 
 /**
