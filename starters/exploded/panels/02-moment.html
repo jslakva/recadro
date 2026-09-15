@@ -1,12 +1,14 @@
 <!doctype html>
-<!-- The moment it works, with the part that matters lifted out. -->
+<!-- The moment it works, the part that matters lifted out and the controls under it one step higher. -->
 <html>
   <head>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../panel.css" />
     <style>
-      .lift-1 { --x: 4; --y: 93.5; --w: 92; --h: 5.5; }
-      [data-device="iPad"] .lift-1 { --x: 2; --y: 95.5; --w: 96; --h: 3.5; }
+      .lift-1 { --x: 0; --y: 28; --w: 100; --h: 9.5; }
+      .lift-2 { --x: 0; --y: 92; --w: 100; --h: 7; --z: 2; }
+      [data-device="iPad"] .lift-1 { --x: 0; --y: 16.8; --w: 100; --h: 5; }
+      [data-device="iPad"] .lift-2 { --x: 32; --y: 94.5; --w: 36; --h: 5; }
     </style>
   </head>
   <body>
@@ -16,9 +18,10 @@
     </header>
     <div class="stage">
       <div class="phone">
-        <div class="screen"><img class="capture" data-capture="{capture:2}" alt="" /></div>
+        <div class="screen"><img class="capture" data-capture="{capture:4}" alt="" /></div>
         <div class="lifted">
           <div class="layer lift-1"></div>
+          <div class="layer lift-2"></div>
         </div>
       </div>
     </div>
