@@ -13,6 +13,8 @@
   --highlight: #ffd84d;
   --font-display: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   --font-text: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  /* How steeply the band's edge and the words on it rise to the right. */
+  --slant: 5deg;
   /* How much the magnifier enlarges what is under it. */
   --zoom: 1.5;
 }
@@ -39,7 +41,11 @@ img.capture {
   object-position: top;
 }
 
-/* The band: over the top fifth, with a bottom edge that falls to the left. */
+/*
+ * The band: over the top fifth, with a bottom edge rising to the right at
+ * --slant, as a fixed angle rather than a share of the band's height, so the
+ * edge keeps the words' angle whatever their length and on every device.
+ */
 .band {
   position: absolute;
   z-index: 2;
@@ -52,12 +58,12 @@ img.capture {
   background:
     repeating-linear-gradient(135deg, rgb(255 255 255 / 0.06) 0 2.2vw, transparent 2.2vw 4.4vw),
     var(--accent);
-  clip-path: polygon(0 0, 100% 0, 100% 78%, 0 100%);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 100vw * tan(var(--slant))), 0 100%);
 }
 
 .band h1,
 .band p {
-  transform: rotate(-3deg);
+  transform: rotate(calc(-1 * var(--slant)));
   transform-origin: left center;
 }
 
