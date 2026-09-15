@@ -418,15 +418,110 @@ function draw() {
   applyFocus();
 }
 
+/** One key in this browser's storage, read and written without failing where storage is unavailable. */
+const remembered = {
+  get: (name) => {
+    try {
+      return localStorage.getItem(`recadro.lineup.${name}`);
+    } catch {
+      return null;
+    }
+  },
+  set: (name, value) => {
+    try {
+      localStorage.setItem(`recadro.lineup.${name}`, value);
+    } catch {
+      // Private windows and blocked storage: the query still keeps the setting.
+    }
+  },
+};
+
+/**
+ * The lineup's settings by their name in its query, each with how to read and
+ * set its control and which values it takes. The ground, size and wrap are how
+ * a person likes to look, so this browser remembers them; device, locale and
+ * what to show belong to the set on screen, and every set served on one port
+ * shares one storage.
+ */
+const SETTINGS = {
+  device: {
+    read: () => deviceSel.value,
+    write: (v) => (deviceSel.value = v),
+    valid: (v) => manifest.slots.some((s) => s.id === v),
+  },
+  locale: {
+    read: () => el("locale").value,
+    write: (v) => (el("locale").value = v),
+    valid: (v) => manifest.locales.includes(v),
+  },
+  show: {
+    read: () => el("mode").value,
+    write: (v) => (el("mode").value = v),
+    valid: (v) => v === "live" || (v === "out" && Boolean(manifest.outUrl)),
+  },
+  store: {
+    read: () => el("store").value,
+    write: (v) => (el("store").value = v),
+    valid: (v) => v === "dark" || v === "light",
+    kept: true,
+  },
+  size: {
+    read: () => el("zoom").value,
+    write: (v) => {
+      el("zoom").value = v;
+      zoomMoved = true;
+    },
+    valid: (v) => /^\d+$/.test(v) && Number(v) >= Number(el("zoom").min) && Number(v) <= Number(el("zoom").max),
+    kept: true,
+  },
+  wrap: {
+    read: () => (el("wrap").checked ? "on" : "off"),
+    write: (v) => (el("wrap").checked = v === "on"),
+    valid: (v) => v === "on" || v === "off",
+    kept: true,
+  },
+};
+
+/**
+ * Sets each control from the lineup's query, so a reload or a link keeps the
+ * view and a page embedding the lineup can choose it; failing that, from what
+ * this browser remembers; failing both, the page's own default stays.
+ */
+function restoreSettings() {
+  const query = new URLSearchParams(location.search);
+  for (const [name, setting] of Object.entries(SETTINGS)) {
+    const value = [query.get(name), setting.kept ? remembered.get(name) : null].find((v) => v !== null && setting.valid(v));
+    if (value !== undefined) setting.write(value);
+  }
+}
+
+/**
+ * Keeps a setting the person just changed: in the query, replacing the history
+ * entry rather than adding one, and in this browser when it is remembered.
+ */
+function keepSetting(name) {
+  const value = SETTINGS[name].read();
+  const url = new URL(location.href);
+  url.searchParams.set(name, value);
+  history.replaceState(history.state, "", url);
+  if (SETTINGS[name].kept) remembered.set(name, value);
+}
+
 // Size alone never rebuilds: a rebuild makes fresh iframes, every live panel
 // loads again from blank, and dragging the slider turns that into a flicker.
-for (const id of ["device", "locale", "mode", "wrap"]) {
-  el(id).addEventListener("input", draw);
+for (const [id, name] of [["device", "device"], ["locale", "locale"], ["mode", "show"], ["wrap", "wrap"]]) {
+  el(id).addEventListener("input", () => {
+    keepSetting(name);
+    draw();
+  });
 }
 el("zoom").addEventListener("input", () => {
   zoomMoved = true;
   resize();
 });
+// Kept on release: a drag fires input per pixel, and browsers throttle a page
+// that rewrites its address that often.
+el("zoom").addEventListener("change", () => keepSetting("size"));
 window.addEventListener("resize", resize);
 
 /**
@@ -439,8 +534,12 @@ function applyStore() {
 }
 
 el("store").value = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+restoreSettings();
 applyStore();
-el("store").addEventListener("input", applyStore);
+el("store").addEventListener("input", () => {
+  keepSetting("store");
+  applyStore();
+});
 window.addEventListener("hashchange", applyFocus);
 
 /** Turns pointer mode on or off; while on, every frame's overlay takes the mouse. */

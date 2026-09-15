@@ -203,6 +203,11 @@ The ground behind them switches between the App Store's light and dark
 backgrounds, starting from your system's appearance. The store shows each
 screenshot on both, and an edge that holds on one can vanish on the other.
 
+The lineup keeps its settings in its address (`/?store=light&device=13-iPad`),
+so a reload keeps the view, two tabs can show two, and a link opens the same
+one. The ground, size and wrap are remembered too, for the next time you open
+it.
+
 Click a panel to see it alone, as large as the window allows; the arrow keys
 or a swipe step through the set and Esc comes back to the lineup. On a phone,
 the first three sit across the screen, as a search result shows them there.
