@@ -7,17 +7,17 @@
     "headline": "Show it working."
   },
   "03-difference": {
-    "headline": "Name what only it does.",
-    "points": [
-      "The first thing *only* it does.",
-      "The second, in one line.",
-      "A third, if it earns the space."
-    ]
+    "headline": "Name what only it does."
   },
   "04-everyday": {
     "headline": "Make the daily part easy."
   },
   "05-start": {
-    "headline": "End on how to start."
+    "headline": "End on how to start.",
+    "points": [
+      "What it takes to *begin*.",
+      "What it costs, plainly.",
+      "Nothing to set up, if true."
+    ]
   }
 }

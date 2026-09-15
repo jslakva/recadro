@@ -5,16 +5,16 @@
   and --r its tilt in degrees. --ry turns a phone in depth and --rx tips it
   back, in degrees, and the class deep gives it a visible edge, for a phone that
   should look three-dimensional; --side: -1 moves that edge to the left, for a
-  phone turned the other way. A phone can belong to one panel and spill into the
-  next, like .spill, or lie across the edge between two, like .across. Fork a
-  placement for iPad with [data-device="iPad"], or for a language with
+  phone turned the other way. A phone can lie across the edge between two
+  panels, like .across, or belong to one and spill into the next, like .spill.
+  Fork a placement for iPad with [data-device="iPad"], or for a language with
   :lang(de). data-capture is the capture's filename in the captures folder.
   data-frame on .phones is how every phone is drawn: steel, hairline or none.
 -->
 <style>
   .opening { --x: 50; --y: 58.5; --h: 68; --r: -6; }
-  .spill { --x: 172; --y: 66; --h: 84; --r: -4; --ry: -30; --rx: 10; }
-  .across { --x: 399; --y: 64; --h: 72; --r: -66; --ry: 18; --rx: 10; --side: -1; }
+  .across { --x: 199; --y: 64; --h: 72; --r: -66; --ry: 18; --rx: 10; --side: -1; }
+  .spill { --x: 372; --y: 66; --h: 84; --r: -4; --ry: -30; --rx: 10; }
 </style>
 
 <div class="wave back"></div>
@@ -24,10 +24,10 @@
   <div class="phone opening" data-capture="{capture:1}">
     <div class="screen"><img alt="" /></div>
   </div>
-  <div class="phone deep spill" data-capture="{capture:2}">
+  <div class="phone deep across" data-capture="{capture:3}">
     <div class="screen"><img alt="" /></div>
   </div>
-  <div class="phone deep across" data-capture="{capture:3}">
+  <div class="phone deep spill" data-capture="{capture:2}">
     <div class="screen"><img alt="" /></div>
   </div>
 </div>

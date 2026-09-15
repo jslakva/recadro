@@ -151,11 +151,11 @@ to the set.
   and a sticker.
 - **`panorama`** — one scene as wide as the whole set, drawn once in
   `world.html`, with each panel showing its own stretch, so the panels read as
-  one picture side by side: a phone that spills into the next panel, a panel
-  of points instead of a screen, a phone lying across the edge of the last two,
-  turned in 3D. Phones are drawn `steel`, `hairline` or with no frame at all,
-  one attribute in `world.html`; `--panorama-image` swaps the drawn scene for a
-  picture.
+  one picture side by side: a phone turned in 3D lying across the edge of the
+  second and third, a phone that spills into the next panel, and a closing
+  panel of points instead of a screen. Phones are drawn
+  `steel`, `hairline` or with no frame at all, one attribute in `world.html`;
+  `--panorama-image` swaps the drawn scene for a picture.
 - **`exploded`** — each phone tipped back in an orthographic view, with parts
   of its own screen lifted straight up off it in layers.
 - **`callouts`** — the phone straight on, with notes pinned to points on its
