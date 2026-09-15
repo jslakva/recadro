@@ -186,14 +186,15 @@ body {
 }
 
 /*
- * A list of points, for a panel that says rather than shows: centred in the
- * space under the headline, each point behind a check in the accent.
+ * A list of points, for a panel that says rather than shows: centred between
+ * the headline and the tops of the waves, so white words never sit on the
+ * accent, each point behind a check in the accent.
  */
 .points {
   position: absolute;
   z-index: 1;
   top: 17vh;
-  bottom: 0;
+  bottom: 36vh;
   left: 14vw;
   right: 8vw;
   display: flex;
@@ -232,7 +233,7 @@ body {
 
 [data-device="iPad"] .points {
   top: 12vh;
-  left: 12vw;
+  left: 15vw;
   right: 10vw;
   gap: 4vh;
 }
