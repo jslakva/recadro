@@ -205,14 +205,13 @@
       a:hover { color: var(--ground-ink); border-bottom-color: var(--ground-dim); }
       a.slug { color: var(--ground-ink); }
       a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
-      /* A phone. The clusters wrap into two rows rather than scrolling out of
+      /* A phone. The clusters wrap into rows rather than scrolling out of
          sight, and the header scrolls away with the page rather than holding a
-         seventh of the screen; size gives way, since three frames already fit
-         the width, as a search result shows them there. */
+         seventh of the screen. Size starts at three frames across the width,
+         as a search result shows them there, and stays at hand. */
       @media (max-width: 600px) {
         header { position: static; column-gap: 16px; row-gap: 8px; padding: 8px 12px 10px; }
         .cluster { gap: 10px; }
-        .size { display: none; }
         .lead { margin-top: 16px; padding: 0 12px; }
         .group { margin-top: 32px; padding: 0 12px; }
         .strip { gap: 8px; padding: 10px 12px 0; }
