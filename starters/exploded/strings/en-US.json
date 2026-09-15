@@ -1,69 +1,10 @@
 {
   "01-promise": {
     "headline": "Say what it *does*.",
-    "subline": "One line on who it is for.",
-    "capture": "{capture:1}",
-    "layers": [
-      {
-        "x": 0,
-        "y": 16,
-        "w": 100,
-        "h": 12
-      },
-      {
-        "x": 0,
-        "y": 52,
-        "w": 100,
-        "h": 14
-      }
-    ]
+    "subline": "One line on who it is for."
   },
-  "02-moment": {
-    "headline": "Show it working.",
-    "capture": "{capture:2}",
-    "layers": [
-      {
-        "x": 0,
-        "y": 18,
-        "w": 100,
-        "h": 20
-      }
-    ]
-  },
-  "03-difference": {
-    "headline": "Name what only it does.",
-    "capture": "{capture:3}",
-    "layers": [
-      {
-        "x": 0,
-        "y": 58,
-        "w": 100,
-        "h": 14
-      }
-    ]
-  },
-  "04-everyday": {
-    "headline": "Make the daily part easy.",
-    "capture": "{capture:4}",
-    "layers": [
-      {
-        "x": 0,
-        "y": 30,
-        "w": 100,
-        "h": 18
-      }
-    ]
-  },
-  "05-start": {
-    "headline": "End on how to start.",
-    "capture": "{capture:5}",
-    "layers": [
-      {
-        "x": 0,
-        "y": 40,
-        "w": 100,
-        "h": 14
-      }
-    ]
-  }
+  "02-moment": { "headline": "Show it working." },
+  "03-difference": { "headline": "Name what only it does." },
+  "04-everyday": { "headline": "Make the daily part easy." },
+  "05-start": { "headline": "End on how to start." }
 }

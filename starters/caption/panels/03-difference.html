@@ -1,14 +1,20 @@
 <!doctype html>
 <!--
   What only this app does, with a slice of the screen enlarged in a strip across
-  the whole panel. The region is "detail" in strings/, in percent of the
-  capture: x and y its top left corner, w and h its size. Give one per slot,
-  keyed "iPhone" and "iPad", when the screen lays out differently on iPad.
+  the whole panel. The slice is --x --y --w --h below, in percent of the
+  capture: x and y its top left corner, w and h its size. The strip fills with
+  the slice's width and centres on its middle. A screen lays out differently on
+  iPad, so the slice forks on [data-device="iPad"]; fork a language the same way
+  with :lang(de).
 -->
 <html>
   <head>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../panel.css" />
+    <style>
+      .detail { --x: 12; --y: 54; --w: 76; --h: 12; }
+      [data-device="iPad"] .detail { --x: 6; --y: 85; --w: 88; --h: 13; }
+    </style>
   </head>
   <body>
     <header class="copy">
@@ -16,7 +22,7 @@
       <p data-string="subline"></p>
     </header>
     <div class="device">
-      <div class="screen"><img class="capture" alt="" /></div>
+      <div class="screen"><img class="capture" data-capture="{capture:3}" alt="" /></div>
     </div>
     <figure class="detail strip"><img class="detail-capture" alt="" /></figure>
     <script type="module" src="../panel.js"></script>

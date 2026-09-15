@@ -81,8 +81,8 @@ img.capture {
 }
 
 /*
- * The magnifier: a round window over the region given in strings/ as percent of
- * the capture, handed over as --x --y --w --h. The capture fills the panel, so
+ * The magnifier: a round window over the region the panel sets as --x --y --w
+ * --h, in percent of the capture. The capture fills the panel, so
  * the region's percent is the panel's too: the window centres on the region and
  * shows it with its width filling the window.
  */

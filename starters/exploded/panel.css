@@ -127,7 +127,10 @@ body {
   height: 100%;
 }
 
-/* Where a layer came from: a dimmed socket left on the screen. */
+/*
+ * Where a layer came from: a dimmed socket left on the screen. It carries the
+ * layer's classes, so the rule that places a layer places its socket.
+ */
 .socket {
   position: absolute;
   left: calc(var(--x) * 1%);
@@ -147,9 +150,10 @@ body {
 }
 
 /*
- * A layer: the region of the capture it covers, cut out exactly — the image
- * inside is the whole capture, scaled and moved so only the region shows —
- * lifted --z steps of --lift and grown by --zoom from its centre.
+ * A layer: the region of the capture it covers, --x --y --w --h in percent, cut
+ * out exactly — the image inside is the whole capture, scaled and moved so only
+ * the region shows — lifted --z steps of --lift (one unless the panel says) and
+ * grown by --zoom from its centre, which a panel can also set per layer.
  */
 .layer {
   position: absolute;
@@ -161,7 +165,7 @@ body {
   border-radius: 1.8vw;
   background: #fff;
   box-shadow: 0 0 0 0.35vw #fff, 0 1.6vh 3.2vh rgb(17 24 39 / 0.28);
-  transform: translateZ(calc(var(--z) * var(--lift))) scale(var(--layer-zoom, var(--zoom)));
+  transform: translateZ(calc(var(--z, 1) * var(--lift))) scale(var(--zoom));
 }
 
 .layer img {

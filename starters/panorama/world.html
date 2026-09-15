@@ -1,26 +1,33 @@
 <!--
-  The world every panel shows a stretch of. Positions are in the world's own
-  units: --x in vw from its left edge, where each panel is 100vw wide, and --y
-  in vh from its top; --h is a phone's height in vh and --r its tilt in degrees.
-  --ry turns a phone in depth and --rx tips it back, in degrees, and the class
-  deep gives it a visible edge, for a phone that should look three-dimensional;
-  --side: -1 moves that edge to the left, for a phone turned the other way.
-  A phone can belong to one panel and spill a little into the next, like the
-  one at 165, or lie across the edge between two, like the one at 399.
-  data-capture is the capture's filename in the captures folder. data-frame on
-  .phones is how every phone is drawn: steel, hairline or none.
+  The world every panel shows a stretch of. Each phone is placed in the <style>
+  below, in the world's own units: --x in vw from its left edge, where each
+  panel is 100vw wide, and --y in vh from its top; --h is a phone's height in vh
+  and --r its tilt in degrees. --ry turns a phone in depth and --rx tips it
+  back, in degrees, and the class deep gives it a visible edge, for a phone that
+  should look three-dimensional; --side: -1 moves that edge to the left, for a
+  phone turned the other way. A phone can belong to one panel and spill into the
+  next, like .spill, or lie across the edge between two, like .across. Fork a
+  placement for iPad with [data-device="iPad"], or for a language with
+  :lang(de). data-capture is the capture's filename in the captures folder.
+  data-frame on .phones is how every phone is drawn: steel, hairline or none.
 -->
+<style>
+  .opening { --x: 50; --y: 58.5; --h: 68; --r: -6; }
+  .spill { --x: 165; --y: 66; --h: 84; --r: 4; --ry: -30; --rx: 10; }
+  .across { --x: 399; --y: 64; --h: 72; --r: -66; --ry: 18; --rx: 10; --side: -1; }
+</style>
+
 <div class="wave back"></div>
 <div class="wave"></div>
 
 <div class="phones" data-frame="steel">
-  <div class="phone" style="--x: 50; --y: 58.5; --h: 68; --r: -6" data-capture="{capture:1}">
+  <div class="phone opening" data-capture="{capture:1}">
     <div class="screen"><img alt="" /></div>
   </div>
-  <div class="phone deep" style="--x: 165; --y: 66; --h: 84; --r: 4; --ry: -30; --rx: 10" data-capture="{capture:2}">
+  <div class="phone deep spill" data-capture="{capture:2}">
     <div class="screen"><img alt="" /></div>
   </div>
-  <div class="phone deep" style="--x: 399; --y: 64; --h: 72; --r: -66; --ry: 18; --rx: 10; --side: -1" data-capture="{capture:3}">
+  <div class="phone deep across" data-capture="{capture:3}">
     <div class="screen"><img alt="" /></div>
   </div>
 </div>

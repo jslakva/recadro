@@ -1,17 +1,22 @@
 <!doctype html>
 <!--
   What only this app does, with a round magnifier over part of the screen. The
-  region is "detail" in strings/, in percent of the capture: x and y its top
-  left corner, w and h its size. Give one per slot, keyed "iPhone" and "iPad",
-  when the screen lays out differently on iPad; the magnifier sits over its centre.
+  part is --x --y --w --h below, in percent of the capture: x and y its top left
+  corner, w and h its size. The magnifier sits over its middle and fills with
+  its width. A screen lays out differently on iPad, so the part forks on
+  [data-device="iPad"]; fork a language the same way with :lang(de).
 -->
 <html>
   <head>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../panel.css" />
+    <style>
+      .detail { --x: 26; --y: 59; --w: 40; --h: 12; }
+      [data-device="iPad"] .detail { --x: 36; --y: 82; --w: 24; --h: 8; }
+    </style>
   </head>
   <body>
-    <img class="capture" alt="" />
+    <img class="capture" data-capture="{capture:3}" alt="" />
     <figure class="detail loupe"><img class="detail-capture" alt="" /></figure>
     <header class="band">
       <h1 data-string="headline"></h1>

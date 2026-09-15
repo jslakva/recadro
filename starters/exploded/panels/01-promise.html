@@ -1,9 +1,22 @@
 <!doctype html>
-<!-- The opening panel: the promise, its screen taken apart the most. -->
+<!--
+  The opening panel: the promise, its screen taken apart the most. Each .layer
+  is a region of the capture lifted off the screen, placed below as --x --y --w
+  --h in percent of the capture: x and y its top left corner, w and h its size.
+  --z lifts a layer more steps and --zoom grows it more. A screen lays out
+  differently on iPad, so the regions fork on [data-device="iPad"]; fork a
+  language the same way with :lang(de), and drop a layer there with display: none.
+-->
 <html>
   <head>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../panel.css" />
+    <style>
+      .lift-1 { --x: 4; --y: 23; --w: 92; --h: 10.5; }
+      .lift-2 { --x: 4; --y: 46; --w: 92; --h: 11; --z: 2; }
+      [data-device="iPad"] .lift-1 { --x: 1.5; --y: 14; --w: 97; --h: 6.5; }
+      [data-device="iPad"] .lift-2 { --x: 1.5; --y: 30; --w: 97; --h: 7.5; }
+    </style>
   </head>
   <body>
     <header class="copy">
@@ -12,8 +25,11 @@
     </header>
     <div class="stage">
       <div class="phone">
-        <div class="screen"><img class="capture" alt="" /></div>
-        <div class="lifted"></div>
+        <div class="screen"><img class="capture" data-capture="{capture:1}" alt="" /></div>
+        <div class="lifted">
+          <div class="layer lift-1"></div>
+          <div class="layer lift-2"></div>
+        </div>
       </div>
     </div>
     <script type="module" src="../panel.js"></script>

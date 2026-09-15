@@ -152,19 +152,23 @@ to the set.
   `world.html`, with each panel showing its own stretch, so the panels read as
   one picture side by side: a phone that spills into the next panel, a panel
   of points instead of a screen, a phone lying across the edge of the last two,
-  turned in 3D.
+  turned in 3D. Phones are drawn `steel`, `hairline` or with no frame at all,
+  one attribute in `world.html`; `--panorama-image` swaps the drawn scene for a
+  picture.
 - **`exploded`** — each phone tipped back in an orthographic view, with parts
-  of its own screen lifted straight up off it in layers; the regions are
-  `"layers"` in strings, in percent of the capture.
-  Phones are drawn `steel`, `hairline` or with no frame at all, one attribute
-  in `world.html`; `--panorama-image` swaps the drawn scene for a picture.
+  of its own screen lifted straight up off it in layers.
 
 The copy is plain except for `{capture:N}` placeholders, each filled with
 the Nth capture already taken, in filename order, so the panels open showing
 the app. A placeholder with no capture yet stays as it is until one is taken.
 From there the set is yours: the variables at the top of `panel.css` are
-the look, `strings/en-US.json` the words. `--captures` is written to
-`recadro.json`; leave it out when captures go in the set's own `captures/`.
+the look, `strings/en-US.json` the words, and each panel's HTML what it shows
+— its capture's filename, and any region of the screen it enlarges or lifts,
+as `--x --y --w --h` in percent of the capture in the panel's `<style>`. A
+screen lays out differently on iPad, so a region forks with
+`[data-device="iPad"]`, and with `:lang(de)` for a language that needs it.
+`--captures` is written to `recadro.json`; leave it out when captures go in
+the set's own `captures/`.
 
 ## When captures live elsewhere
 

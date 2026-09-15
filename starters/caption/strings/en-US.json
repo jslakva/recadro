@@ -1,19 +1,15 @@
 {
   "01-promise": {
     "headline": "Say what it *does*.",
-    "subline": "One line on who it is for and why it matters.",
-    "capture": "{capture:1}"
+    "subline": "One line on who it is for and why it matters."
   },
   "02-moment": {
     "headline": "Show the moment it works.",
-    "subline": "The screen where the promise pays off.",
-    "capture": "{capture:2}"
+    "subline": "The screen where the promise pays off."
   },
   "03-difference": {
     "headline": "Name what only it does.",
-    "subline": "Then zoom in on the detail that proves it.",
-    "capture": "{capture:3}",
-    "detail": { "x": 4, "y": 58, "w": 92, "h": 14 }
+    "subline": "Then zoom in on the detail that proves it."
   },
   "04-review": {
     "headline": "Let a real review speak.",
@@ -24,7 +20,6 @@
   "05-start": {
     "headline": "End on how to start.",
     "subline": "No account, nothing to set up — whatever is true.",
-    "capture": "{capture:4}",
     "badge": "Free"
   }
 }

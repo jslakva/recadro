@@ -51,7 +51,7 @@ live. Strings sit at a fixed place in the set that a page can name itself.
 Captures land wherever the repo's capture flow writes them, per slot and
 sometimes per locale, so the tool resolves that folder once and hands it to
 every panel. The page still chooses the filename in it: a capture named after
-the slug, or whatever its strings map the slug to.
+the slug, or whatever the panel names.
 
 ## The set: conventions first, one optional file
 

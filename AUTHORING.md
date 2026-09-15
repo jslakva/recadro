@@ -50,7 +50,7 @@ understanding; they belong in no panel.
 
 `captures` is a root-absolute folder URL ending in `/`, already resolved for
 this slot and locale. The page appends a filename: the slug plus `.png`, or
-whatever its strings map the slug to.
+whatever the panel names.
 
 ## recadro.json
 
@@ -86,12 +86,15 @@ writes `--captures` to `recadro.json`, and adds `AGENTS.md` and `CLAUDE.md`
 (which imports `AGENTS.md`) pointing at this file, for agents that load an
 instruction file in the folder they work in. `--captures` is a path from where the
 command runs (`path/to/captures`), which `init` rewrites relative to the set
-for `recadro.json`. In `panorama` the placeholders are
-in `world.html`, the scene every panel shows a stretch of. Then adapt the copy:
-the variables at the top of `panel.css` to the app's colours and fonts, the
-words in `strings/en-US.json`, any regions the panels enlarge or lift
-(`"detail"`, `"layers"`, in percent of the capture) to the app's screens, and a
-`{capture:N}` left over to the capture still to take.
+for `recadro.json`. The placeholders are in the panels' HTML, as
+`data-capture`, and in `panorama` in `world.html`, the scene every panel shows a
+stretch of. Then adapt the copy: the variables at the top of `panel.css` to the
+app's colours and fonts, the words in `strings/en-US.json`, and a `{capture:N}`
+left over to the capture still to take. Strings hold words only. A region a
+panel enlarges or lifts is `--x --y --w --h` in the panel's own `<style>`, in
+percent of the capture; fit it to the app's screen on each slot, forking with
+`[data-device="iPad"]`, and with `:lang(de)` only where a language moves the
+screen. Look at the capture for that slot before choosing numbers.
 
 The copy belongs to the repo. Starters are MIT-0, so it keeps no notice, and
 recadro's own license (FSL-1.1-ALv2) covers the tool, not the set, the app or

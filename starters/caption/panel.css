@@ -138,9 +138,9 @@ img.capture {
 
 /*
  * The enlarged detail: a strip across the whole panel, over the device, showing
- * a region of the capture given in strings/ as percent of the capture and
- * handed over as --x --y --w --h. The image is scaled so the region's width
- * fills the strip and moved so the region's centre sits in the strip's centre.
+ * a region of the capture that the panel sets as --x --y --w --h, in percent of
+ * the capture. The image is scaled so the region's width fills the strip and
+ * moved so the region's centre sits in the strip's centre.
  */
 .detail {
   position: absolute;
