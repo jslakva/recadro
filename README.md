@@ -276,12 +276,13 @@ take notes from the lineup live.
 
 `init` offers to add a `/recadro` skill for Claude Code at
 `.claude/skills/recadro/SKILL.md` in the repository — asked at a terminal,
-`--skill` or `--no-skill` to answer without the question, `--skill` alone to
-add it to an existing set. The skill is thin on purpose: it says to read the
-installed `AUTHORING.md` first, so what it knows tracks the version you have,
-and it carries the one loop that needs a harness's own tools, `/recadro live`:
-start `dev --live`, listen with `wait`, act on each note, `reply`, stop when
-you say so.
+`--skill` or `--no-skill` to answer without the question, `init <set>` on an
+existing set to add it later. The skill is one flat file: the `/recadro live`
+loop — start `dev --live`, listen with `wait`, act on each note, `reply`, stop
+when you say so — with the installed `AUTHORING.md` whole beneath it, so
+invoking it loads every rule and nothing has to be found first. It carries
+the version it was written from; after updating recadro, `init <set> --skill`
+rewrites it, and `dev` says so while it is behind.
 
 `init` also points agents at the document from inside the set: an `AGENTS.md`
 that says to read it, and a `CLAUDE.md` that imports that. Claude Code and Cursor load them when

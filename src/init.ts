@@ -47,19 +47,52 @@ https://github.com/jslakva/recadro/blob/main/AUTHORING.md
 
 /**
  * Where the package's skill goes in a consumer's repository, from its root.
- * The skill is thin — read AUTHORING.md, then how to run the `live` loop — so
- * a copy stays right across versions; the knowledge keeps tracking the
- * installed package.
+ * The file is composed here: the package's `skills/recadro/SKILL.md` — how to
+ * run the `live` loop — with the installed AUTHORING.md whole beneath it, so
+ * invoking the skill loads every rule and nothing has to be found first. A
+ * stamp names the version it came from; `--skill` rewrites it when that is
+ * not the installed one.
  */
 export const SKILL_PATH = join(".claude", "skills", "recadro", "SKILL.md");
 
-/** Writes the package's skill into a repository; "kept" when one is already there, and it is left alone. */
-export function installSkill(root: string): "written" | "kept" {
+/** The version of this package, from its own package.json. */
+export const VERSION: string = (JSON.parse(readFileSync(join(PKG, "package.json"), "utf8")) as { version: string }).version;
+
+/** The stamp line the composed skill carries, right under its frontmatter. */
+const STAMP = /^<!-- written by recadro (\S+); .* -->$/m;
+
+/** The version an installed skill was written from, or null for none or one without a stamp. */
+export function skillVersion(root: string): string | null {
+  try {
+    return readFileSync(join(root, SKILL_PATH), "utf8").match(STAMP)?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** What `installSkill` did: written afresh, kept as it was, or rewritten from an older version. */
+export type SkillState = { state: "written" } | { state: "kept" } | { state: "refreshed"; from: string };
+
+/**
+ * Writes the composed skill into a repository. One already there from this
+ * version is kept; one from another version is rewritten, since it is the
+ * tool's own file and the document under the loop has moved on.
+ */
+export function installSkill(root: string): SkillState {
   const target = join(root, SKILL_PATH);
-  if (existsSync(target)) return "kept";
+  const from = skillVersion(root);
+  if (from === VERSION) return { state: "kept" };
+  const loop = readFileSync(join(PKG, "skills", "recadro", "SKILL.md"), "utf8");
+  // The document's one relative link points at a file that is not beside the skill.
+  const authoring = readFileSync(join(PKG, "AUTHORING.md"), "utf8").replace("](README.md)", "](https://github.com/jslakva/recadro#readme)");
+  const stamp = `<!-- written by recadro ${VERSION}; recadro init <set> --skill rewrites it from the installed version -->`;
+  const composed =
+    loop.replace(/^(---\n[\s\S]*?\n---\n)/, `$1\n${stamp}\n`) +
+    `\n---\n\nThe rest of this file is recadro ${VERSION}'s AUTHORING.md, as installed.\n\n` +
+    authoring;
   mkdirSync(dirname(target), { recursive: true });
-  copyFileSync(join(PKG, "skills", "recadro", "SKILL.md"), target);
-  return "written";
+  writeFileSync(target, composed);
+  return from ? { state: "refreshed", from } : { state: "written" };
 }
 
 /** What `init` was asked to make. */

@@ -192,18 +192,20 @@ package cannot run, a copy would stop tracking the version, and it would serve
 one agent where a document serves all. Each objection had a fix. `init` is an
 installer already, and writing `.claude/skills/recadro/SKILL.md` at the
 repository root is the same act as writing `AGENTS.md` in the set, one folder
-up, and asked about first. A copy stops tracking the version only if it holds
-knowledge, so the skill holds none: its first instruction is to read the
-installed `AUTHORING.md`, and the rest is the one loop that needs a harness's
-own tools — `dev --live`, `wait` under something that reports output as it
-comes, `reply`, stop when told. And a skill in a file format other harnesses
-read too is not one agent's.
+up, and asked about first. A copy stops tracking the version silently; this
+one carries the version it was written from, `init <set> --skill` rewrites it
+from the installed package, and `dev` says when it is behind. And a skill in a
+file format other harnesses read too is not one agent's.
 
-What the skill buys is being visible. A document inside `node_modules` works
-when the agent is pointed at it and leaves the person wondering whether it
-was; an entry in the harness's own list needs no pointing and no wondering. The
-document keeps the knowledge, the skill is the door, and the nested agent file
-stays as the quieter door for an agent that wanders into the set.
+What the skill buys is being visible and being whole. A document inside
+`node_modules` works when the agent is pointed at it, and finding it is a
+step — one that depends on where the package manager put the package and
+where the agent happened to start — that a person then wonders about. The
+skill is one flat file: how to run the live loop, then the installed
+`AUTHORING.md` entire, so invoking it loads every rule with no path to
+resolve. The package keeps the one source, the skill is a stamped copy of it,
+and the nested agent file stays as the quieter door for an agent that wanders
+into the set without one.
 
 ## The lineup is the tool's UI, not a panel
 

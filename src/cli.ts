@@ -13,7 +13,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 import type { Browser } from "playwright";
-import { AGENT_FILES, initSet, installSkill, listStarters, SKILL_PATH } from "./init.ts";
+import { AGENT_FILES, initSet, installSkill, listStarters, SKILL_PATH, skillVersion, VERSION } from "./init.ts";
 import { startServer } from "./server.ts";
 import {
   capturesUrl,
@@ -37,8 +37,9 @@ const USAGE = `recadro — App Store screenshots as code
 
   --starter     init: the starter to copy          (${listStarters().join(", ")})
   --captures    init: the folder holding a folder per device, from here (written to ${CONFIG_FILE})
-  --skill       init: add a /recadro skill for Claude Code at ${SKILL_PATH.split(sep).join("/")} without asking;
-                on an existing set, init adds only the skill.  --no-skill: don't, and don't ask
+  --skill       init: add a /recadro skill for Claude Code at ${SKILL_PATH.split(sep).join("/")} without asking,
+                or rewrite one another version wrote; on an existing set, init adds only the skill.
+                --no-skill: don't, and don't ask
   --live        dev: take notes pinned in the lineup, for an agent running \`recadro wait\`
 
   --panels      the set: a folder holding panels/       (default: found from here)
@@ -136,8 +137,13 @@ async function openBrowser(): Promise<Browser> {
  */
 async function skillLine(root: string, dir: string, yes: boolean, no: boolean): Promise<string> {
   const target = join(root, SKILL_PATH);
-  if (existsSync(target)) return `${shown(target)} (kept)`;
   const later = `recadro init ${shown(dir)} --skill`;
+  // One already there is the tool's own file: kept from this version, rewritten from another, no question.
+  if (existsSync(target)) {
+    const result = installSkill(root);
+    if (result.state === "refreshed") return `${shown(target)} (rewritten from recadro ${result.from})`;
+    return `${shown(target)} (kept)`;
+  }
   if (no) return `not added; ${later} adds /recadro for Claude Code`;
   const tty = process.stdin.isTTY && process.stdout.isTTY;
   if (!yes && !tty) return `not added; ${later} adds /recadro for Claude Code`;
@@ -146,6 +152,13 @@ async function skillLine(root: string, dir: string, yes: boolean, no: boolean): 
   }
   installSkill(root);
   return shown(target);
+}
+
+/** A line for `dev` when the repository's skill was written by another version of recadro, or nothing. */
+function staleSkillLine(root: string, dir: string): string | null {
+  const from = skillVersion(root);
+  if (!from || from === VERSION) return null;
+  return `skill     ${shown(join(root, SKILL_PATH))} is from recadro ${from}; recadro init ${shown(dir)} --skill rewrites it`;
 }
 
 async function main(): Promise<void> {
@@ -244,6 +257,8 @@ async function main(): Promise<void> {
     console.log(`         captures  ${shown(resolve(set.dir, set.captures))}/`);
     console.log(`         lineup    ${origin}/`);
     if (values.live) console.log(`         live      recadro wait  (prints each note pinned in the lineup; recadro reply <id> "…" answers)`);
+    const stale = staleSkillLine(set.root, set.dir);
+    if (stale) console.log(`         ${stale}`);
     return;
   }
 

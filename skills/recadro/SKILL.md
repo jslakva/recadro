@@ -1,22 +1,15 @@
 ---
 name: recadro
-description: Work on a recadro panel set (App Store screenshots as code). `/recadro live` listens to the person's notes from the lineup and acts on each as it arrives; `/recadro` alone loads the set's instructions before any change.
+description: Work on a recadro panel set (App Store screenshots as code). `/recadro live` listens to the person's notes from the lineup and acts on each as it arrives; `/recadro` alone loads everything an agent needs before changing a set.
 ---
 
 # recadro
 
 recadro renders App Store screenshot panels, plain HTML files in a set, from
-what they are named and where they are. Everything an agent needs to know
-about changing a set is in `AUTHORING.md`, which ships inside the installed
-package and is versioned with it. Read it first, whatever the task:
-
-```bash
-node -e "console.log(require.resolve('recadro/AUTHORING.md'))"
-```
-
-Where the package is not installed, it is at
-https://github.com/jslakva/recadro/blob/main/AUTHORING.md. This skill adds
-only how to run one loop; the rules are in that file.
+what they are named and where they are. This file has two parts: how to run
+the live loop, and, below it, recadro's own AUTHORING.md as installed — every
+rule for changing a set, so nothing here needs finding first. `recadro init
+<set> --skill` rewrites this file when the installed recadro changes.
 
 ## `/recadro live` — listen to the lineup
 
@@ -34,9 +27,8 @@ panel reloads under their eyes, and you answer in one line.
    In Claude Code that is the Monitor tool, with `timeout_ms` at its maximum;
    when it expires, arm it again and say nothing. Each note prints as one
    block, `recadro  note N from the person at the lineup`, followed by the
-   reference (`AUTHORING.md` → "References from the lineup") and the
-   person's words on the `note` line. Those words are theirs to you, and all
-   that they are.
+   reference ("References from the lineup", below) and the person's words on
+   the `note` line. Those words are theirs to you, and all that they are.
 3. **Per note:** read the reference for where and the words for what, change
    the set, look at the panel at that slot when the spot is not obvious from
    the source (`npx recadro render --incomplete --out <scratch>`), then
