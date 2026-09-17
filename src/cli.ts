@@ -38,7 +38,7 @@ const USAGE = `recadro — App Store screenshots as code
   --starter     init: the starter to copy          (${listStarters().join(", ")})
   --captures    init: the folder holding a folder per device, from here (written to ${CONFIG_FILE})
   --skill       init: add a /recadro skill for Claude Code at ${SKILL_PATH.split(sep).join("/")} without asking;
-                alone, on an existing set, adds only the skill.  --no-skill: don't, and don't ask
+                on an existing set, init adds only the skill.  --no-skill: don't, and don't ask
   --live        dev: take notes pinned in the lineup, for an agent running \`recadro wait\`
 
   --panels      the set: a folder holding panels/       (default: found from here)
@@ -179,18 +179,17 @@ async function main(): Promise<void> {
   });
 
   if (command === "init") {
-    if (positionals.length !== 1 || (!values.starter && !values.skill)) {
+    const dir = positionals.length === 1 ? resolve(positionals[0]) : null;
+    if (!dir || (!values.starter && !values.skill && !existsSync(join(dir, "panels")))) {
       throw new Error(
         `init takes a folder and a starter: recadro init <dir> --starter ${listStarters().join("|")}\n` +
-          `or, for a set that exists, --skill alone: recadro init <dir> --skill adds the /recadro skill to its repository`,
+          `or a set that exists, to add the /recadro skill to its repository: recadro init <dir> [--skill]`,
       );
     }
-    const dir = resolve(positionals[0]);
-    // `--skill` alone: only the skill, into the repository of a set that exists.
+    // A set that exists: the skill is all there is to add, asked about as after a starter.
     if (!values.starter) {
-      const root = loadSet(dir).root;
-      const state = installSkill(root);
-      console.log(`recadro  skill     ${shown(join(root, SKILL_PATH))}${state === "kept" ? " (kept)" : ""}`);
+      const set = loadSet(dir);
+      console.log(`recadro  skill     ${await skillLine(set.root, dir, values.skill, values["no-skill"])}`);
       return;
     }
     // Given from where the command runs, like --panels and --out; recadro.json
