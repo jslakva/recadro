@@ -97,8 +97,9 @@ Without `--starter`, `init` at a terminal lists the starters installed and
 asks which, Enter taking `blank`. This makes the set and writes `recadro.json` in the folder you
 run in, naming it (`{ "set": "store/screenshots" }`), so recadro runs from
 that folder with no flag; run `init` from where you will run recadro.
-`--captures` is the captures folder, from the same place; `init` writes it
-into the file too.
+`--captures` is the captures folder and `--out` where renders go, both from
+the same place; `init` writes them into the file too. Bare `init` prints
+this.
 
 - **`blank`** — one panel, a headline over the screen, and nothing else: the
   set above, for a layout you write yourself or hand to an agent.
@@ -165,7 +166,7 @@ keys and other placeholders are an error.
 ## Commands
 
 ```
-recadro init   <dir> [--starter <name>] [--captures <dir>] [--skill | --no-skill]
+recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--skill | --no-skill]
 recadro dev    [--config <path>] [--port <n>] [--live]
 recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
 recadro wait   [--config <path>]

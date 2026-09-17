@@ -77,6 +77,8 @@ export interface InitOptions {
   config: string;
   /** The captures folder for `recadro.json`, relative to its folder, when captures are not in the set's own `captures/`. */
   captures?: string;
+  /** The `out` pattern for `recadro.json`, relative to its folder, when renders are not to go to the set's own `out/`. */
+  out?: string;
 }
 
 /** What `init` did, for the caller's summary. */
@@ -147,7 +149,7 @@ function copyStarter(from: string, to: string, captures: string[], unfilled: Set
  * copied, so its paths are checked first; a failure removes what was made.
  */
 export function initSet(options: InitOptions): InitResult {
-  const { dir, starter, config, captures } = options;
+  const { dir, starter, config, captures, out } = options;
   const source = join(STARTERS_DIR, starter);
   if (!existsSync(source)) {
     throw new Error(`no starter "${starter}". Starters: ${listStarters().join(", ")}`);
@@ -157,10 +159,13 @@ export function initSet(options: InitOptions): InitResult {
   }
   const existed = existsSync(dir);
   if (existed && readdirSync(dir).length) throw new Error(`${dir} is not empty; init makes a new set`);
+  // The first folder mkdir will make, so a failure takes every folder made and nothing above it.
+  let made = dir;
+  while (!existed && !existsSync(dirname(made))) made = dirname(made);
 
   // The set's path is left out when the set is the file's own folder, the default.
   const set = relative(dirname(config), dir).split(sep).join("/");
-  const written = { ...(set && set !== "." ? { set } : {}), ...(captures ? { captures } : {}) };
+  const written = { ...(set && set !== "." ? { set } : {}), ...(captures ? { captures } : {}), ...(out ? { out } : {}) };
   mkdirSync(dir, { recursive: true });
   try {
     writeFileSync(config, `${JSON.stringify(written, null, 2)}\n`);
@@ -170,8 +175,7 @@ export function initSet(options: InitOptions): InitResult {
     return { captures: taken.files, capturesFrom: taken.from, unfilled: [...unfilled].sort((a, b) => a - b) };
   } catch (error) {
     rmSync(config, { force: true });
-    rmSync(dir, { recursive: true, force: true });
-    if (existed) mkdirSync(dir);
+    if (!existed) rmSync(made, { recursive: true, force: true });
     throw error;
   }
 }

@@ -30,29 +30,41 @@ import {
 import { SLOTS, selectSlots } from "./slots.ts";
 import { reply, wait } from "./wait.ts";
 
+const INIT_LINE = `recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--skill | --no-skill]`;
+
+const INIT_FLAGS = `  --starter     the starter to copy into <dir>  (${listStarters().join(", ")}); asked at a terminal when left out, Enter for ${DEFAULT_STARTER}
+  --captures    the captures folder, from here  (written to ${CONFIG_FILE})
+  --out         where renders go, from here     (written to ${CONFIG_FILE}; {locale} and {device} stand for a folder each)
+  --skill       add the /recadro skill without asking; --no-skill: don't, and don't ask
+                init writes ${CONFIG_FILE} in the folder it runs in, naming <dir>; run recadro from that folder`;
+
 const USAGE = `recadro — App Store screenshots as code
 
-  recadro init   <dir> [--starter <name>] [--captures <dir>] [--skill | --no-skill]
+  ${INIT_LINE}
   recadro dev    [--config <path>] [--port <n>] [--live]
   recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
   recadro wait   [--config <path>]
   recadro reply  <id> "<what you changed>" [--config <path>]
   recadro skill  [--config <path>]
 
-  --starter     init: the starter to copy into <dir>   (${listStarters().join(", ")}); asked at a terminal when left out, Enter for ${DEFAULT_STARTER}
-                init writes ${CONFIG_FILE} in the folder it runs in, naming <dir>; run recadro from that folder
-  --captures    init: the captures folder, from here  (written to ${CONFIG_FILE})
-  --skill       init: add the /recadro skill without asking; --no-skill: don't, and don't ask
-                skill writes it for Claude Code at ${SKILL_PATH.split(sep).join("/")}, or rewrites one already
-                there from the installed recadro, asked first at a terminal
-  --live        dev: take notes pinned in the lineup, for an agent running \`recadro wait\`
-
   --config      the set's ${CONFIG_FILE}, or the folder holding it   (default: the one in the folder you run in)
+
+init
+${INIT_FLAGS}
+
+dev
+  --live        take notes pinned in the lineup, for an agent running \`recadro wait\`
+
+render
   --out         where renders go       (default: ${CONFIG_FILE} "out", else <set>/out; <locale>/<device>-<slug>.png below it)
   --devices     slots to render        (default: those with captures, else all)
   --locales     locales to render      (default: the names in <set>/strings/, else ${DEFAULT_LOCALE})
   --incomplete  shoot panels missing a capture too, to look at them;
                 needs an --out other than the set's own
+
+skill
+  writes the /recadro skill for Claude Code at ${SKILL_PATH.split(sep).join("/")}, or rewrites one
+  already there from the installed recadro, asked first at a terminal
 `;
 
 /** Splits a comma-separated flag, dropping empty entries. */
@@ -271,7 +283,7 @@ async function main(): Promise<void> {
   });
 
   if (command === "init") {
-    if (positionals.length !== 1) throw new Error(`init takes a folder: recadro init <dir> [--starter ${listStarters().join("|")}]`);
+    if (positionals.length !== 1) throw new Error(`init takes a folder:\n\n  ${INIT_LINE}\n\n${INIT_FLAGS}`);
     const dir = resolve(positionals[0]);
     // The file goes where init runs, which is where recadro will run: the one
     // rule for reading it, so --config would only say where not to put it.
@@ -283,12 +295,14 @@ async function main(): Promise<void> {
     // --captures is given from here, which is the file's folder, so it is
     // written as given, normalised, with forward slashes on every platform.
     const captures = values.captures && (relative(process.cwd(), resolve(values.captures)).split(sep).join("/") || ".");
+    // --out is a pattern with placeholders, so it is written as typed, slashes forward; loadSet checks it before anything is copied.
+    const out = values.out?.split(sep).join("/");
     // Everything that stops init is checked before it asks, so a question is never answered for nothing.
     if (existsSync(dir) && readdirSync(dir).length) throw new Error(`${shown(dir)} is not empty; init makes a new set`);
     const starter = values.starter ?? (await chooseStarter(dir));
-    const result = initSet({ dir, starter, config, captures });
+    const result = initSet({ dir, starter, config, captures, out });
     const set = loadSet(config);
-    const names = [set.dir !== process.cwd() ? `set ${shown(set.dir)}` : "", captures ? `captures ${captures}` : ""].filter(Boolean);
+    const names = [set.dir !== process.cwd() ? `set ${shown(set.dir)}` : "", captures ? `captures ${captures}` : "", out ? `out ${out}` : ""].filter(Boolean);
     console.log(`recadro  ${shown(dir)} from the ${starter} starter`);
     console.log(`         config    ${shown(config)}  (${names.length ? names.join(", ") : "the set is this folder"})`);
     console.log(`         captures  ${shown(set.captures)}/  (${describeCaptures(set, [DEFAULT_LOCALE])})`);
