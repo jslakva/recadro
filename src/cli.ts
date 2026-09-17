@@ -290,7 +290,10 @@ async function main(): Promise<void> {
     if (values.config) throw new Error(`init writes ${CONFIG_FILE} in the folder it runs in; run it from where the file should be`);
     const config = join(process.cwd(), CONFIG_FILE);
     if (existsSync(config)) {
-      throw new Error(`${CONFIG_FILE} here already names the set at ${shown(loadSet(config).dir)}; a second set is made from another folder`);
+      throw new Error(
+        `there is already a ${CONFIG_FILE} in this folder, ${config}, naming the set at ${shown(loadSet(config).dir)}; ` +
+          `run init from the folder the new set belongs to, or remove that file first`,
+      );
     }
     // --captures is given from here, which is the file's folder, so it is
     // written as given, normalised, with forward slashes on every platform.

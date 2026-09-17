@@ -6,7 +6,7 @@
  * from there with no flag.
  */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, extname, join, relative, sep } from "node:path";
+import { basename, dirname, extname, join, relative, sep } from "node:path";
 import { PKG } from "./pkg.ts";
 import { capturesDir, capturesIn, DEFAULT_LOCALE, loadSet } from "./set.ts";
 import { SLOTS } from "./slots.ts";
@@ -155,7 +155,7 @@ export function initSet(options: InitOptions): InitResult {
     throw new Error(`no starter "${starter}". Starters: ${listStarters().join(", ")}`);
   }
   if (existsSync(config)) {
-    throw new Error(`${config} already names the set at ${loadSet(config).dir}; a second set is made from another folder`);
+    throw new Error(`there is already a ${basename(config)} in this folder, ${config}, naming the set at ${loadSet(config).dir}; run init from the folder the new set belongs to, or remove that file first`);
   }
   const existed = existsSync(dir);
   if (existed && readdirSync(dir).length) throw new Error(`${dir} is not empty; init makes a new set`);
