@@ -1,7 +1,8 @@
 # recadro — App Store screenshots as code
 
-Compose store panels from raw simulator captures. Plain HTML in, exact slot
-sizes out.
+The apps at the top of the store do not show bare screenshots; their listings
+tell a story, one panel at a time. recadro composes those panels from raw
+simulator captures. Plain HTML in, exact slot sizes out.
 
 ```bash
 npx recadro init store/screenshots --starter caption   # a new set from a starter, and recadro.json here naming it
@@ -277,6 +278,10 @@ the package: it is about 200 MB that `dev` never uses. The first `render`
 without it asks to install it; where nobody is at a terminal to answer, it
 stops and prints the install command instead, pinned to the Playwright recadro
 uses. In CI, run that command before `render`, adding `--with-deps` on Linux.
+
+What App Store Connect checks, recadro makes true by construction: each PNG at
+its slot's exact pixels, sRGB, no alpha channel. What it cannot make true is
+the content, which is what the lineup is for.
 
 ## License
 

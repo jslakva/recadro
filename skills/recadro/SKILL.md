@@ -32,6 +32,20 @@ Look at the first three together: they are all a search result shows. Shoot
 before and after a change and compare the spot. Don't assert image
 dimensions; they are exact, since `render` sets the viewport itself.
 
+## Composing a set
+
+- A set tells one story across its panels, one point each. The first three
+  are all a search result shows, so they must read as a complete story on
+  their own: a beginning, the point, a close. The panels after them may
+  expand it; the first three must never read as cut off.
+- Look in the repository for the app's own artwork — icon, illustrations,
+  brand colours and type — and use it around the screen, not only inside it.
+  The starters do: the panorama's phone crossing a panel edge, the callouts'
+  notes pinned beside the screen.
+- Where it fits the design, let something inside the capture continue outside
+  it — a card, a character, a colour — so the screen and the panel read as
+  one picture rather than a photo on a background.
+
 ## Running the commands
 
 - `render` needs Playwright's Chromium, installed apart from the package.
