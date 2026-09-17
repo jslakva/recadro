@@ -151,7 +151,7 @@ async function chooseStarter(dir: string): Promise<string> {
   }
   console.log("Starters:");
   starters.forEach((name, i) => console.log(`  ${String(i + 1).padStart(2)}  ${name}`));
-  return choose(`Copy which into ${shown(dir)}?`, starters, DEFAULT_STARTER);
+  return choose("Start from which starter?", starters, DEFAULT_STARTER);
 }
 
 /**
