@@ -14,7 +14,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 import type { Browser } from "playwright";
-import { AGENT_FILES, initSet, installSkill, listStarters, SKILL_PATH, skillVersion, VERSION } from "./init.ts";
+import { AGENT_FILES, DEFAULT_STARTER, initSet, installSkill, listStarters, SKILL_PATH, skillVersion, VERSION } from "./init.ts";
 import { startServer } from "./server.ts";
 import {
   capturesUrl,
@@ -39,7 +39,7 @@ const USAGE = `recadro — App Store screenshots as code
   recadro wait   [--config <path>]
   recadro reply  <id> "<what you changed>" [--config <path>]
 
-  --starter     init: the starter to copy into <dir>   (${listStarters().join(", ")}); asked at a terminal when left out
+  --starter     init: the starter to copy into <dir>   (${listStarters().join(", ")}); asked at a terminal when left out, Enter for ${DEFAULT_STARTER}
                 init writes ${CONFIG_FILE} in the folder it runs in, naming <dir>; run recadro from that folder
   --captures    init: the captures folder, from here  (written to ${CONFIG_FILE})
   --skill       init: add a /recadro skill for Claude Code at ${SKILL_PATH.split(sep).join("/")} without asking,
@@ -117,9 +117,10 @@ async function confirm(question: string): Promise<boolean> {
 
 /**
  * Asks which of `options` on the terminal, listed by number; a number or a
- * name answers, anything else asks again, Ctrl+C quits.
+ * name answers, Enter alone is `fallback`, anything else asks again, Ctrl+C
+ * quits.
  */
-async function choose(question: string, options: string[]): Promise<string> {
+async function choose(question: string, options: string[], fallback: string): Promise<string> {
   const prompt = createInterface({ input: process.stdin, output: process.stdout });
   prompt.on("SIGINT", () => {
     process.stdout.write("\n");
@@ -127,7 +128,8 @@ async function choose(question: string, options: string[]): Promise<string> {
   });
   try {
     for (;;) {
-      const answer = (await prompt.question(`${question} [1-${options.length}] `)).trim();
+      const answer = (await prompt.question(`${question} [1-${options.length}, Enter for ${fallback}] `)).trim();
+      if (answer === "") return fallback;
       const chosen = /^\d+$/.test(answer) ? options[Number(answer) - 1] : options.find((option) => option === answer);
       if (chosen) return chosen;
     }
@@ -139,7 +141,7 @@ async function choose(question: string, options: string[]): Promise<string> {
 /**
  * The starter for a new set when `--starter` names none: asked at a terminal,
  * from the folders in the package's `starters/`, so a starter added there is
- * offered with no list to keep. Anywhere else — an agent, CI — the flag is
+ * offered with no list to keep; Enter takes the blank one. Anywhere else — an agent, CI — the flag is
  * required, and the error names what it takes.
  */
 async function chooseStarter(dir: string): Promise<string> {
@@ -149,7 +151,7 @@ async function chooseStarter(dir: string): Promise<string> {
   }
   console.log("Starters:");
   starters.forEach((name, i) => console.log(`  ${String(i + 1).padStart(2)}  ${name}`));
-  return choose(`Copy which into ${shown(dir)}?`, starters);
+  return choose(`Copy which into ${shown(dir)}?`, starters, DEFAULT_STARTER);
 }
 
 /**

@@ -226,8 +226,8 @@ npx recadro init <dir> [--starter <name>] [--captures <path>]
 ```
 
 copies a starter — the folders in the package's `starters/`; at a terminal,
-`init` without `--starter` lists them by number and asks; anywhere else the
-flag is required and the error names them — into a new folder, fills its `{capture:N}`
+`init` without `--starter` lists them by number and asks, Enter taking
+`blank`; anywhere else the flag is required and the error names them — into a new folder, fills its `{capture:N}`
 placeholders with the captures already taken in filename order, writes `recadro.json` in the folder
 the command runs in — naming `<dir>` as the set, and `--captures` (the captures
 folder, from the same place) — and adds `AGENTS.md` and `CLAUDE.md` pointing

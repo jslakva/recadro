@@ -135,7 +135,8 @@ without a capture stays as it is, which is also where the empty state comes
 from until one is taken. Asked for no starter, `init` offers the folders it
 finds in `starters/`, by name and nothing more: a starter carries no metadata
 the tool would read, so adding one is adding a folder, and what each looks
-like is the README's to say.
+like is the README's to say. Enter takes `blank`, the one with no look, so
+the choice made by not choosing commits the set to nothing.
 
 ## One server, two commands
 

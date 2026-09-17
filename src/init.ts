@@ -118,6 +118,12 @@ export interface InitResult {
   unfilled: number[];
 }
 
+/**
+ * The starter `init` takes when Enter answers its question: the one with no
+ * look, so the choice made by not choosing commits a set to nothing.
+ */
+export const DEFAULT_STARTER = "blank";
+
 /** The starters that ship, by name. */
 export function listStarters(): string[] {
   return readdirSync(STARTERS_DIR, { withFileTypes: true })

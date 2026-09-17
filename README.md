@@ -93,7 +93,7 @@ npx recadro init store/screenshots --starter overlay --captures path/to/captures
 ```
 
 Without `--starter`, `init` at a terminal lists the starters installed and
-asks which. This makes the set and writes `recadro.json` in the folder you
+asks which, Enter taking `blank`. This makes the set and writes `recadro.json` in the folder you
 run in, naming it (`{ "set": "store/screenshots" }`), so recadro runs from
 that folder with no flag; run `init` from where you will run recadro.
 `--captures` is the captures folder, from the same place; `init` writes it
