@@ -1,9 +1,11 @@
 # Authoring panels for recadro
 
 Instructions for a coding agent, or a person, changing a panel set that
-recadro renders. Everything here follows from one fact: **recadro reads what a
-set's files are called and where they are, never what they say.** The layout,
-its strings, its tokens and its capture filenames are the repo's. The
+recadro renders. Everything here follows from one fact: **a panel is an
+ordinary web page, and recadro serves it, sizes it to each slot and shoots
+it.** It finds the set's pieces by their names and places and hands the page
+four query params; what the page shows — its layout, its words, its tokens,
+which capture it loads — is written in the repo like any other page. The
 [README](README.md) explains the tool and why it is shaped this way.
 
 ## Inputs, the set, outputs
@@ -13,17 +15,16 @@ its strings, its tokens and its capture filenames are the repo's. The
 <set>/
   panels/NN-slug.html     the panels, in filename order; the slug is the name without .html
   strings/<locale>.*      one entry per locale; the names are the locales
-  panel.css, panel.js     whatever the panels share; recadro never reads them
+  panel.css, panel.js     what the panels share — the look, the loading — as any page would
   recadro.json            optional: where the inputs and outputs are, nothing else
   AGENTS.md, CLAUDE.md    written by init; they point agents here
 <out>/<locale>/<device>-<slug>.png            outputs: the renders, flat per locale as fastlane's deliver reads them
 ```
 
 Inputs and outputs live where the repo keeps them, named in `recadro.json`;
-without it, both are in the set, at `<set>/captures/` and `<set>/out/`.
-Captures must be inside the repository, since a page loads them by URL from
-its root. Renders may go anywhere; the lineup's `out/` view shows only what
-is inside the repository.
+if not named, both are in the set, at `<set>/captures/` and `<set>/out/`.
+Both belong inside the repository: a page loads captures by URL from its
+root, and the lineup shows `out/` from there.
 
 - recadro finds the set from where a command runs: that folder, the nearest
   set above it, or the one set below it. With several sets in the repo, pass
@@ -97,14 +98,13 @@ filename it wants — the slug plus `.png`, unless the panel maps names itself.
 ## Captures, strings, recadro.json
 
 - **Captures** are full-screen simulator screenshots, one per panel and slot,
-  in `captures/`: `<file>` the panel's slug unless the page maps it. A folder
-  naming no slot serves the slot its captures are shaped for, so one slot's
-  can sit flat in the folder; with `iPad` as well as `iPhone` (App Store
-  Connect requires it when the app supports iPad), each slot's go in a folder
-  named exactly for it, since a panel asks for the same filename on both.
-  Captures that differ per language go in a folder named for the locale,
-  `captures/<locale>/[<slot>/]` (or `<slot>/<locale>/`); a locale with no
-  folder of its own gets the captures outside any.
+  in `captures/`: `<file>` the panel's slug unless the page maps it. One
+  slot's captures can sit flat in the folder. With `iPad` as well as `iPhone`
+  (App Store Connect requires it when the app supports iPad), each slot's go
+  in a folder named exactly for it, since a panel asks for the same filename
+  on both. Captures that differ per language go in a folder named for the
+  locale, `captures/<locale>/[<slot>/]` (or `<slot>/<locale>/`); a locale
+  with no folder of its own gets the captures outside any.
 - **Strings** are one file per locale in `strings/`, named for the locale, in
   whatever format the panels read. Adding `strings/de-DE.json` is the whole of
   adding German; recadro renders it from the name. A different type stack for
@@ -116,22 +116,20 @@ filename it wants — the slug plus `.png`, unless the panel maps names itself.
   { "captures": "../../e2e/screenshots", "out": "../../fastlane/screenshots/{locale}" }
   ```
 
-  Paths are relative to the set; captures must be inside the repository.
-  `captures` is the folder whose locale and slot folders are read by name, so
-  it takes no placeholders. `out` takes `{locale}`, a folder per locale, and
-  `{device}`, a folder per slot, each a whole folder name; `{locale}` is
-  appended when absent, and without `{device}` the slot prefixes the
-  filename. The default is the tree fastlane's `deliver` reads, which picks
-  the slot from the pixel size; `"out": "out/{locale}/{device}"` gives a
-  folder per slot instead, the file the slug alone. Those two keys are all
-  it takes; anything else is an error. Command-line flags win over it.
+  Create it by hand; `init --captures` writes the first key for a new set.
+  Paths are relative to the set. `captures` names the folder, laid out inside as above. `out` takes
+  `{locale}` and `{device}`, each a whole folder name; without `{device}` the
+  slot prefixes the filename. The default is the tree fastlane's `deliver`
+  reads, which picks the slot from the pixel size;
+  `"out": "out/{locale}/{device}"` gives a folder per slot instead, the file
+  the slug alone. Those two keys are all it takes; anything else is an error.
+  Command-line flags win over it.
 - A panel reporting `no capture at <path>` for a file that exists has a wrong
   filename or the file in a folder serving another slot: the path is what the
   page asked for, from the repository root, so compare it with the file. A
   `{capture:N}` in it is a placeholder `init` left for a capture not yet taken.
-  `dev` and `render` print, on their `captures` line, which slot each folder
-  serves and how many captures in a folder told by shape are shaped for the
-  other slot; those are never found.
+  The `captures` line `dev` and `render` print says which slot each folder
+  serves.
 
 ## Look at your work
 
@@ -147,7 +145,7 @@ at every slot and locale. Look for a headline that wraps badly or is cropped,
 text past the frame, a fallback font, a capture that did not load, a layout
 that only works on one slot or in one language. Look at the first three
 together: they are all a search result shows. Don't assert image dimensions;
-they are exact by construction.
+they are exact, since `render` sets the viewport itself.
 
 `npx recadro render` alone produces what ships. It prints what it picked and
 why, then one line per shot:
@@ -162,10 +160,10 @@ recadro  6 panels in store/screenshots
 ```
 
 It exits 0 either way; read the lines. A panel is incomplete when an `<img>` of
-its failed, and `render` skips it, so `out/` only ever holds this run's
-complete panels and can be uploaded wholesale; what an earlier run wrote for
-each slot and locale rendered is removed first, and the other slot's files are
-left alone. A panel with no `<img>` at all is complete and ships. A device
+its failed, and `render` skips it. Each run replaces its own files for the
+slots and locales it rendered and touches nothing else, so `out/` holds only
+complete panels and can be uploaded wholesale. A panel with no `<img>` at all
+is complete and ships. A device
 missing from `devices` has no captures; `--devices` renders it anyway.
 `--out` moves the folder and keeps the layout below it. `--incomplete`
 refuses to write into the set's own `out`.
@@ -230,8 +228,8 @@ recadro  note 3 from the person at the lineup
          reply    recadro reply 3 "<what you changed>"
 ```
 
-`note` is the person's words, printed as typed and addressed to you; the
-server reads nothing. `reply` answers with one line, shown at the note's pin,
+`note` is the person's words, printed as typed and addressed to you. `reply`
+answers with one line, shown at the note's pin,
 so the person knows the reload they saw was yours; reply once per note, after
 the change, and change nothing outside the set for it. When `wait` prints that
 the server is gone, stop; a new `dev --live` needs a new `wait`. With nobody
