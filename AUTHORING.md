@@ -21,44 +21,62 @@ recadro.json              where recadro runs: "set", and where the inputs and ou
 <out>/<locale>/<device>-<slug>.png            outputs: the renders, flat per locale as fastlane's deliver reads them
 ```
 
-`recadro.json` is the one place recadro looks: the file in the folder a command
-runs in, or the one `--config <path>` names; nothing is searched. It names the
-set (`"set"`, the file's own folder when left out) and where the inputs and
-outputs are, paths relative to the file; not named, both are in the set, at
-`<set>/captures/` and `<set>/out/`. Both belong inside the repository: a page
-loads captures by URL from its root, and the lineup shows `out/` from there.
+recadro reads `recadro.json`. It looks in the folder a command runs in;
+`--config <path>` names another file, or the folder holding one. Every key
+is optional, paths are relative to the file, and the file itself is plain
+JSON, without the comments:
 
-- Run commands from the folder holding `recadro.json`, usually the repository
-  root, or pass `--config <path>`. A repository with several sets has a file
-  per set, each in its own folder.
+```jsonc
+{
+  // the folder holding panels/ and strings/; default: the file's own folder
+  "set": "store/screenshots",
+  // the inputs; default: <set>/captures/. Inside the repository: a page loads them by URL from its root
+  "captures": "e2e/screenshots",
+  // the outputs; default: <set>/out/{locale}/. Inside the repository, or the lineup cannot show them
+  "out": "fastlane/screenshots/{locale}"
+}
+```
+
+Several sets are several files: `recadro.json` for the one run without a
+`--config` flag, any name for the others, each picked with `--config <file>`.
+
 - Before changing one panel, read what they share — `panel.css`, `panel.js` —
-  and `recadro.json`. The conventions there are the repo's.
-- The server's root is the repository: the nearest folder holding `.git`.
-  Outside git it is the nearest JS workspace or `package.json`, else the set
-  itself. A panel reaches anything in the repo by a relative or root-absolute
-  URL, and nothing beyond it. Relative URLs resolve against the page,
-  `panels/<slug>.html`, even from a shared module script one folder up, so a
-  panel's strings are `../strings/${locale}.json`.
+  and `recadro.json`. What is in them is the repo's own; recadro asks nothing
+  of a page beyond the Don'ts below.
+- recadro serves the pages, for `dev` and `render` alike, from the repository
+  root: the nearest folder holding `.git`, or outside git the nearest JS
+  workspace or `package.json`, else the set itself. A panel reaches anything
+  in the repo by a relative or root-absolute URL, and nothing beyond it.
+  Relative URLs resolve against the page, `panels/<slug>.html`, even from a
+  shared module script one folder up, so a panel's strings are
+  `../strings/${locale}.json`.
 - A `vite.config.*` beside `panels/`, if present, is merged into the server.
   It cannot move the root.
 
-## The contract
+## What a page is given
+
+Four query params, and nothing else:
 
 ```
-tool → page:   ?panel=<slug>&device=<slot>&locale=<locale>&captures=<folder URL>
-page → tool:   nothing
-tool → disk:   <out>/<locale>/<device>-<slug>.png
+?panel=<slug>&device=<slot>&locale=<locale>&captures=<folder URL>
 ```
+
+`captures` is a root-absolute folder URL ending in `/`, already resolved for
+this slot and locale; the page appends the filename it wants — the slug plus
+`.png`, unless the panel maps names itself. The page is the viewport,
+`100vw × 100vh`, opened at the slot's size:
 
 | slot     | App Store Connect display | delivered pixels | viewport (CSS px) | scale |
 |----------|---------------------------|------------------|-------------------|-------|
 | `iPhone` | 6.9″                      | 1320 × 2868      | 440 × 956         | 3     |
 | `iPad`   | 13″                       | 2048 × 2732      | 1024 × 1366       | 2     |
 
-The page is the viewport, `100vw × 100vh`. The numbers are for your
-understanding and belong in no panel. `captures` is a root-absolute folder URL
-ending in `/`, already resolved for this slot and locale; the page appends the
-filename it wants — the slug plus `.png`, unless the panel maps names itself.
+The numbers are for reading references and choosing hairlines; they belong in
+no panel. 
+
+For how a page reads the params and loads its capture and strings, see any
+starter's `panel.js`: `starters/<name>/panel.js` in the installed package, or on
+[GitHub](https://github.com/jslakva/recadro/tree/main/starters).
 
 ## Don't
 
@@ -111,15 +129,8 @@ filename it wants — the slug plus `.png`, unless the panel maps names itself.
   whatever format the panels read. Adding `strings/de-DE.json` is the whole of
   adding German; recadro renders it from the name. A different type stack for
   a language is `:root:lang(de)` once the page sets `lang`.
-- **`recadro.json`** names the set, and says where captures and renders are
-  when not in `<set>/captures/` and `<set>/out/<locale>/`:
-
-  ```json
-  { "set": "store/screenshots", "captures": "e2e/screenshots", "out": "fastlane/screenshots/{locale}" }
-  ```
-
-  `init` writes it, with `set` and, from `--captures`, the second key; add
-  `out` by hand. Paths are relative to the file's folder, not the set.
+- **`recadro.json`** (its shape is at the top): `init` writes it, with `set`
+  and, from `--captures`, the second key; add `out` by hand. Paths are relative to the file's folder, not the set.
   `captures` names the folder, laid out inside as above. `out` takes
   `{locale}` and `{device}`, each a whole folder name; without `{device}` the
   slot prefixes the filename. The default is the tree fastlane's `deliver`
