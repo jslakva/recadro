@@ -9,14 +9,14 @@ its strings, its tokens and its capture filenames are the repo's. The
 ## Inputs, the set, outputs
 
 ```
-<captures>/[<locale>/][<device>/]<file>.png   inputs: raw simulator captures
+<captures>/[<locale>/][<device>/]<file>.png   inputs: raw simulator captures; the folders are read by name, both optional
 <set>/
   panels/NN-slug.html     the panels, in filename order; the slug is the name without .html
   strings/<locale>.*      one entry per locale; the names are the locales
   panel.css, panel.js     whatever the panels share; recadro never reads them
   recadro.json            optional: where the inputs and outputs are, nothing else
   AGENTS.md, CLAUDE.md    written by init; they point agents here
-<out>/<locale>/<device>-<slug>.png            outputs: the renders
+<out>/<locale>/<device>-<slug>.png            outputs: the renders, flat per locale as fastlane's deliver reads them
 ```
 
 Inputs and outputs live where the repo keeps them, named in `recadro.json`;
@@ -24,19 +24,6 @@ without it, both are in the set, at `<set>/captures/` and `<set>/out/`.
 Captures must be inside the repository, since a page loads them by URL from
 its root. Renders may go anywhere; the lineup's `out/` view shows only what
 is inside the repository.
-
-The folders below `<captures>` are read by name: one named for a locale
-(`en-US`) holds that locale's captures, one named for a slot (`iPhone`,
-`iPad`) holds that slot's, either inside the other, and each optional. A
-folder that names no slot serves the slot its captures are shaped for, so a
-flat folder of phone captures is an iPhone-only set, and captures shared by
-every locale need no locale folder. Two slots' captures go in a folder each,
-since a panel asks for the same filename on both.
-
-Renders go one folder per locale, flat, the slot in the filename: the tree
-fastlane's `deliver` reads, which picks the slot from the pixel size. An `out`
-with `{device}` in it puts the slot in a folder instead
-(`"out": "out/{locale}/{device}"` writes `<out>/<locale>/<device>/<slug>.png`).
 
 - recadro finds the set from where a command runs: that folder, the nearest
   set above it, or the one set below it. With several sets in the repo, pass
@@ -110,12 +97,14 @@ filename it wants — the slug plus `.png`, unless the panel maps names itself.
 ## Captures, strings, recadro.json
 
 - **Captures** are full-screen simulator screenshots, one per panel and slot,
-  in `captures/`: `<file>` the panel's slug unless the page maps it. One
-  slot's captures can sit flat in the folder; with `iPad` as well as `iPhone`
-  (App Store Connect requires it when the app supports iPad), each slot's go
-  in a folder named exactly for it. Captures that differ per language go in a
-  folder named for the locale, `captures/<locale>/[<slot>/]`; a locale with
-  no folder of its own gets the captures outside any.
+  in `captures/`: `<file>` the panel's slug unless the page maps it. A folder
+  naming no slot serves the slot its captures are shaped for, so one slot's
+  can sit flat in the folder; with `iPad` as well as `iPhone` (App Store
+  Connect requires it when the app supports iPad), each slot's go in a folder
+  named exactly for it, since a panel asks for the same filename on both.
+  Captures that differ per language go in a folder named for the locale,
+  `captures/<locale>/[<slot>/]` (or `<slot>/<locale>/`); a locale with no
+  folder of its own gets the captures outside any.
 - **Strings** are one file per locale in `strings/`, named for the locale, in
   whatever format the panels read. Adding `strings/de-DE.json` is the whole of
   adding German; recadro renders it from the name. A different type stack for
@@ -131,9 +120,11 @@ filename it wants — the slug plus `.png`, unless the panel maps names itself.
   `captures` is the folder whose locale and slot folders are read by name, so
   it takes no placeholders. `out` takes `{locale}`, a folder per locale, and
   `{device}`, a folder per slot, each a whole folder name; `{locale}` is
-  appended when absent, and without `{device}` the slot prefixes the filename.
-  Those two keys are all it takes; anything else is an error. Command-line
-  flags win over it.
+  appended when absent, and without `{device}` the slot prefixes the
+  filename. The default is the tree fastlane's `deliver` reads, which picks
+  the slot from the pixel size; `"out": "out/{locale}/{device}"` gives a
+  folder per slot instead, the file the slug alone. Those two keys are all
+  it takes; anything else is an error. Command-line flags win over it.
 - A panel reporting `no capture at <path>` for a file that exists has a wrong
   filename or the file in a folder serving another slot: the path is what the
   page asked for, from the repository root, so compare it with the file. A
