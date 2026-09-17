@@ -137,7 +137,7 @@ starter's `panel.js`: `starters/<name>/panel.js` in the installed package, or on
 ## Commands
 
 ```
-recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--skill | --no-skill]
+recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--config <path>] [--skill | --no-skill]
 recadro dev    [--config <path>] [--port <n>] [--live]
 recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
 recadro wait   [--config <path>]
@@ -149,8 +149,9 @@ recadro skill  [--config <path>]
 
 Makes a set from a starter: creates the panels from the chosen starter's
 design, prefills them with the captures already taken, writes `recadro.json`
-where the command runs — naming the set, and `captures` and `out` when the
-flags give them — and offers to install the skill if absent.
+where the command runs, or where `--config` says — naming the set, and
+`captures` and `out` when the flags give them — and offers to install the
+skill if absent.
 
 ### `skill`
 

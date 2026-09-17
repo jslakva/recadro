@@ -10,7 +10,7 @@
  * it, and it wins over the set's conventions.
  */
 import { existsSync, mkdirSync, readdirSync } from "node:fs";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { dirname, extname, join, relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 import type { Browser } from "playwright";
@@ -23,6 +23,7 @@ import {
   DEFAULT_LOCALE,
   describeCaptures,
   devicesWithCaptures,
+  isDir,
   loadSet,
   outTemplate,
   type PanelSet,
@@ -30,13 +31,14 @@ import {
 import { SLOTS, selectSlots } from "./slots.ts";
 import { reply, wait } from "./wait.ts";
 
-const INIT_LINE = `recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--skill | --no-skill]`;
+const INIT_LINE = `recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--config <path>] [--skill | --no-skill]`;
 
 const INIT_FLAGS = `  --starter     the starter to copy into <dir>  (${listStarters().join(", ")}); asked at a terminal when left out, Enter for ${DEFAULT_STARTER}
   --captures    the captures folder, from here  (written to ${CONFIG_FILE})
   --out         where renders go, from here     (written to ${CONFIG_FILE}; {locale} and {device} stand for a folder each)
   --skill       add the /recadro skill without asking; --no-skill: don't, and don't ask
-                init writes ${CONFIG_FILE} in the folder it runs in, naming <dir>; run recadro from that folder`;
+                init writes ${CONFIG_FILE} in the folder it runs in, naming <dir>, so recadro runs from there with no flag;
+                --config puts it elsewhere, a folder or a .json name, and recadro then takes the same --config`;
 
 const USAGE = `recadro — App Store screenshots as code
 
@@ -245,6 +247,21 @@ async function writeSkill(set: PanelSet): Promise<string> {
   return `${shown(target)} (rewritten${from && from !== VERSION ? ` from recadro ${from}` : ""})`;
 }
 
+/**
+ * The `recadro.json` `init` writes: the file `--config` names, or `recadro.json`
+ * in the folder it names, as `configFile` reads them; without the flag, the one
+ * in the working directory. A path that is neither a folder that exists nor a
+ * .json name is refused rather than guessed at.
+ */
+function configToWrite(flag: string | undefined): string {
+  if (!flag) return join(process.cwd(), CONFIG_FILE);
+  const path = resolve(flag);
+  if (isDir(path)) return join(path, CONFIG_FILE);
+  if (extname(path) !== ".json") throw new Error(`--config ${flag} is neither a folder that exists nor a .json file to write`);
+  if (!isDir(dirname(path))) throw new Error(`--config ${flag}: the folder ${shown(dirname(path))} does not exist`);
+  return path;
+}
+
 /** A line for `dev` when the repository's skill was written by another version of recadro, or nothing. */
 function staleSkillLine(set: PanelSet): string | null {
   const from = skillVersion(set.root);
@@ -285,21 +302,23 @@ async function main(): Promise<void> {
   if (command === "init") {
     if (positionals.length !== 1) throw new Error(`init takes a folder:\n\n  ${INIT_LINE}\n\n${INIT_FLAGS}`);
     const dir = resolve(positionals[0]);
-    // The file goes where init runs, which is where recadro will run: the one
-    // rule for reading it, so --config would only say where not to put it.
-    if (values.config) throw new Error(`init writes ${CONFIG_FILE} in the folder it runs in; run it from where the file should be`);
-    const config = join(process.cwd(), CONFIG_FILE);
+    // The file goes where init runs, which is where recadro will run with no
+    // flag; --config puts it where the other commands would read it from,
+    // which lets one folder hold several sets, one file each.
+    const config = configToWrite(values.config);
     if (existsSync(config)) {
       throw new Error(
-        `there is already a ${CONFIG_FILE} in this folder, ${config}, naming the set at ${shown(loadSet(config).dir)}; ` +
-          `run init from the folder the new set belongs to, or remove that file first`,
+        `${config} is already there, naming the set at ${shown(loadSet(config).dir)}; ` +
+          `name another file or folder with --config, run init from another folder, or remove that file first`,
       );
     }
-    // --captures is given from here, which is the file's folder, so it is
-    // written as given, normalised, with forward slashes on every platform.
-    const captures = values.captures && (relative(process.cwd(), resolve(values.captures)).split(sep).join("/") || ".");
-    // --out is a pattern with placeholders, so it is written as typed, slashes forward; loadSet checks it before anything is copied.
-    const out = values.out?.split(sep).join("/");
+    // --captures and --out are given from here and written relative to the
+    // file, with forward slashes on every platform; --out's placeholders are
+    // plain segments to relative(), and loadSet checks the pattern before
+    // anything is copied.
+    const fromFile = (path: string): string => relative(dirname(config), resolve(path)).split(sep).join("/") || ".";
+    const captures = values.captures && fromFile(values.captures);
+    const out = values.out && fromFile(values.out);
     // Everything that stops init is checked before it asks, so a question is never answered for nothing.
     if (existsSync(dir) && readdirSync(dir).length) throw new Error(`${shown(dir)} is not empty; init makes a new set`);
     const starter = values.starter ?? (await chooseStarter(dir));
@@ -322,7 +341,7 @@ async function main(): Promise<void> {
       console.log(`         left      ${left} in the set, for captures still to take`);
     }
     console.log(`         skill     ${await skillLine(set, values.skill, values["no-skill"])}`);
-    console.log(`         next      recadro dev  (from here)`);
+    console.log(`         next      recadro dev${configFlag(set)}  (from here)`);
     return;
   }
 

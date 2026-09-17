@@ -54,7 +54,8 @@ preference — the slot geometry — and where a set keeps its pieces.
 - **The set** is what `recadro.json` names, and recadro reads that file in the
   folder you run in — nothing is searched. `init` writes it there, three lines
   at most, so from then on the command is `recadro dev` with no flag. A json
-  elsewhere is `--config <path>`.
+  elsewhere is `--config <path>`, to `init` as to every other command, which
+  is how one folder holds several sets: a file each.
 
 ## Writing a panel
 
@@ -96,10 +97,11 @@ npx recadro init store/screenshots --starter overlay --captures path/to/captures
 Without `--starter`, `init` at a terminal lists the starters installed and
 asks which, Enter taking `blank`. This makes the set and writes `recadro.json` in the folder you
 run in, naming it (`{ "set": "store/screenshots" }`), so recadro runs from
-that folder with no flag; run `init` from where you will run recadro.
-`--captures` is the captures folder and `--out` where renders go, both from
-the same place; `init` writes them into the file too. Bare `init` prints
-this.
+that folder with no flag; run `init` from where you will run recadro, or
+give `--config` a folder or a `.json` name and the file goes there, for
+recadro to take with the same flag. `--captures` is the captures folder and
+`--out` where renders go, both from where you run; `init` writes them into
+the file, relative to it. Bare `init` prints this.
 
 - **`blank`** — one panel, a headline over the screen, and nothing else: the
   set above, for a layout you write yourself or hand to an agent.
@@ -166,7 +168,7 @@ keys and other placeholders are an error.
 ## Commands
 
 ```
-recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--skill | --no-skill]
+recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--config <path>] [--skill | --no-skill]
 recadro dev    [--config <path>] [--port <n>] [--live]
 recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
 recadro wait   [--config <path>]

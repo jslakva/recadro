@@ -193,7 +193,7 @@ function localesIn(dir: string): string[] {
 }
 
 /** Whether `path` is a folder. */
-function isDir(path: string): boolean {
+export function isDir(path: string): boolean {
   try {
     return statSync(path).isDirectory();
   } catch {

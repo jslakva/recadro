@@ -6,7 +6,7 @@
  * from there with no flag.
  */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { basename, dirname, extname, join, relative, sep } from "node:path";
+import { dirname, extname, join, relative, sep } from "node:path";
 import { PKG } from "./pkg.ts";
 import { capturesDir, capturesIn, DEFAULT_LOCALE, loadSet } from "./set.ts";
 import { SLOTS } from "./slots.ts";
@@ -73,7 +73,7 @@ export interface InitOptions {
   dir: string;
   /** The starter's name, a folder in `STARTERS_DIR`. */
   starter: string;
-  /** Absolute path of the `recadro.json` to write, in the folder `init` runs in; it must not exist. */
+  /** Absolute path of the `recadro.json` to write; it must not exist. */
   config: string;
   /** The captures folder for `recadro.json`, relative to its folder, when captures are not in the set's own `captures/`. */
   captures?: string;
@@ -155,7 +155,7 @@ export function initSet(options: InitOptions): InitResult {
     throw new Error(`no starter "${starter}". Starters: ${listStarters().join(", ")}`);
   }
   if (existsSync(config)) {
-    throw new Error(`there is already a ${basename(config)} in this folder, ${config}, naming the set at ${loadSet(config).dir}; run init from the folder the new set belongs to, or remove that file first`);
+    throw new Error(`${config} is already there, naming the set at ${loadSet(config).dir}; name another file or folder with --config, run init from another folder, or remove that file first`);
   }
   const existed = existsSync(dir);
   if (existed && readdirSync(dir).length) throw new Error(`${dir} is not empty; init makes a new set`);
