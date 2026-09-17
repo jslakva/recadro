@@ -229,7 +229,10 @@ A panel is incomplete when it asked for a capture that is not there: a request
 under the folder `?captures=` named came back without the file, typically a
 capture that does not exist yet. Those render in `dev` (a page can style a
 missing capture into a deliberate empty state) and are **skipped** by `render`,
-so `out/` only ever holds complete panels and can be uploaded wholesale.
+so `out/` only ever holds complete panels and can be uploaded wholesale. The
+skip is also a non-zero exit, so a script that renders and then uploads
+stops before a listing with a hole; the complete panels are written all the
+same.
 
 A panel that asks for **no** capture — a text-only story panel — has nothing to
 miss and ships. The distinction is asked-for-and-absent, not absent. Nothing of
@@ -259,16 +262,12 @@ has to be found first. The first part is the package's own
 the version it was written from; after updating recadro, `init --skill`
 rewrites it, and `dev` says so while it is behind.
 
-`init` also points agents at the document from inside the set: an `AGENTS.md`
-that says to read it, and a `CLAUDE.md` that imports that. Claude Code and Cursor load them when
-they work in the set. Codex reads `AGENTS.md` only from the repository root
-down to the folder it was started in, and Copilot reads one in a subfolder only
-behind a setting; for those, or for a set `init` did not make, add one line to
-the root `AGENTS.md` or `CLAUDE.md`:
+Without the skill — another harness, or a declined question — point the
+agent file you already keep at the two package files, one line:
 
 ```md
 Store screenshots are composed with recadro. Before editing store/screenshots/,
-read node_modules/recadro/AUTHORING.md.
+read node_modules/recadro/skills/recadro/SKILL.md and node_modules/recadro/AUTHORING.md.
 ```
 
 ## Requirements

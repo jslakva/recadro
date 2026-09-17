@@ -228,15 +228,13 @@ panels that can never load their captures.
 
 `AUTHORING.md` ships inside the package and is versioned with it: what an agent
 needs to know about a set is read from the copy that matches the installed
-tool, never from a copy that drifted. A consumer's own agent file points at it,
-and `init` writes one into the set.
+tool, never from a copy that drifted. A consumer's own agent file points at it.
 
 That was the whole answer for a while — a skill would need an installer the
 package cannot run, a copy would stop tracking the version, and it would serve
 one agent where a document serves all. Each objection had a fix. `init` is an
 installer already, and writing `.claude/skills/recadro/SKILL.md` at the
-repository root is the same act as writing `AGENTS.md` in the set, one folder
-up, and asked about first. A copy stops tracking the version silently; this
+repository root is one more file it writes, asked about first. A copy stops tracking the version silently; this
 one carries the version it was written from, `init <set> --skill` rewrites it
 from the installed package, and `dev` says when it is behind. And a skill in a
 file format other harnesses read too is not one agent's.
@@ -250,9 +248,9 @@ skill is one flat file: how an agent works on a set, then the installed
 resolve. The split between the two halves is by reader: AUTHORING.md is the
 set's reference for anyone with a change to make, a person included, and says
 nothing about how to behave; the first half is the agent's, and is where every
-"you" went. The package keeps the one source, the skill is a stamped copy of it,
-and the nested agent file stays as the quieter door for an agent that wanders
-into the set without one.
+"you" went. The package keeps the one source, the skill is a stamped copy of
+it, and a set holds only the set: `init` writes no pointer files into it, since
+a harness without skills has an agent file of its own for that one line.
 
 ## The lineup is the tool's UI, not a panel
 

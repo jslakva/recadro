@@ -20,7 +20,6 @@ recadro.json              where recadro runs: "set", and where the inputs and ou
   panels/NN-slug.html     the panels, in filename order; the slug is the name without .html
   strings/<locale>.*      one entry per locale; the names are the locales
   panel.css, panel.js     what the panels share — the look, the loading — as any page would
-  AGENTS.md, CLAUDE.md    written by init; they point agents here
 <out>/<locale>/<device>-<slug>.png            outputs: the renders, flat per locale as fastlane's deliver reads them
 ```
 
@@ -144,8 +143,24 @@ recadro wait   [--config <path>]
 recadro reply  <id> "<what you changed>" [--config <path>]
 ```
 
-**`render`** produces what ships. It prints what it picked and why, then one
-line per shot:
+### `init`
+
+Makes a set from a starter: creates the panels from the chosen starter's
+design, prefills them with the captures already taken, writes `recadro.json`
+where the command runs, and offers to install the skill if absent.
+
+### `dev`
+
+Serves the lineup — every panel side by side. Reloads the panels as their
+files change. Pointer mode (`P`) copies a reference to a spot in a panel, for
+pasting to an agent.
+
+With `--live` it also carries notes from the lineup to an agent running
+`wait` (below); with none connected, the pointer copies as before.
+
+### `render`
+
+Produces what ships. It prints what it picked and why, then one line per shot:
 
 ```
 recadro  6 panels in store/screenshots
@@ -156,28 +171,24 @@ recadro  6 panels in store/screenshots
   skipped en-US/iPhone-03-quote — no capture at <path>
 ```
 
-It exits 0 either way; the lines say what happened. A panel is incomplete when
-a capture it asked for — a request under the `?captures=` folder — was not
-there, and `render` skips it. Each run replaces its own files for the slots
-and locales it rendered and touches nothing else, so `out/` holds only
-complete panels and can be uploaded wholesale. A panel that asks for no
-capture is complete and ships, and how a missing one looks is the page's own.
-A device missing from `devices` has no captures; `--devices` renders it
-anyway. `--out` moves the folder and keeps the layout below it.
-`--incomplete` shoots incomplete panels too, for looking, and refuses to
-write into the set's own `out`.
+A panel with any capture missing — a request under `?captures=` that came
+back without the file — is skipped, and `render` exits non-zero, so a script
+that uploads next stops. The rest are written, each run replacing only its own
+slots and locales.
+
+`--incomplete` shoots the skipped panels too, for looking, exits 0, and
+requires an `--out` outside the set's own; `--out` keeps the layout below it.
+
+`--devices` renders a slot even with no captures.
 
 `render` needs Playwright's Chromium, installed apart from the package. Where
-it is missing, `render` writes nothing and prints the pinned install command
-(about 200 MB); that one, not a bare `npx playwright install`. At a terminal,
-`render` asks instead.
+it is missing, at a terminal `render` asks to install it; anywhere else it
+writes nothing and prints the pinned install command. Run that one, not a bare
+`npx playwright install`; it downloads about 200 MB.
 
-**`dev`** serves the lineup — every panel side by side — at `/`, reloads the
-panels as their files change, and does not exit. Its pointer (`P`) copies a
-reference to one spot — slug, slot and locale, file, point, element — for
-pasting to an agent.
+### `wait` and `reply`
 
-**`dev --live`** also carries notes from the lineup to an agent:
+For an agent listening to the lineup; a person reading this can skip them.
 
 ```bash
 npx recadro dev --live          # the lineup, taking notes; leave it running
@@ -200,11 +211,13 @@ recadro  note 3 from the person at the lineup
          reply    recadro reply 3 "<what you changed>"
 ```
 
-`reply` marks the note done in the lineup, its line shown at the pin. With no
-`wait` connected, the pointer copies to the clipboard as before.
+`reply` marks the note done in the lineup, its line shown at the pin.
 
 ## Changing the set
 
+- **A set from a starter:** the look is the variables at the top of
+  `panel.css`, the words `strings/en-US.json`. A `{capture:N}` left in either
+  is a capture still to take; put the filename there once it exists.
 - **A panel's copy:** in `strings/<locale>.*`, never in the HTML.
 - **A region a panel enlarges or lifts:** `--x --y --w --h` in the panel's own
   `<style>`, in percent of the capture. Fit it to the app's screen on each
@@ -218,51 +231,3 @@ recadro  note 3 from the person at the lineup
   folder named for the slot, and the other slot's in one too. **Captures
   move:** change `captures` in `recadro.json`. **The set moves:** change
   `set`. No panel changes for any of these.
-
-## Starting a set
-
-```bash
-npx recadro init <dir> [--starter <name>] [--captures <path>]
-```
-
-copies a starter — the folders in the package's `starters/`; at a terminal,
-`init` without `--starter` lists them by number and asks, Enter taking
-`blank`; anywhere else the flag is required and the error names them — into a new folder, fills its `{capture:N}`
-placeholders with the captures already taken in filename order, writes `recadro.json` in the folder
-the command runs in — naming `<dir>` as the set, and `--captures` (the captures
-folder, from the same place) — and adds `AGENTS.md` and `CLAUDE.md` pointing
-here. Run it from the folder recadro will run in, usually the repository
-root; a `recadro.json` already there is an error, since that folder has its
-set. The placeholders are `data-capture`
-in the panels' HTML, and in `panorama` also in `world.html`, the scene every
-panel shows a stretch of. Then adapt: the variables at the top of `panel.css`
-to the app's colours and fonts, the words in `strings/en-US.json`, and any
-`{capture:N}` left to the capture still to take. `blank` is one panel and the
-four files it needs, for a layout written from nothing, and carries
-commented-out lines showing where more words and screens go. The copy is the repo's:
-starters are MIT-0, with no notice to keep, and recadro's own license covers
-the tool, not the set, the app or the renders.
-
-## Moving an existing set onto this layout
-
-A set made before this layout typically fetches strings from outside it and
-builds capture paths itself. Shoot it with `--incomplete` first, so there is
-something to compare against, then:
-
-1. **Strings:** one file per locale in `strings/`, holding only what the panels
-   read; a section of a larger file moves out on its own. Point the panels'
-   fetch at `../strings/${locale}.<ext>`.
-2. **`recadro.json`:** in the folder commands run from, `set` naming the set
-   and, if the capture flow writes elsewhere, `captures` naming that folder.
-   Slot folders in it must be named `iPhone` and `iPad`, locale folders for
-   the locale; a folder named otherwise is not read. Rename them in the
-   capture flow if not.
-3. **Panels:** replace every capture path the page builds with `?captures=`
-   plus the filename. Keep whatever maps a slug to a capture filename.
-4. **Commands:** drop `--locales` and `--devices` from the repo's scripts
-   where the set now says the same thing, and any flag that named the set.
-5. **Compare:** shoot again into a second folder and look at both side by side.
-   Nothing should have changed.
-6. **Agent files:** if the set has none, add them as `init` writes them:
-   `CLAUDE.md` is the one line `@AGENTS.md`, and `AGENTS.md` says to read this
-   file before changing the set.

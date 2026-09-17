@@ -14,7 +14,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 import type { Browser } from "playwright";
-import { AGENT_FILES, DEFAULT_STARTER, initSet, installSkill, listStarters, SKILL_PATH, skillVersion, VERSION } from "./init.ts";
+import { DEFAULT_STARTER, initSet, installSkill, listStarters, SKILL_PATH, skillVersion, VERSION } from "./init.ts";
 import { startServer } from "./server.ts";
 import {
   capturesUrl,
@@ -289,7 +289,6 @@ async function main(): Promise<void> {
       const left = result.unfilled.map((n) => `{capture:${n}}`).join(", ");
       console.log(`         left      ${left} in the set, for captures still to take`);
     }
-    console.log(`         agents    ${Object.keys(AGENT_FILES).join(", ")}, pointing at recadro's SKILL.md and AUTHORING.md`);
     console.log(`         skill     ${await skillLine(set, values.skill, values["no-skill"])}`);
     console.log(`         next      recadro dev  (from here)`);
     return;
@@ -369,6 +368,10 @@ async function main(): Promise<void> {
       console.log(`  ${verb} ${where} — no capture at ${missing.join(", ")}`);
     }
     console.log(`\n${result.written.length} written, ${result.incomplete.length} ${verb} → ${shown(out.base)}`);
+    // A skipped panel is a hole in the listing. A script that renders and then
+    // uploads hears only the exit code, so it fails here; the complete panels
+    // are written all the same. Under --incomplete the gaps are expected.
+    if (result.incomplete.length && !values.incomplete) process.exitCode = 1;
   } finally {
     await server.vite.close();
     await browser.close();
