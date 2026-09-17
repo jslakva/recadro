@@ -222,7 +222,8 @@ recadro  note 3 from the person at the lineup
          reply    recadro reply 3 "<what you changed>"
 ```
 
-`reply` marks the note done in the lineup, its line shown at the pin.
+`reply` marks the note done in the lineup, its line opening at the pin and
+listed in the lineup's log.
 
 ## Changing the set
 

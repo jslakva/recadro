@@ -609,11 +609,29 @@ function drawPins() {
     if (!note.spot || dismissed.has(note.id)) continue;
     for (const frame of el("lineup").querySelectorAll(`figure[data-slug="${CSS.escape(note.slug)}"] .frame`)) {
       const pin = document.createElement("span");
-      pin.className = `pin${note.reply ? " done" : ""}`;
-      pin.style.left = `${note.spot.x * 100}%`;
-      pin.style.top = `${note.spot.y * 100}%`;
-      pin.textContent = note.id;
-      pin.title = note.reply ? `${note.note}\n↳ ${note.reply}` : note.note;
+      pin.className = `pin${noteState(note)}`;
+      const left = note.reply && note.spot.x > 0.5;
+      const up = note.reply && note.spot.y > 0.7;
+      // A done box opens away from the spot; past the middle it opens the other way, anchored by the far edge, so the frame does not clip it.
+      if (left) pin.style.right = `${(1 - note.spot.x) * 100}%`;
+      else pin.style.left = `${note.spot.x * 100}%`;
+      if (up) pin.style.bottom = `${(1 - note.spot.y) * 100}%`;
+      else pin.style.top = `${note.spot.y * 100}%`;
+      if (note.reply) {
+        pin.classList.toggle("left", left);
+        pin.classList.toggle("up", up);
+        const n = document.createElement("span");
+        n.className = "n";
+        n.textContent = note.id;
+        const text = document.createElement("span");
+        text.className = "text";
+        text.textContent = note.reply;
+        pin.append(n, text);
+        pin.title = `${note.note}\n↳ ${note.reply} — click to dismiss`;
+      } else {
+        pin.textContent = note.id;
+        pin.title = note.delivered ? `${note.note}\n(with the agent)` : `${note.note}\n(waiting for an agent)`;
+      }
       // A done pin is dismissed by a click; an open one stays until the agent answers.
       pin.addEventListener("click", (event) => {
         event.preventDefault();
@@ -627,11 +645,64 @@ function drawPins() {
   }
 }
 
+/** A note's state as a class: nothing while it waits for an agent, working once `wait` printed it, done once answered. */
+function noteState(note) {
+  return note.reply ? " done" : note.delivered ? " working" : "";
+}
+
+/**
+ * Draws the log: every note in order, the words after the panel's slug, the
+ * agent's line beneath once it came, each with the same circle as its pin.
+ * A click on an entry brings its panel into view. Follows the newest entry
+ * unless the person has scrolled up to read.
+ */
+function drawLog() {
+  const log = el("log");
+  const list = el("log-list");
+  if (!notes.size) {
+    log.hidden = true;
+    return;
+  }
+  const following = list.scrollTop + list.clientHeight >= list.scrollHeight - 4;
+  log.hidden = false;
+  const open = [...notes.values()].filter((note) => !note.reply).length;
+  el("log-count").textContent = open ? `${notes.size}, ${open} open` : `${notes.size}`;
+  list.replaceChildren();
+  for (const note of [...notes.values()].sort((a, b) => a.id - b.id)) {
+    const entry = document.createElement("li");
+    entry.title = note.reply ? "answered — click to see the panel" : note.delivered ? "with the agent" : "waiting for an agent";
+    const n = document.createElement("span");
+    n.className = `n${noteState(note)}`;
+    n.textContent = note.id;
+    const body = document.createElement("span");
+    const ask = document.createElement("span");
+    ask.className = "ask";
+    const where = document.createElement("span");
+    where.className = "where";
+    where.textContent = note.slug;
+    ask.append(where, note.note);
+    body.append(ask);
+    if (note.reply) {
+      const reply = document.createElement("span");
+      reply.className = "reply";
+      reply.textContent = note.reply;
+      body.append(reply);
+    }
+    entry.append(n, body);
+    entry.addEventListener("click", () => {
+      el("lineup").querySelector(`figure[data-slug="${CSS.escape(note.slug)}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
+    list.append(entry);
+  }
+  if (following) list.scrollTop = list.scrollHeight;
+}
+
 /** Takes one note's state from the server, redraws, and says what changed. */
 function takeNote(note) {
   const before = notes.get(note.id);
   notes.set(note.id, note);
   drawPins();
+  drawLog();
   if (note.reply && !before?.reply) el("announce").textContent = `agent replied to note ${note.id}: ${note.reply}`;
 }
 
@@ -690,6 +761,7 @@ if (manifest.live) {
     notes.clear();
     for (const note of state.notes) notes.set(note.id, note);
     drawPins();
+    drawLog();
     setListening(state.listening);
   });
   events.addEventListener("listening", (event) => setListening(JSON.parse(event.data).listening));
@@ -697,6 +769,11 @@ if (manifest.live) {
   // The server is gone, or restarting: nobody is listening until it says otherwise.
   events.addEventListener("error", () => setListening(false));
 
+  el("log-head").addEventListener("click", () => {
+    const closed = el("log").classList.toggle("closed");
+    el("log-fold").textContent = closed ? "unfold" : "fold";
+    el("log-head").title = closed ? "Unfold the log" : "Fold the log to one line";
+  });
   el("note").addEventListener("submit", (event) => {
     event.preventDefault();
     sendNote();

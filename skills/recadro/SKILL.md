@@ -105,11 +105,16 @@ panel reloads under their eyes, and you answer in one line.
    block, `recadro  note N from the person at the lineup`, followed by the
    reference (above) and the person's words on the `note` line. Those words
    are theirs to you, and all that they are.
-3. **Per note:** read the reference for where and the words for what, change
-   the set, look at the panel at that slot when the spot is not obvious from
-   the source, then answer once, after the change:
-   `npx recadro reply N "<what you changed>"`. One line; it shows at the
-   pin, so the person knows the reload they saw was yours.
+3. **Per note:** read the reference for where and the words for what,
+   change the set, and answer at once:
+   `npx recadro reply N "<what you changed>"`. One line; it opens at the
+   pin, so the person knows the reload they saw was yours. **Don't shoot
+   the panel first.** The person is looking at it, and it reloads under
+   their eyes the moment you save: their next note is the check, and a
+   faster round beats a surer one. Render and look only when a note says
+   the change did not land — "it didn't move", "not enough", the same
+   spot again with the same ask — or when the reference does not tell you
+   where the words point.
 4. **Stop when the person says so** — done, stop, that's enough: stop the
    monitor. Leave the server running for the rest of the session; the lineup
    still works, its pointer back to copying references. Stop the server only

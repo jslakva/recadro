@@ -214,9 +214,12 @@ into a coding agent. [AUTHORING.md](AUTHORING.md) tells the agent how to read it
 Started as `dev --live`, the lineup sends notes instead of copying them: with
 an agent running `recadro wait` — a dot in the header says when one is — a
 pointer click opens a field at the spot, the note goes to the agent with the
-reference, and a pin marks it until the agent's `recadro reply` comes back,
-shown on hover. The panel reloads under your eyes as the agent saves. With
-nobody listening, the click copies as before; shift-click copies regardless.
+reference, and a pin marks it: blue while it waits, turning once the agent
+has it, and open as a box with the agent's line once `recadro reply` comes
+back; a click dismisses it. A log at the bottom right lists every note and
+its answer in order. The panel reloads under your eyes as the agent saves.
+With nobody listening, the click copies as before; shift-click copies
+regardless.
 
 There is deliberately no validation. Overflow, a cropped headline, the wrong face
 — the eye catches all of these instantly, and a check that duplicates the eye is

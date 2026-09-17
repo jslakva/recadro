@@ -18,8 +18,10 @@
   person to paste to a coding agent. It reads what is under the cursor and
   judges nothing. Under `dev --live`, with an agent's `recadro wait` connected,
   a click opens a note field at the spot instead, and the note goes to the
-  agent with the reference; a pin marks it until the agent's one line comes
-  back. The clipboard stays a shift-click, or a button, away.
+  agent with the reference; a pin marks it — turning while the agent has it,
+  open as a box with the agent's line once it comes back — and a log at the
+  bottom right lists every note with its answer. The clipboard stays a
+  shift-click, or a button, away.
 
   "Wrap three" is on by default, because the first three panels are the ones a
   search result shows on their own and the rest are only reached by opening the
@@ -244,13 +246,57 @@
       .note button[type="submit"] { background: var(--focus); border-color: var(--focus); }
       .note button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
       /* A pin: one sent note at its spot, numbered as `wait` prints it; blue
-         while open, the mark colour once the agent's line came back, which the
-         pin then shows on hover and a click dismisses. */
+         while it waits for an agent, a turning arc around it once `wait` has
+         printed it and the agent is on it. Once the agent's line came back the
+         pin opens into a box at the spot — the number in the mark colour, the
+         line beside it — which a click dismisses. The box grows away from the
+         spot, rightward and down, or leftward and up near the far edges, since
+         the frame clips. */
       .pin { position: absolute; z-index: 2; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%;
              display: grid; place-items: center; font: 600 10px/1 "Mona Sans", ui-sans-serif, system-ui, sans-serif;
              background: var(--focus); color: #fff; cursor: help;
              box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .9), 0 1px 3px rgba(0, 0, 0, .4); }
-      .pin.done { background: var(--mark); color: #000; cursor: pointer; }
+      .pin.working::after, .log .n.working::after { content: ""; position: absolute; inset: -5px; border-radius: 50%;
+             border: 2px solid transparent; border-top-color: var(--focus); animation: turn 1s linear infinite; }
+      .pin.done { width: auto; height: auto; max-width: 60%; display: flex; align-items: flex-start; gap: 6px;
+                  border-radius: 9px; background: rgba(0, 0, 0, .9); color: var(--ink); cursor: pointer;
+                  font: 500 10px/1.3 "Mona Sans", ui-sans-serif, system-ui, sans-serif; text-align: left;
+                  box-shadow: 0 2px 10px rgba(0, 0, 0, .4); }
+      .pin.done .n { flex: none; width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center;
+                     font: 600 10px/1 "Mona Sans", ui-sans-serif, system-ui, sans-serif; background: var(--mark); color: #000; }
+      .pin.done .text { padding: 2px 8px 2px 0; overflow-wrap: anywhere; }
+      /* Anchored by right or bottom on the far side, so the box has the near side's room to grow into. */
+      .pin.done.left { margin: -8px -8px 0 0; flex-direction: row-reverse; }
+      .pin.done.left .text { padding: 2px 0 2px 8px; }
+      .pin.done.up { margin-top: 0; margin-bottom: -8px; align-items: flex-end; }
+      @keyframes turn { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) {
+        .pin.working::after, .log .n.working::after { animation: none; border-color: var(--focus); border-style: dashed; }
+      }
+      /* The log: every note this server took, in order, with the agent's line
+         under each as it comes — the pins as a list, for reading back what was
+         asked and answered. Bottom right, dark like the note field; the head
+         folds it to one line. Shown once there is a note. */
+      .log { position: fixed; right: 12px; bottom: 12px; z-index: 3; width: 320px; max-height: 40vh; display: grid;
+             grid-template-rows: auto 1fr; border-radius: 8px; background: rgba(0, 0, 0, .9); color: var(--ink);
+             color-scheme: dark; font-size: 11px; line-height: 1.35; box-shadow: 0 6px 24px rgba(0, 0, 0, .35); }
+      .log-head { display: flex; align-items: center; gap: 8px; padding: 7px 10px; font-size: 11px; color: var(--dim);
+                  cursor: pointer; user-select: none; }
+      .log-head b { font-weight: 600; color: var(--ink); }
+      .log-head .fold { margin-left: auto; font-size: 10px; }
+      .log.closed { grid-template-rows: auto; }
+      .log.closed ol { display: none; }
+      .log ol { margin: 0; padding: 0 10px 8px; list-style: none; overflow-y: auto; display: grid; gap: 6px; }
+      .log li { display: grid; grid-template-columns: 16px 1fr; gap: 8px; align-items: start; cursor: pointer; }
+      .log li:hover .ask { color: #fff; }
+      .log .n { position: relative; width: 14px; height: 14px; margin-top: 1px; border-radius: 50%; display: grid; place-items: center;
+                font: 600 9px/1 "Mona Sans", ui-sans-serif, system-ui, sans-serif; background: var(--focus); color: #fff; }
+      .log .n.done { background: var(--mark); color: #000; }
+      .log .where { font: 10px/1.3 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-ligatures: none;
+                    color: var(--dim); margin-right: 6px; }
+      .log .ask { color: var(--ink); overflow-wrap: anywhere; }
+      .log .reply { display: block; color: var(--mark); overflow-wrap: anywhere; }
+      .log .reply::before { content: "↳ "; color: var(--dim); }
       /* The pointer copies a spot for pasting into an agent; a touch screen
          has neither the hover nor, usually, the agent. P still toggles it. Nor
          does it have the keys the panel shown alone hints at. */
@@ -317,6 +363,10 @@
       <div id="lineup"></div>
     </main>
     <p class="visually-hidden" id="announce" aria-live="polite"></p>
+    <aside class="log" id="log" hidden aria-label="Notes to the agent">
+      <div class="log-head" id="log-head" title="Fold the log to one line"><b>notes</b><span id="log-count"></span><span class="fold" id="log-fold">fold</span></div>
+      <ol id="log-list"></ol>
+    </aside>
     <form class="note" id="note" hidden>
       <div class="ref" id="note-ref"></div>
       <textarea id="note-text" rows="2" placeholder="Note to the agent" aria-label="Note to the agent"></textarea>

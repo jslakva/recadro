@@ -78,6 +78,8 @@ export interface Note {
   slug: string;
   /** The spot as fractions of the panel's width and height, for the pin. */
   spot: { x: number; y: number } | null;
+  /** Whether a `wait` has printed it, so the lineup can show it as with the agent. */
+  delivered: boolean;
   /** The agent's one line, once it replied. */
   reply: string | null;
 }
@@ -194,6 +196,7 @@ export class NoteChannel {
       note: text,
       slug: typeof body.slug === "string" ? body.slug : "",
       spot: typeof spot?.x === "number" && typeof spot?.y === "number" ? { x: spot.x, y: spot.y } : null,
+      delivered: false,
       reply: null,
     };
     this.notes.push(note);
@@ -208,6 +211,7 @@ export class NoteChannel {
       this.undelivered.push(note);
       return;
     }
+    note.delivered = true;
     const line = `${JSON.stringify(note)}\n`;
     for (const waiter of this.waiters) waiter.write(line);
   }
@@ -223,7 +227,11 @@ export class NoteChannel {
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
     this.waiters.add(res);
-    for (const note of this.undelivered.splice(0)) res.write(`${JSON.stringify(note)}\n`);
+    for (const note of this.undelivered.splice(0)) {
+      note.delivered = true;
+      res.write(`${JSON.stringify(note)}\n`);
+      this.tellLineups("note", note);
+    }
     this.tellLineups("listening", { listening: true });
     res.on("close", () => {
       this.waiters.delete(res);
