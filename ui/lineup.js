@@ -581,6 +581,8 @@ let listening = false;
 const notes = new Map();
 /** Pins the person clicked away in this tab. */
 const dismissed = new Set();
+/** Open pins the person clicked into a box in this tab. */
+const opened = new Set();
 /** What the open note field is about, or null while it is closed. */
 let pending = null;
 
@@ -610,36 +612,61 @@ function drawPins() {
     for (const frame of el("lineup").querySelectorAll(`figure[data-slug="${CSS.escape(note.slug)}"] .frame`)) {
       const pin = document.createElement("span");
       pin.className = `pin${noteState(note)}`;
-      const left = note.reply && note.spot.x > 0.5;
-      const up = note.reply && note.spot.y > 0.7;
-      // A done box opens away from the spot; past the middle it opens the other way, anchored by the far edge, so the frame does not clip it.
+      // An answered pin opens on its own; an open one when clicked.
+      const box = Boolean(note.reply) || opened.has(note.id);
+      const left = box && note.spot.x > 0.5;
+      const up = box && note.spot.y > 0.7;
+      // A box opens away from the spot; past the middle it opens the other way, anchored by the far edge, so the frame does not clip it.
       if (left) pin.style.right = `${(1 - note.spot.x) * 100}%`;
       else pin.style.left = `${note.spot.x * 100}%`;
       if (up) pin.style.bottom = `${(1 - note.spot.y) * 100}%`;
       else pin.style.top = `${note.spot.y * 100}%`;
-      if (note.reply) {
+      const state = note.reply ? "answered" : note.delivered ? "with the agent" : "waiting for an agent";
+      if (box) {
+        pin.classList.add("box");
         pin.classList.toggle("left", left);
         pin.classList.toggle("up", up);
         const n = document.createElement("span");
         n.className = "n";
         n.textContent = note.id;
+        n.title = state;
         const text = document.createElement("span");
         text.className = "text";
-        text.textContent = note.reply;
-        pin.append(n, text);
-        pin.title = `${note.note}\n↳ ${note.reply} — click to dismiss`;
+        if (note.reply) {
+          text.textContent = note.reply;
+          text.title = `you: ${note.note}`;
+        } else {
+          const said = document.createElement("span");
+          said.className = "said";
+          said.textContent = "you: ";
+          text.append(said, note.note);
+        }
+        const x = document.createElement("button");
+        x.type = "button";
+        x.className = "x";
+        x.textContent = "×";
+        x.title = note.reply ? "Dismiss" : "Fold to the circle";
+        x.setAttribute("aria-label", x.title);
+        // Folding an open box keeps the note; dismissing an answered pin is for this tab, and the log still lists it.
+        x.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (note.reply) dismissed.add(note.id);
+          else opened.delete(note.id);
+          drawPins();
+        });
+        pin.append(n, text, x);
+        pin.addEventListener("click", (event) => event.stopPropagation());
       } else {
         pin.textContent = note.id;
-        pin.title = note.delivered ? `${note.note}\n(with the agent)` : `${note.note}\n(waiting for an agent)`;
+        pin.title = `${note.note}\n(${state} — click to open)`;
+        pin.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          opened.add(note.id);
+          drawPins();
+        });
       }
-      // A done pin is dismissed by a click; an open one stays until the agent answers.
-      pin.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (!note.reply) return;
-        dismissed.add(note.id);
-        drawPins();
-      });
       frame.append(pin);
     }
   }

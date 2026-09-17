@@ -216,8 +216,9 @@ an agent running `recadro wait` — a dot in the header says when one is — a
 pointer click opens a field at the spot, the note goes to the agent with the
 reference, and a pin marks it: blue while it waits, turning once the agent
 has it, and open as a box with the agent's line once `recadro reply` comes
-back; a click dismisses it. A log at the bottom right lists every note and
-its answer in order. The panel reloads under your eyes as the agent saves.
+back. A click on a pin opens it into a box with your words; the box's ×
+folds it back, or dismisses an answered one. A log at the bottom right
+lists every note and its answer in order. The panel reloads under your eyes as the agent saves.
 With nobody listening, the click copies as before; shift-click copies
 regardless.
 
