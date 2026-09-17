@@ -7,7 +7,7 @@
 
 /** One App Store Connect screenshot slot. */
 export interface Slot {
-  /** Directory name, matching the capture folders and the `--devices` flag. */
+  /** The slot's name: a captures folder, the `--devices` flag, the output filename or folder. */
   id: string;
   /** The kind of device, as the lineup's device switch names it. */
   device: string;
@@ -53,4 +53,16 @@ export function selectSlots(ids: readonly string[]): Slot[] {
     }
   }
   return SLOTS.filter((slot) => ids.includes(slot.id));
+}
+
+/**
+ * The slot an image of this size is a capture for: the one whose delivered
+ * shape is nearest, upright, so an iPhone SE's 750×1334 still reads as the
+ * phone and an iPad mini's 1488×2266 as the iPad. A capture can be any
+ * simulator's size; the page scales it into the panel.
+ */
+export function slotForShape(width: number, height: number): Slot {
+  const aspect = Math.min(width, height) / Math.max(width, height);
+  const off = (slot: Slot) => Math.abs(aspect - slot.width / slot.height);
+  return SLOTS.reduce((best, slot) => (off(slot) < off(best) ? slot : best));
 }

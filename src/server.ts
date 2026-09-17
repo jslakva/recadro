@@ -11,17 +11,16 @@ import { announceLive, NoteChannel } from "./notes.ts";
 import { discoverPanels, urlPathFor, type Panel } from "./panels.ts";
 import { PKG } from "./pkg.ts";
 import {
+  CAPTURE_FILE,
   capturesBase,
-  capturesUrl,
+  capturesUrls,
   DEFAULT_LOCALE,
   devicesWithCaptures,
   loadSet,
+  outTemplate,
   type PanelSet,
 } from "./set.ts";
 import { SLOTS } from "./slots.ts";
-
-/** A file `dev` treats as a capture when it appears or changes under the captures folder. */
-const CAPTURE_FILE = /\.(png|jpe?g|webp|heic)$/i;
 
 /** A running server, plus what the caller needs to build panel URLs. */
 export interface PanelServer {
@@ -54,11 +53,15 @@ interface LineupManifest {
   slots: typeof SLOTS;
   /** Locales `strings/` names, or the default one. */
   locales: string[];
-  /** The `?captures=` URL with `{locale}` and `{device}` left for the lineup to fill. */
-  capturesUrl: string;
-  /** Slots with a captures folder, so the lineup can say which have none. */
+  /** Each slot and locale's `?captures=` URL, keyed by slot then locale. */
+  captures: Record<string, Record<string, string>>;
+  /** Slots with captures, so the lineup can say which have none. */
   devicesWithCaptures: string[];
-  /** Root-absolute URL of the output folder, or null when it lies outside the root and cannot be shown. */
+  /**
+   * Root-absolute URL of a render, with `{locale}`, `{device}` and `{slug}` for
+   * the lineup to fill, or null when the output folder lies outside the root
+   * and cannot be shown.
+   */
   outUrl: string | null;
   /** Whether the notes channel is served, so the lineup offers a note field beside the clipboard. */
   live: boolean;
@@ -109,14 +112,14 @@ function sendOwnFile(res: ServerResponse, file: string, type: string): void {
 function manifestFor(set: PanelSet, options: ServerOptions): LineupManifest {
   const current = loadSet(set.dir);
   const locales = current.locales.length ? current.locales : [DEFAULT_LOCALE];
-  const outUrl = urlPathFor(current.root, current.outDir);
+  const outUrl = urlPathFor(current.root, current.out.base);
   return {
     panels: discoverPanels(current.dir, current.root).map(({ slug, urlPath }) => ({ slug, urlPath })),
     slots: SLOTS,
     locales,
-    capturesUrl: capturesUrl(current),
+    captures: capturesUrls(current, locales),
     devicesWithCaptures: devicesWithCaptures(current, locales),
-    outUrl: outUrl.startsWith("/..") ? null : outUrl,
+    outUrl: outUrl.startsWith("/..") ? null : `${outUrl}/${outTemplate(current.out)}`,
     live: Boolean(options.live),
   };
 }
@@ -141,7 +144,7 @@ function watchFetched(server: ViteDevServer, set: PanelSet): void {
     const fetched =
       file.startsWith(set.dir + sep) &&
       !file.startsWith(panels) &&
-      !file.startsWith(set.outDir + sep) &&
+      !file.startsWith(set.out.base + sep) &&
       !server.moduleGraph.getModulesByFile(file)?.size;
     if (!capture && !fetched) return;
     clearTimeout(pending);

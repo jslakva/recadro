@@ -36,7 +36,7 @@ its own when it comes.
 ```
 tool → page:   ?panel=<slug>&device=<slot>&locale=<locale>&captures=<folder URL>
 page → tool:   nothing
-tool → disk:   <out>/<device>/<locale>/<NN-slug>.png
+tool → disk:   <out>/<locale>/<device>-<NN-slug>.png
 ```
 
 The tool reads what a set's files are called and where they are. It never
@@ -62,9 +62,9 @@ names, and the one file that exists is optional:
 <set>/
   panels/NN-slug.html     the panels; the number prefix is the order
   strings/<locale>.*      one entry per locale; the names are the locales
-  captures/<device>/      where captures are, unless recadro.json says otherwise
+  captures/               where captures are, unless recadro.json says otherwise
   recadro.json            optional: "captures" and "out"
-  out/                    renders, unless recadro.json or --out says otherwise
+  out/<locale>/           renders, unless recadro.json or --out says otherwise
   panel.css, panel.js     the page's own; recadro never reads them
 ```
 
@@ -77,16 +77,33 @@ names, and the one file that exists is optional:
   is adding its strings, and nothing else changes. A strings file that other
   tooling reads where it is can be symlinked in. A set with no `strings/`
   renders `en-US`.
-- **Devices are the captures folders that exist.** An iPhone-only app has no
-  `iPad` folder and renders no iPad panels without saying so anywhere. A set
-  with no captures folder at all — text-only, or not captured yet — renders
-  every slot.
+- **Devices are what the captures are shaped for.** A capture is a phone's or
+  an iPad's by its proportions, and that is sturdier than any folder name or
+  exact size, which vary by simulator and are scaled into the panel anyway.
+  So a flat folder of captures serves the slot they are shaped for, and an
+  iPhone-only app renders no iPad panels without saying so anywhere. What
+  shape cannot settle is which capture a panel means when both devices have
+  one of the same name — a panel asks for `01-home.png` on either — so two
+  slots' captures go in a folder each, named for the slot. The locale is the
+  other folder name that means something, since captures that differ per
+  language are the same names again; a folder named for a locale holds that
+  locale's, with the slot folders inside or outside it, and captures shared
+  by every locale sit in no locale folder. This mirrors what capture flows
+  write — Maestro's folder per device, snapshot's folder per locale — rather
+  than asking them to change. A set with no captures at all — text-only, or
+  not captured yet — renders every slot.
+- **Renders go where the upload reads.** fastlane's `deliver` reads one flat
+  folder per locale and picks the slot from the pixel size, so that is the
+  default: `<out>/<locale>/<device>-<slug>.png`, the slot in the filename
+  because both slots' panels share a slug. Pointing `out` at the fastlane
+  folder makes an upload with nothing copied in between. A flow that wants a
+  folder per slot says so with `{device}` in the pattern.
 - **`recadro.json` holds the two facts names cannot.** Where the capture flow
-  writes (`"captures": "../../maestro/{device}/{locale}"`, where `{locale}`
-  makes captures per locale) and, rarely, where renders go. It sits in the set,
-  so its paths are relative to the set and a repository can hold several sets.
-  It is strict: a mistyped key or placeholder is an error, because one quietly
-  ignored looks exactly like captures that do not exist yet.
+  writes (`"captures": "../../maestro/screenshots"`) and, rarely, where
+  renders go. It sits in the set, so its paths are relative to the set and a
+  repository can hold several sets. It is strict: a mistyped key or
+  placeholder is an error, because one quietly ignored looks exactly like
+  captures that do not exist yet.
 
 Flags win over `recadro.json`, which wins over the conventions. What never
 becomes a key is anything a page lays out with: the strings format, the tokens,

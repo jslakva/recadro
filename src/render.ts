@@ -7,11 +7,12 @@
  * every write is flattened and stamped sRGB, because an alpha channel is never
  * wanted (ASC rejects transparency) and so there is nothing to test for.
  */
-import { mkdirSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, readdirSync, rmSync } from "node:fs";
+import { dirname, join } from "node:path";
 import type { Browser, Page } from "playwright";
 import sharp from "sharp";
 import type { Panel } from "./panels.ts";
+import { outFile, type OutLayout } from "./set.ts";
 import { viewportFor, type Slot } from "./slots.ts";
 
 /** Everything one render pass needs. */
@@ -28,8 +29,8 @@ export interface RenderOptions {
   locales: string[];
   /** The page's `?captures=` for one slot and locale: a root-absolute folder URL. */
   capturesUrl: (device: string, locale: string) => string;
-  /** Absolute path of the output directory; `<out>/<device>/<locale>/`. */
-  outDir: string;
+  /** Where renders go: the folder and the layout below it, `<out>/<locale>/<device>-<slug>.png` by default. */
+  out: OutLayout;
   /**
    * Shoot incomplete panels too, instead of skipping them. For looking, never
    * for shipping: the caller keeps this away from the set's own output
@@ -40,11 +41,11 @@ export interface RenderOptions {
 
 /** What a pass produced, for the caller's summary line. */
 export interface RenderResult {
-  /** Files written, as paths relative to `outDir`. */
+  /** Files written, as paths relative to `out.base`. */
   written: string[];
   /**
-   * Panels with an image that resolved to nothing, as `device/locale/slug` with
-   * the srcs. Skipped, or written anyway under `incomplete`.
+   * Panels with an image that resolved to nothing, as the file they would have
+   * been written to, with the srcs. Skipped, or written anyway under `incomplete`.
    */
   incomplete: { where: string; missing: string[] }[];
 }
@@ -94,22 +95,46 @@ async function settle(page: Page): Promise<string[]> {
 }
 
 /**
- * Renders every slot x locale x panel whose capture exists, or every panel at
- * all under `incomplete`.
- *
- * Each `<out>/<device>/<locale>/` directory is cleared first, so a panel
- * deleted from the directory cannot survive as a stale PNG that an upload
+ * Removes what an earlier render wrote for this slot and locale: the folder
+ * when the layout gives the slot one, else this slot's files in the locale's
+ * folder, the other slot's left alone. Emptied before a render into it, so a
+ * panel deleted from the set cannot survive as a stale PNG that an upload
  * would still find and ship.
  */
+function clear(out: OutLayout, slot: Slot, locale: string): string {
+  const dir = join(out.base, dirname(outFile(out, slot.id, locale, "x")));
+  if (out.layout.includes("{device}")) {
+    rmSync(dir, { recursive: true, force: true });
+  } else {
+    const prefix = `${slot.id}-`;
+    for (const name of safeList(dir)) {
+      if (name.startsWith(prefix) && name.endsWith(".png")) rmSync(join(dir, name), { force: true });
+    }
+  }
+  mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+/** The names in a folder, or none when it does not exist. */
+function safeList(dir: string): string[] {
+  try {
+    return readdirSync(dir);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Renders every slot x locale x panel whose capture exists, or every panel at
+ * all under `incomplete`.
+ */
 export async function render(options: RenderOptions): Promise<RenderResult> {
-  const { browser, origin, panels, slots, locales, capturesUrl, outDir, incomplete = false } = options;
+  const { browser, origin, panels, slots, locales, capturesUrl, out, incomplete = false } = options;
   const result: RenderResult = { written: [], incomplete: [] };
 
   for (const slot of slots) {
     for (const locale of locales) {
-      const dir = join(outDir, slot.id, locale);
-      rmSync(dir, { recursive: true, force: true });
-      mkdirSync(dir, { recursive: true });
+      clear(out, slot, locale);
 
       const context = await browser.newContext({
         viewport: viewportFor(slot),
@@ -128,21 +153,21 @@ export async function render(options: RenderOptions): Promise<RenderResult> {
         // an empty list and call an unfinished panel complete.
         await page.goto(`${origin}${panel.urlPath}${query}`, { waitUntil: "networkidle" });
 
+        const file = outFile(out, slot.id, locale, panel.slug);
         const missing = await settle(page);
         if (missing.length) {
-          result.incomplete.push({ where: `${slot.id}/${locale}/${panel.slug}`, missing });
+          result.incomplete.push({ where: file.replace(/\.png$/, ""), missing });
           if (!incomplete) continue;
         }
 
         const shot = await page.screenshot({ type: "png" });
-        const file = join(dir, `${panel.slug}.png`);
         await sharp(shot)
           .flatten({ background: "#ffffff" })
           .toColorspace("srgb")
           .withIccProfile("srgb")
           .png({ compressionLevel: 9 })
-          .toFile(file);
-        result.written.push(`${slot.id}/${locale}/${panel.slug}.png`);
+          .toFile(join(out.base, file));
+        result.written.push(file);
       }
 
       await context.close();

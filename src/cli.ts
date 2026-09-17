@@ -16,12 +16,15 @@ import type { Browser } from "playwright";
 import { AGENT_FILES, initSet, installSkill, listStarters, SKILL_PATH, skillVersion, VERSION } from "./init.ts";
 import { startServer } from "./server.ts";
 import {
+  capturesBase,
   capturesUrl,
   CONFIG_FILE,
   DEFAULT_LOCALE,
+  describeCaptures,
   devicesWithCaptures,
   findSet,
   loadSet,
+  outTemplate,
   type PanelSet,
 } from "./set.ts";
 import { SLOTS, selectSlots } from "./slots.ts";
@@ -29,22 +32,22 @@ import { reply, wait } from "./wait.ts";
 
 const USAGE = `recadro — App Store screenshots as code
 
-  recadro init   <dir> --starter <name> [--captures <pattern>] [--skill | --no-skill]
+  recadro init   <dir> --starter <name> [--captures <dir>] [--skill | --no-skill]
   recadro dev    [--panels <dir>] [--port <n>] [--live]
   recadro render [--panels <dir>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
   recadro wait   [--panels <dir>]
   recadro reply  <id> "<what you changed>" [--panels <dir>]
 
   --starter     init: the starter to copy          (${listStarters().join(", ")})
-  --captures    init: the folder holding a folder per device, from here (written to ${CONFIG_FILE})
+  --captures    init: the captures folder, from here (written to ${CONFIG_FILE})
   --skill       init: add a /recadro skill for Claude Code at ${SKILL_PATH.split(sep).join("/")} without asking,
                 or rewrite one another version wrote; on an existing set, init adds only the skill.
                 --no-skill: don't, and don't ask
   --live        dev: take notes pinned in the lineup, for an agent running \`recadro wait\`
 
   --panels      the set: a folder holding panels/       (default: found from here)
-  --out         output directory       (default: ${CONFIG_FILE} "out", else <set>/out)
-  --devices     slots to render        (default: those with a captures folder, else all)
+  --out         where renders go       (default: ${CONFIG_FILE} "out", else <set>/out; <locale>/<device>-<slug>.png below it)
+  --devices     slots to render        (default: those with captures, else all)
   --locales     locales to render      (default: the names in <set>/strings/, else ${DEFAULT_LOCALE})
   --incomplete  shoot panels missing a capture too, to look at them;
                 needs an --out other than the set's own
@@ -75,15 +78,15 @@ function localesFor(set: PanelSet, flag: string | undefined): { locales: string[
 
 /**
  * The slots to render, and why. Without `--devices`, a slot is rendered when it
- * has a captures folder for one of the locales — so an iPhone-only app renders
- * no iPad panels — and every slot is rendered when none has one yet.
+ * has captures for one of the locales — so an iPhone-only app renders no iPad
+ * panels — and every slot is rendered when none has any yet.
  */
 function slotsFor(set: PanelSet, locales: string[], flag: string | undefined): { ids: string[]; from: string } {
   if (flag) return { ids: list(flag), from: "--devices" };
   const found = devicesWithCaptures(set, locales);
-  if (!found.length) return { ids: SLOTS.map((s) => s.id), from: "no captures folders yet" };
+  if (!found.length) return { ids: SLOTS.map((s) => s.id), from: "no captures yet" };
   const missing = SLOTS.filter((s) => !found.includes(s.id)).map((s) => s.id);
-  return { ids: found, from: missing.length ? `no captures folder for ${missing.join(", ")}` : "captures folders" };
+  return { ids: found, from: missing.length ? `no captures for ${missing.join(", ")}` : "captures" };
 }
 
 /** Asks a yes-or-no question on the terminal; Enter alone is yes, Ctrl+C quits. */
@@ -211,7 +214,7 @@ async function main(): Promise<void> {
     const result = initSet({ dir, starter: values.starter, captures });
     const set = loadSet(dir);
     console.log(`recadro  ${shown(dir)} from the ${values.starter} starter`);
-    console.log(`         captures  ${shown(resolve(set.dir, set.captures))}/`);
+    console.log(`         captures  ${shown(capturesBase(set))}/  (${describeCaptures(set, [DEFAULT_LOCALE])})`);
     if (result.capturesFrom) {
       const first = result.captures[0];
       const last = result.captures.at(-1);
@@ -254,7 +257,7 @@ async function main(): Promise<void> {
     const { origin, panels } = await startServer(set, { port, watchFetched: true, live: values.live });
     console.log(`recadro  ${counted(panels.length, "panel")} in ${shown(set.dir)}`);
     console.log(`         locales   ${locales.join(", ")}  (${localesFrom})`);
-    console.log(`         captures  ${shown(resolve(set.dir, set.captures))}/`);
+    console.log(`         captures  ${shown(capturesBase(set))}/  (${describeCaptures(set, locales)})`);
     console.log(`         lineup    ${origin}/`);
     if (values.live) console.log(`         live      recadro wait  (prints each note pinned in the lineup; recadro reply <id> "…" answers)`);
     const stale = staleSkillLine(set.root, set.dir);
@@ -262,12 +265,13 @@ async function main(): Promise<void> {
     return;
   }
 
-  const outDir = values.out ? resolve(values.out) : set.outDir;
+  // `--out` moves the folder; the layout below it stays the set's.
+  const out = values.out ? { ...set.out, base: resolve(values.out) } : set.out;
   // The set's out directory only ever holds complete panels, so whatever
   // uploads from it can take it wholesale. An incomplete shot there would ship
   // an empty frame.
-  if (values.incomplete && outDir === set.outDir) {
-    throw new Error(`--incomplete shoots panels that must not ship; pass an --out other than ${shown(set.outDir)}`);
+  if (values.incomplete && out.base === set.out.base) {
+    throw new Error(`--incomplete shoots panels that must not ship; pass an --out other than ${shown(set.out.base)}`);
   }
   const { ids, from: devicesFrom } = slotsFor(set, locales, values.devices);
   const slots = selectSlots(ids);
@@ -276,13 +280,13 @@ async function main(): Promise<void> {
   // stops a render that has touched nothing.
   const browser = await openBrowser();
   const { render } = await import("./render.ts");
-  mkdirSync(outDir, { recursive: true });
+  mkdirSync(out.base, { recursive: true });
   const server = await startServer(set, { port });
   try {
     console.log(`recadro  ${counted(server.panels.length, "panel")} in ${shown(set.dir)}`);
     console.log(`         devices   ${ids.join(", ")}  (${devicesFrom})`);
     console.log(`         locales   ${locales.join(", ")}  (${localesFrom})`);
-    console.log(`         out       ${shown(outDir)}\n`);
+    console.log(`         out       ${shown(out.base)}/${outTemplate(out)}\n`);
 
     const result = await render({
       browser,
@@ -291,7 +295,7 @@ async function main(): Promise<void> {
       slots,
       locales,
       capturesUrl: (device, locale) => capturesUrl(set, device, locale),
-      outDir,
+      out,
       incomplete: values.incomplete,
     });
     const verb = values.incomplete ? "incomplete" : "skipped";
@@ -299,7 +303,7 @@ async function main(): Promise<void> {
     for (const { where, missing } of result.incomplete) {
       console.log(`  ${verb} ${where} — no capture at ${missing.join(", ")}`);
     }
-    console.log(`\n${result.written.length} written, ${result.incomplete.length} ${verb} → ${shown(outDir)}`);
+    console.log(`\n${result.written.length} written, ${result.incomplete.length} ${verb} → ${shown(out.base)}`);
   } finally {
     await server.vite.close();
     await browser.close();

@@ -24,18 +24,18 @@ store/screenshots/          # the set, found from wherever you run recadro
   panels/01-hero.html       # the panels; the number prefix is the order
   panels/02-feature.html
   strings/en-US.json        # one per locale; the file names are the locales
-  captures/iPhone/01-hero.png  # raw captures, one folder per device
+  captures/01-hero.png      # raw captures; a folder per device, and per locale, when needed
   panel.css, panel.js       # whatever the panels share; recadro never reads them
   recadro.json              # optional: only when captures live elsewhere
-  out/                      # rendered: <device>/<locale>/<NN-slug>.png
+  out/                      # rendered: <locale>/<device>-<NN-slug>.png
 ```
 
 The whole tool ↔ layout contract is four query params:
 
 ```
-tool → page:   ?panel=02-feature&device=iPhone&locale=en-US&captures=/store/screenshots/captures/iPhone/
+tool → page:   ?panel=02-feature&device=iPhone&locale=en-US&captures=/store/screenshots/captures/
 page → tool:   nothing
-tool → disk:   out/<device>/<locale>/<NN-slug>.png, at exact slot pixels
+tool → disk:   out/<locale>/<device>-<NN-slug>.png, at exact slot pixels
 ```
 
 recadro reads what things are called, never what they say. A page fetches its
@@ -45,8 +45,11 @@ preference — the slot geometry — and where a set keeps its pieces.
 
 - **Locales** are the names in `strings/`. Add `strings/de-DE.json` and
   `render` renders German too.
-- **Devices** are the folders in `captures/`. No `iPad` folder, no iPad
-  panels; no captures at all yet, every slot.
+- **Devices** are what the captures are shaped for. A folder of phone
+  captures is an iPhone-only set and renders no iPad panels; captures for
+  both go in a folder each, `iPhone/` and `iPad/`; no captures at all yet,
+  every slot. Captures that differ per language go in a folder named for the
+  locale.
 - **The set** is found: the folder you run in, the nearest set above it, or the
   one set below it.
 
@@ -137,9 +140,8 @@ the set itself, where nothing beside it is reachable.
 npx recadro init store/screenshots --starter overlay --captures path/to/captures
 ```
 
-`--captures` is the folder holding a folder per device (`iPhone/`, `iPad/`),
-from where you run the command; `init` writes it into `recadro.json` relative
-to the set.
+`--captures` is the captures folder, from where you run the command; `init`
+writes it into `recadro.json` relative to the set.
 
 - **`overlay`** — the capture fills the panel, and a band of colour over its
   top carries the headline, with highlighted words; one panel magnifies part
@@ -183,19 +185,28 @@ A capture flow usually writes where it writes. Tell the set with
 `recadro.json` beside `panels/`:
 
 ```json
-{ "captures": "../../e2e/screenshots/{device}/{locale}" }
+{ "captures": "../../e2e/screenshots" }
 ```
 
-Paths are relative to the set. `{device}` is the slot id; a folder without it
-holds one folder per slot. `{locale}`, when present, makes the captures per
-locale. The folder must be
-inside the repository. The only other key is `out`, for renders somewhere
-other than `<set>/out`. Unknown keys are an error.
+Paths are relative to the set, and the folder must be inside the repository.
+What is below it is read by name: a folder named for a locale holds that
+locale's captures, one named for a slot holds that slot's, either inside the
+other and each optional; a folder naming no slot serves the slot its captures
+are shaped for. So a Maestro flow's `iPhone/` and `iPad/`, a flat folder from
+one simulator, and `<locale>/<slot>/` from a flow run per language all read
+as they are.
+
+The only other key is `out`, for renders somewhere other than `<set>/out`.
+Renders go one folder per locale, flat, the slot prefixed to the filename —
+the tree fastlane's `deliver` reads, so `"out": "../../fastlane/screenshots"`
+is an upload with no copying in between. `{device}` in the pattern puts the
+slot in a folder instead: `"out": "out/{locale}/{device}"`. Unknown keys and
+other placeholders are an error.
 
 ## Commands
 
 ```
-recadro init   <dir> --starter <name> [--captures <pattern>] [--skill | --no-skill]
+recadro init   <dir> --starter <name> [--captures <dir>] [--skill | --no-skill]
 recadro dev    [--panels <dir>] [--port <n>] [--live]
 recadro render [--panels <dir>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
 recadro wait   [--panels <dir>]
@@ -204,8 +215,9 @@ recadro reply  <id> "<what you changed>" [--panels <dir>]
 
 Flags win over `recadro.json`, which wins over the set's names. `--panels`
 defaults to the set found from the working directory, `--locales` to the names
-in `strings/` (or `en-US`), `--devices` to the slots with a captures folder (or
-all), `--out` to `<set>/out`. Both commands print what they picked and why.
+in `strings/` (or `en-US`), `--devices` to the slots with captures (or all),
+`--out` to `<set>/out`, keeping the layout below it. Both commands print what
+they picked and why.
 
 ## The lineup is the check
 

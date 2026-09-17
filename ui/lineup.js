@@ -240,11 +240,14 @@ function figureFor(panel, context) {
   frame.className = "frame loading";
   const alone = `#${encodeURIComponent(panel.slug)}`;
 
-  const captures = manifest.capturesUrl.replaceAll("{locale}", locale).replaceAll("{device}", slot.id);
+  const captures = manifest.captures[slot.id][locale];
   const panelUrl =
     `${panel.urlPath}?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}` +
     `&locale=${encodeURIComponent(locale)}&captures=${encodeURIComponent(captures)}`;
-  const pngUrl = `${manifest.outUrl}/${slot.id}/${locale}/${panel.slug}.png`;
+  const pngUrl = String(manifest.outUrl)
+    .replaceAll("{locale}", locale)
+    .replaceAll("{device}", slot.id)
+    .replaceAll("{slug}", panel.slug);
 
   if (mode === "live") {
     const iframe = document.createElement("iframe");

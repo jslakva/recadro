@@ -7,7 +7,7 @@
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, extname, join } from "node:path";
 import { PKG } from "./pkg.ts";
-import { capturesDir, CONFIG_FILE, DEFAULT_LOCALE, loadSet } from "./set.ts";
+import { capturesDir, capturesIn, CONFIG_FILE, DEFAULT_LOCALE, loadSet } from "./set.ts";
 import { SLOTS } from "./slots.ts";
 
 /** Where the starters ship: one folder per starter, named for it. */
@@ -18,9 +18,6 @@ const CAPTURE_PLACEHOLDER = /\{capture:(\d+)\}/g;
 
 /** The files a placeholder is filled in; anything else is copied byte for byte. */
 const TEXT_FILES = new Set([".html", ".css", ".js", ".json", ".md", ".txt"]);
-
-/** A file counted as a capture when listing the captures already taken. */
-const CAPTURE_FILE = /\.(png|jpe?g|webp)$/i;
 
 /**
  * The agent files `init` writes into a set, by name. Agents that read an
@@ -101,7 +98,7 @@ export interface InitOptions {
   dir: string;
   /** The starter's name, a folder in `STARTERS_DIR`. */
   starter: string;
-  /** A captures pattern for `recadro.json`, when captures are not in the set's own `captures/{device}`. */
+  /** The captures folder for `recadro.json`, when captures are not in the set's own `captures/`. */
   captures?: string;
 }
 
@@ -126,17 +123,13 @@ export function listStarters(): string[] {
 /**
  * The captures already taken, in filename order, from the first slot that has
  * any. Every slot is expected to hold the same filenames, since a capture flow
- * runs the same steps per device. A per-locale pattern is read for the default
+ * runs the same steps per device. Captures per locale are read for the default
  * locale, the one the starters' strings are written in.
  */
 function capturesTaken(dir: string): { files: string[]; from: string | null } {
   const set = loadSet(dir);
   for (const slot of SLOTS) {
-    const folder = capturesDir(set, slot.id, DEFAULT_LOCALE);
-    if (!existsSync(folder)) continue;
-    const files = readdirSync(folder)
-      .filter((name) => CAPTURE_FILE.test(name))
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    const files = capturesIn(capturesDir(set, slot.id, DEFAULT_LOCALE));
     if (files.length) return { files, from: slot.id };
   }
   return { files: [], from: null };
