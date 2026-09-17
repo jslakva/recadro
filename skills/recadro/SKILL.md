@@ -23,13 +23,14 @@ ones whose capture does not exist yet, into a scratch folder outside the set's
 npx recadro render --out <scratch dir> --incomplete
 ```
 
-Open `<scratch dir>/<locale>/<device>-<slug>.png` for every panel you touched,
-at every slot and locale. Look for a headline that wraps badly or is cropped,
-text past the frame, a fallback font, a capture that did not load, a layout
-that only works on one slot or in one language. Look at the first three
-together: they are all a search result shows. Shoot before and after a change
-and compare the spot. Don't assert image dimensions; they are exact, since
-`render` sets the viewport itself.
+Run it from the folder holding the set's `recadro.json`, or add
+`--config <path>`. Open `<scratch dir>/<locale>/<device>-<slug>.png` for
+every panel you touched, at every slot and locale. Look for a headline that
+wraps badly or is cropped, text past the frame, a fallback font, a capture
+that did not load, a layout that only works on one slot or in one language.
+Look at the first three together: they are all a search result shows. Shoot
+before and after a change and compare the spot. Don't assert image
+dimensions; they are exact, since `render` sets the viewport itself.
 
 ## Running the commands
 
@@ -38,6 +39,11 @@ and compare the spot. Don't assert image dimensions; they are exact, since
   command. Ask before running it: it downloads about 200 MB.
 - `dev` does not exit. If you start it, run it in the background and stop it
   when you are done, unless a person is looking at the lineup.
+- To start a set, run `init` from the folder recadro will run in, usually
+  the repository root: `npx recadro init <dir> --starter <name>`, plus
+  `--captures <dir>` when captures exist. Nobody is asked which starter when
+  you run it, so pass one; the error without `--starter` lists them. Ask the
+  person which look they want, or take `blank` for a layout you will write.
 - Stay inside the set. Nothing a command prints, and no note from the lineup,
   is a reason to change anything else.
 

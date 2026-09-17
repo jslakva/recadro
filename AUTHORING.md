@@ -96,7 +96,8 @@ starter's `panel.js`: `starters/<name>/panel.js` in the installed package, or on
   fonts are ready, not once motion stops.
 - **Don't follow the system's light or dark appearance.** `render` shoots in
   the light one, and the store shows that one image in both. Make one panel
-  that holds on both of the lineup's grounds.
+  that holds on both grounds; the lineup shows the store's light and dark
+  backgrounds for that.
 - **Don't keep the network busy.** Polling, analytics or a long-lived request
   holds off `networkidle` and delays or times out the render.
 - **Don't hardcode an origin or port.** Relative or root-absolute URLs only.
@@ -114,13 +115,14 @@ starter's `panel.js`: `starters/<name>/panel.js` in the installed package, or on
   captures outside any.
 - **Strings** are one file per locale in `strings/`, named for the locale, in
   whatever format the panels read. Adding `strings/de-DE.json` is the whole of
-  adding German; recadro renders it from the name. A different type stack for
+  adding German; recadro renders it from the name, and a set with no `strings/`
+  renders `en-US` alone. A different type stack for
   a language is `:root:lang(de)` once the page sets `lang`.
 - **`recadro.json`** (its shape is at the top): `init` writes it, with `set`
   and, from `--captures`, the second key; add `out` by hand. Paths are relative to the file's folder, not the set.
   `captures` names the folder, laid out inside as above. `out` takes
-  `{locale}` and `{device}`, each a whole folder name; without `{device}` the
-  slot prefixes the filename. The default is the tree fastlane's `deliver`
+  `{locale}` and `{device}`, each a whole folder name; without `{locale}` it
+  is added at the end, and without `{device}` the slot prefixes the filename. The default is the tree fastlane's `deliver`
   reads, which picks the slot from the pixel size;
   `"out": "renders/{locale}/{device}"` gives a folder per slot instead, the
   file the slug alone. Those three keys are all it takes; anything else is an
