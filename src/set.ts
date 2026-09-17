@@ -332,8 +332,8 @@ export function describeCaptures(set: PanelSet, locales: readonly string[]): str
       .filter((entry) => entry.isDirectory() && !known.has(entry.name))
       .map((entry) => `${entry.name}/`);
     if (!passed.length) return "none yet";
-    const slots = SLOTS.map((slot) => slot.id).join(" and ");
-    return `none yet; ${passed.join(", ")} passed over, neither a slot nor a locale — the slots are ${slots}`;
+    const slots = SLOTS.map((slot) => `${slot.id}/`).join(" or ");
+    return `none yet; expected captures in this folder, in ${slots}, or in a locale folder like ${locales[0]}/ — not ${passed.join(", ")}`;
   }
   return `${found.join(", ")}${perLocale ? ", per locale" : ""}`;
 }
