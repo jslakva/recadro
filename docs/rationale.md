@@ -176,18 +176,33 @@ wanted, so there is nothing to test for.
 ## Incomplete panels are skipped, text-only panels ship
 
 The tool never learns which capture a panel wants, so it cannot check the
-filesystem for it. It asks the rendered page instead: after `networkidle` and
-`document.fonts.ready`, any `<img>` with `naturalWidth === 0` means the panel
-is not ready, and `render` skips it. `out/` then only ever holds complete
-panels, so whatever uploads from it can take it wholesale.
+filesystem for it. It watches the page ask instead: it handed the page a
+`?captures=` folder, so a request below that folder is a capture request, and
+one the server answers with anything but the file — a 404, a redirect, a
+failed connection — is a capture the panel wanted and did not get. `render`
+skips that panel. `out/` then only ever holds complete panels, so whatever
+uploads from it can take it wholesale.
 
-A panel with no image at all is complete by construction — text-only story
-panels are common in six-panel sets and they have nothing to fail. The
-distinction is present-but-broken, not absent.
+A panel that asks for no capture is complete by construction — text-only story
+panels are common in six-panel sets and they have nothing to miss. The
+distinction is asked-for-and-absent, not absent.
+
+An earlier version read the page for this: after `networkidle`, any `<img>`
+with `naturalWidth === 0` meant the panel was not ready. It worked, and it cost
+three rules about how to write a page — no decoration in an `<img>`, no
+placeholder that loads, keep the failed `<img>` and hide it — imposed to keep
+one check working; and a placeholder swapped in defeated it anyway. Watching
+the request costs no rule: decoration may be an `<img>` and fail quietly, a
+page may swap a placeholder in and the miss was already seen, a capture drawn
+onto a canvas from `fetch` counts the same as one in an `<img>`. The tool reads
+nothing of the page; it watches the one URL it owns.
 
 `networkidle` rather than `load` matters: a panel that sets its capture from
-captions it fetched has no image request yet when `load` fires, and checking
-then would call an unfinished panel complete.
+captions it fetched has asked for nothing yet when `load` fires, and checking
+then would call an unfinished panel complete. And the server answers a path
+that is no file with a 404 instead of falling back to a root `index.html`, as
+vite does for an app: a web repository often has one, and a missing capture
+would otherwise come back as a page of HTML.
 
 A skipped panel is still worth looking at — its empty frame is designed too —
 and `dev` shows it only to a browser. An agent or a CI job has pixels to read

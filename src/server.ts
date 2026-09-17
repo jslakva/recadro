@@ -211,6 +211,12 @@ function recadroPlugin(set: PanelSet, options: ServerOptions): Plugin {
 export async function startServer(set: PanelSet, options: ServerOptions = {}): Promise<PanelServer> {
   const ours: InlineConfig = {
     root: set.root,
+    // Pages, not an app: a path that is no file is a 404. vite's default falls
+    // back to a root `index.html`, which a web repository often has, and a
+    // capture not taken yet would then come back as a 200 page of HTML —
+    // which render, watching the page's capture requests, would take for the
+    // capture.
+    appType: "mpa",
     configFile: false,
     logLevel: "warn",
     server: { port: options.port, host: "localhost" },

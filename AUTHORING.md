@@ -49,7 +49,8 @@ Several sets are several files: `recadro.json` for the one run without a
   in the repo by a relative or root-absolute URL, and nothing beyond it.
   Relative URLs resolve against the page, `panels/<slug>.html`, even from a
   shared module script one folder up, so a panel's strings are
-  `../strings/${locale}.json`.
+  `../strings/${locale}.json`. In CSS, `url()` is relative to the stylesheet
+  instead.
 - A `vite.config.*` beside `panels/`, if present, is merged into the server.
   It cannot move the root.
 
@@ -84,25 +85,11 @@ starter's `panel.js`: `starters/<name>/panel.js` in the installed package, or on
   Strings, tokens, which panel shows which capture — the page reads those from
   its own files, and recadro reads none of them.
 - **Don't build capture paths in a panel.** Use `?captures=`. A path written
-  into `panel.js` breaks the moment captures move or become per locale.
+  into `panel.js` breaks the moment captures move or become per locale, and
+  `render` cannot tell that a capture asked for elsewhere is missing.
 - **Don't write device dimensions into CSS or JS.** Size in `vw`, `vh` and
   `%`. Use `?device=` to fork a layout — set it as an attribute and select on
   it — never for pixel arithmetic.
-- **Don't hide a missing capture behind a placeholder that loads.** A panel is
-  complete when none of its `<img>`s failed, and `render` ships complete
-  panels; a placeholder swapped in goes to the App Store. Keep the `<img>`,
-  hide it on `error` with an inline style, and draw the empty state on its
-  container. `img.hidden = true` is not enough where a rule gives the image a
-  `display`; the broken-image glyph shows through.
-
-  ```js
-  img.addEventListener("error", () => { img.style.visibility = "hidden"; });
-  ```
-
-- **Don't put decoration in an `<img>`.** Every `<img>` counts toward whether
-  a panel is complete. Captures and crops of them are `<img>`; backgrounds,
-  textures and ornaments are CSS, which fails quietly. In CSS, `url()` is
-  relative to the stylesheet, not the page.
 - **Don't name strings files anything but locales.** Every entry in `strings/`
   named like a locale is rendered. Shared strings go elsewhere, such as
   `strings-common.json` beside the folder.
@@ -173,11 +160,12 @@ recadro  6 panels in store/screenshots
   skipped en-US/iPhone-03-quote — no capture at <path>
 ```
 
-It exits 0 either way; read the lines. A panel is incomplete when an `<img>` of
-its failed, and `render` skips it. Each run replaces its own files for the
-slots and locales it rendered and touches nothing else, so `out/` holds only
-complete panels and can be uploaded wholesale. A panel with no `<img>` at all
-is complete and ships. A device
+It exits 0 either way; read the lines. A panel is incomplete when a capture it
+asked for — a request under the `?captures=` folder — was not there, and
+`render` skips it. Each run replaces its own files for the slots and locales it
+rendered and touches nothing else, so `out/` holds only complete panels and can
+be uploaded wholesale. A panel that asks for no capture is complete and ships,
+and how a missing one looks is the page's own. A device
 missing from `devices` has no captures; `--devices` renders it anyway.
 `--out` moves the folder and keeps the layout below it. `--incomplete`
 refuses to write into the set's own `out`.
@@ -260,8 +248,7 @@ listening, the pointer copies to the clipboard as before.
   numbers.
 - **New panel:** add `panels/NN-slug.html`. Renaming or renumbering changes the
   output filenames, and the upload order follows them.
-- **Text-only panel:** leave out `<img>` entirely; with nothing to fail, it
-  ships.
+- **Text-only panel:** ask for no capture; with nothing to miss, it ships.
 - **New locale:** add its strings file. **New device:** its captures in a
   folder named for the slot, and the other slot's in one too. **Captures
   move:** change `captures` in `recadro.json`. **The set moves:** change

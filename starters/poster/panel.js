@@ -5,8 +5,9 @@
  * *like this* become <em>. The rest is the panel's own HTML: each <img> with
  * data-capture names its capture's filename in the folder recadro passes as
  * ?captures=, so a panel can show two, and where each phone stands is in the
- * panel's <style>. A capture not taken yet leaves its <img> broken — which is
- * how render knows to skip the panel — and hidden, and marks its phone empty.
+ * panel's <style>. A capture not taken yet is asked for and not there — which
+ * is how render knows to skip the panel — and its <img> is hidden and its
+ * phone marked empty.
  *
  * The root gets the slot as data-device and the locale as lang, so a panel's
  * CSS can fork on either.

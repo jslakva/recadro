@@ -5,8 +5,9 @@
  * each note's label — and words marked *like this* become <em>. The rest is the
  * panel's own HTML: the <img> with data-capture names its capture's filename in
  * the folder recadro passes as ?captures=, and where each note lands is in the
- * panel's <style>. A capture not taken yet leaves the <img> broken — which is
- * how render knows to skip the panel — and hidden, so the empty state shows.
+ * panel's <style>. A capture not taken yet is asked for and not there — which
+ * is how render knows to skip the panel — and its <img> is hidden, so the
+ * empty state shows.
  *
  * The root gets the slot as data-device and the locale as lang, so a panel's
  * CSS can fork on either.

@@ -87,8 +87,8 @@ document.querySelector("h1").textContent = strings[panel];
 
 const capture = document.querySelector("img.capture");
 if (capture) {
-  // A capture that does not exist yet stays a broken <img> — that is how
-  // render knows to skip the panel — and is hidden rather than replaced.
+  // A capture that does not exist yet is asked for and not there — that is
+  // how render knows to skip the panel — and the broken <img> is hidden.
   capture.addEventListener("error", () => { capture.style.visibility = "hidden"; });
   capture.src = `${captures}${panel}.png`;
 }
@@ -271,14 +271,16 @@ transparency), so there is nothing to test for.
 
 ## Incomplete panels are skipped
 
-A panel is incomplete when it carries an `<img>` that resolved to nothing —
-typically a capture that does not exist yet. Those render in `dev` (a page can
-style a failed image into a deliberate empty state) and are **skipped** by
-`render`, so `out/` only ever holds complete panels and can be uploaded
-wholesale.
+A panel is incomplete when it asked for a capture that is not there: a request
+under the folder `?captures=` named came back without the file, typically a
+capture that does not exist yet. Those render in `dev` (a page can style a
+missing capture into a deliberate empty state) and are **skipped** by `render`,
+so `out/` only ever holds complete panels and can be uploaded wholesale.
 
-A panel with **no** image at all — a text-only story panel — has nothing to fail
-and ships. The distinction is present-but-broken, not absent.
+A panel that asks for **no** capture — a text-only story panel — has nothing to
+miss and ships. The distinction is asked-for-and-absent, not absent. Nothing of
+the page is read for it: recadro watches the one URL it handed the page, so
+how a page loads a capture, and what it shows in its place, is its own.
 
 To look at incomplete panels without a browser — in CI, or from an agent —
 `render --incomplete --out <dir>` shoots every panel. It refuses to write into

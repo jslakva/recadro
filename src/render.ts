@@ -44,54 +44,84 @@ export interface RenderResult {
   /** Files written, as paths relative to `out.base`. */
   written: string[];
   /**
-   * Panels with an image that resolved to nothing, as the file they would have
-   * been written to, with the srcs. Skipped, or written anyway under `incomplete`.
+   * Panels that asked for a capture the server did not have, as the file they
+   * would have been written to, with the paths asked for. Skipped, or written
+   * anyway under `incomplete`.
    */
   incomplete: { where: string; missing: string[] }[];
 }
 
 /**
- * Waits for the page to be finished and reports whether it is complete.
+ * What a page asked for under its captures folder and did not get.
  *
- * "Complete" is deliberately not a contract the page implements: a panel that
- * carries no `<img>` at all — a text-only story panel — has nothing to fail and
- * is complete, while a panel whose capture is absent has an `<img>` that
- * resolved to nothing. That is the readiness signal the filesystem was always
- * providing; this is where the tool reads it without learning which capture any
- * panel wanted.
+ * "Complete" is deliberately not a contract the page implements, and nothing
+ * of the page is read for it: the tool watches the one URL it owns. It handed
+ * the page a `?captures=` folder, so a request below that folder is a capture
+ * request, and one answered with anything but the file — a 404 for a capture
+ * not taken yet, a redirect, a failed connection — is a capture the panel
+ * wanted and did not get. A 304 is the file: the browser had it from an
+ * earlier panel in the same context and the server said so. How the page
+ * shows a miss is its business, in the lineup.
  *
- * Fonts are awaited here too, or the first panel ships in a fallback face.
+ * A panel that asks for no capture, a text-only story panel, has nothing to
+ * miss and is complete; a panel that swaps a failed capture for a placeholder
+ * still asked, and the answer was still seen. How the page loads a capture —
+ * an `<img>`, a CSS `url()`, a `fetch` for a canvas — makes no difference.
  *
- * A missing image is reported as a path in the repository, decoded, the way the
- * lineup's pointer names one: the server's origin and port mean nothing to the
- * reader, and `%7Bcapture%3A5%7D` hides a placeholder nobody filled.
+ * A request the page itself cancelled, by changing an `<img>`'s `src` while
+ * the first was in flight, says nothing about the file, so an abort is not a
+ * miss. Anything else that fails is.
+ *
+ * A miss is reported as a path in the repository, decoded, the way the
+ * lineup's pointer names one: the server's origin and port mean nothing to
+ * the reader, and `%7Bcapture%3A5%7D` hides a placeholder nobody filled.
  */
-async function settle(page: Page): Promise<string[]> {
-  return page.evaluate(async () => {
-    await document.fonts.ready;
-    const images = Array.from(document.images);
-    await Promise.all(
-      images.map(
-        (img) =>
-          img.complete ||
-          new Promise<void>((resolve) => {
-            img.addEventListener("load", () => resolve(), { once: true });
-            img.addEventListener("error", () => resolve(), { once: true });
-          }),
-      ),
-    );
-    return images
-      .filter((img) => img.naturalWidth === 0)
-      .map((img) => {
-        const src = new URL(img.currentSrc || img.src, document.baseURI);
-        if (src.origin !== location.origin) return src.href;
-        try {
-          return decodeURIComponent(src.pathname).slice(1);
-        } catch {
-          return src.pathname.slice(1);
-        }
-      });
-  });
+class CaptureRequests {
+  private prefix = "";
+  private missing = new Set<string>();
+
+  constructor(page: Page) {
+    page.on("response", (response) => {
+      const status = response.status();
+      if ((status < 200 || status >= 300) && status !== 304) this.note(response.url());
+    });
+    page.on("requestfailed", (request) => {
+      if (request.failure()?.errorText !== "net::ERR_ABORTED") this.note(request.url());
+    });
+  }
+
+  /** Starts collecting for the next page, given its `?captures=` folder. */
+  watch(capturesPath: string): void {
+    this.prefix = capturesPath;
+    this.missing.clear();
+  }
+
+  /** The captures asked for and not got since `watch`, in request order. */
+  report(): string[] {
+    return [...this.missing];
+  }
+
+  private note(url: string): void {
+    const path = decoded(new URL(url).pathname);
+    if (path.startsWith(this.prefix)) this.missing.add(path.slice(1));
+  }
+}
+
+/** A URL path as the reader sees it: percent-decoded where that decodes. */
+function decoded(pathname: string): string {
+  try {
+    return decodeURIComponent(pathname);
+  } catch {
+    return pathname;
+  }
+}
+
+/**
+ * Waits for the page to be finished: fonts are awaited here, or the first
+ * panel ships in a fallback face.
+ */
+async function settle(page: Page): Promise<void> {
+  await page.evaluate(() => document.fonts.ready);
 }
 
 /**
@@ -142,19 +172,23 @@ export async function render(options: RenderOptions): Promise<RenderResult> {
         locale,
       });
       const page = await context.newPage();
+      const requests = new CaptureRequests(page);
 
-      const captures = encodeURIComponent(capturesUrl(slot.id, locale));
+      const capturesPath = capturesUrl(slot.id, locale);
+      const captures = encodeURIComponent(capturesPath);
       for (const panel of panels) {
         const query =
           `?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}&locale=${locale}&captures=${captures}`;
         // `networkidle` rather than `load`: a panel fetches its own captions and
-        // sets its capture from them, so the image request does not exist yet
-        // when `load` fires. Checking `document.images` before that would find
-        // an empty list and call an unfinished panel complete.
+        // sets its capture from them, so the capture request does not exist yet
+        // when `load` fires, and a page asked before it had asked for anything
+        // would be called complete.
+        requests.watch(decoded(capturesPath));
         await page.goto(`${origin}${panel.urlPath}${query}`, { waitUntil: "networkidle" });
+        await settle(page);
 
         const file = outFile(out, slot.id, locale, panel.slug);
-        const missing = await settle(page);
+        const missing = requests.report();
         if (missing.length) {
           result.incomplete.push({ where: file.replace(/\.png$/, ""), missing });
           if (!incomplete) continue;
