@@ -26,8 +26,8 @@ const TEXT_FILES = new Set([".html", ".css", ".js", ".json", ".md", ".txt"]);
  * The file is composed here: the package's `skills/recadro/SKILL.md` — how to
  * run the `live` loop — with the installed AUTHORING.md whole beneath it, so
  * invoking the skill loads every rule and nothing has to be found first. A
- * stamp names the version it came from; `--skill` rewrites it when that is
- * not the installed one.
+ * stamp names the version it came from, so `init` can tell one that is behind
+ * and `dev` can say so.
  */
 export const SKILL_PATH = join(".claude", "skills", "recadro", "SKILL.md");
 
@@ -46,18 +46,14 @@ export function skillVersion(root: string): string | null {
   }
 }
 
-/** What `installSkill` did: written afresh, kept as it was, or rewritten from an older version. */
-export type SkillState = { state: "written" } | { state: "kept" } | { state: "refreshed"; from: string };
-
 /**
- * Writes the composed skill into a repository. One already there from this
- * version is kept; one from another version is rewritten, since it is the
- * tool's own file and the document under the loop has moved on.
+ * Writes the composed skill into a repository, over one already there, and
+ * returns the version that one was written from: null for none, or for a
+ * file without a stamp. Whether to write over it is the caller's call.
  */
-export function installSkill(root: string): SkillState {
+export function installSkill(root: string): string | null {
   const target = join(root, SKILL_PATH);
   const from = skillVersion(root);
-  if (from === VERSION) return { state: "kept" };
   const loop = readFileSync(join(PKG, "skills", "recadro", "SKILL.md"), "utf8");
   // The document's one relative link points at a file that is not beside the skill.
   const authoring = readFileSync(join(PKG, "AUTHORING.md"), "utf8").replace("](README.md)", "](https://github.com/jslakva/recadro#readme)");
@@ -68,7 +64,7 @@ export function installSkill(root: string): SkillState {
     authoring;
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, composed);
-  return from ? { state: "refreshed", from } : { state: "written" };
+  return from;
 }
 
 /** What `init` was asked to make. */

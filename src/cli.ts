@@ -43,8 +43,8 @@ const USAGE = `recadro — App Store screenshots as code
                 init writes ${CONFIG_FILE} in the folder it runs in, naming <dir>; run recadro from that folder
   --captures    init: the captures folder, from here  (written to ${CONFIG_FILE})
   --skill       init: add a /recadro skill for Claude Code at ${SKILL_PATH.split(sep).join("/")} without asking,
-                or rewrite one another version wrote; without <dir> and --starter, init adds only the skill.
-                --no-skill: don't, and don't ask
+                or rewrite one already there (asked first at a terminal); without <dir> and --starter,
+                init adds only the skill.  --no-skill: don't, and don't ask
   --live        dev: take notes pinned in the lineup, for an agent running \`recadro wait\`
 
   --config      the set's ${CONFIG_FILE}, or the folder holding it   (default: the one in the folder you run in)
@@ -186,19 +186,32 @@ async function openBrowser(): Promise<Browser> {
  * saying what happened. Asked at a terminal, Enter meaning yes, as `render`
  * asks about Chromium; anywhere else — an agent, CI — nothing is written and
  * the line names the flag, since a half-asked question helps nobody. A skill
- * already there is kept and not asked about.
+ * already there is the tool's own file: a new set keeps one from this version
+ * and rewrites one from another without asking; `--skill` rewrites it either
+ * way, asking first at a terminal, since the installed package may have
+ * changed under the same version while the tool is being tried unpublished.
  */
 async function skillLine(set: PanelSet, yes: boolean, no: boolean): Promise<string> {
   const target = join(set.root, SKILL_PATH);
   const later = `recadro init${configFlag(set)} --skill`;
-  // One already there is the tool's own file: kept from this version, rewritten from another, no question.
+  const tty = process.stdin.isTTY && process.stdout.isTTY;
   if (existsSync(target)) {
-    const result = installSkill(set.root);
-    if (result.state === "refreshed") return `${shown(target)} (rewritten from recadro ${result.from})`;
-    return `${shown(target)} (kept)`;
+    if (no) return `${shown(target)} (left as it is)`;
+    const from = skillVersion(set.root);
+    const rewritten = `${shown(target)} (rewritten${from && from !== VERSION ? ` from recadro ${from}` : ""})`;
+    if (yes) {
+      const was = from ? `from recadro ${from}` : "not written by recadro";
+      if (tty && !(await confirm(`${shown(target)} is already there, ${was}. Rewrite it from recadro ${VERSION}?`))) {
+        return `${shown(target)} (kept)`;
+      }
+      installSkill(set.root);
+      return rewritten;
+    }
+    if (from === VERSION) return `${shown(target)} (kept)`;
+    installSkill(set.root);
+    return rewritten;
   }
   if (no) return `not added; ${later} adds /recadro for Claude Code`;
-  const tty = process.stdin.isTTY && process.stdout.isTTY;
   if (!yes && !tty) return `not added; ${later} adds /recadro for Claude Code`;
   if (!yes && !(await confirm(`Add a /recadro skill for Claude Code at ${shown(dirname(target))}/?`))) {
     return `not added; ${later} adds it later`;

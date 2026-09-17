@@ -261,7 +261,8 @@ what the lineup sends, the `/recadro live` loop — with the installed
 has to be found first. The first part is the package's own
 `skills/recadro/SKILL.md`, readable as a document by any agent. It carries
 the version it was written from; after updating recadro, `init --skill`
-rewrites it, and `dev` says so while it is behind.
+rewrites it, asking first at a terminal, and `dev` says so while it is
+behind.
 
 Without the skill — another harness, or a declined question — point the
 agent file you already keep at the two package files, one line:

@@ -10,8 +10,8 @@ served, sized to each slot and shot. This file is for an agent working on a
 set. Its first part is how to work — checking without a browser, reading what
 the lineup sends, the live loop; its second, below, is recadro's AUTHORING.md
 as installed — the set, the params, the rules and the commands — so nothing
-needs finding first. `recadro init --skill` rewrites this file when the
-installed recadro changes.
+needs finding first. `recadro init --skill` rewrites this file from the
+installed recadro.
 
 ## Check your work
 
