@@ -1,7 +1,8 @@
 /**
- * The panel set: what the tool learns about a folder holding `panels/` from
- * names and one optional file — where it is, its locales, its captures, its
- * output. What a panel, a strings file or a stylesheet says is never read here.
+ * The panel set: what the tool learns from `recadro.json` — where the set is,
+ * where its captures are, where renders go — and from the names in the set:
+ * its panels and its locales. What a panel, a strings file or a stylesheet
+ * says is never read here.
  */
 import { existsSync, readdirSync, readFileSync, statSync, type Dirent } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
@@ -9,9 +10,6 @@ import { searchForWorkspaceRoot } from "vite";
 import { urlPathFor } from "./panels.ts";
 import { imageSize } from "./shape.ts";
 import { SLOTS, slotForShape } from "./slots.ts";
-
-/** A panel file as discovery counts it: a number prefix, a slug, `.html`. */
-const PANEL_FILE = /^\d+-.+\.html$/;
 
 /**
  * An entry in `strings/` that names a locale — `en-US.json`, `de-DE.md`, `ja`,
@@ -23,22 +21,23 @@ const LOCALE_NAME = /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
 /** The locale a set without `strings/` renders in. */
 export const DEFAULT_LOCALE = "en-US";
 
-/** Folders discovery never looks inside: dependencies and build output. Hidden folders are skipped too. */
-const SKIPPED = new Set(["node_modules", "Pods", "DerivedData", "build", "dist"]);
-
-/** How many levels below the working directory discovery looks for a set. */
-const SEARCH_DEPTH = 6;
-
-/** The name of the set's one optional file. */
+/**
+ * The one file recadro reads: in the folder a command runs in, or where
+ * `--config` points. Nothing else is searched.
+ */
 export const CONFIG_FILE = "recadro.json";
 
 /**
- * Every key `recadro.json` takes, with the value a set without it gets. Both are
- * paths relative to the set. `captures` is a folder, read by the names below
- * it. `out` is a pattern: `{locale}` is a folder per locale, and `{device}`,
- * when present, a folder per slot inside or outside it; without it the slot
- * goes in the filename.
+ * Every key `recadro.json` takes. All are paths relative to the file's folder.
+ * `set` is the folder holding `panels/`, the file's own folder when absent.
+ * `captures` is a folder, read by the names below it; absent, it is `captures`
+ * in the set. `out` is a pattern: `{locale}` is a folder per locale, and
+ * `{device}`, when present, a folder per slot inside or outside it; without it
+ * the slot goes in the filename; absent, `out/{locale}` in the set.
  */
+const KEYS = ["set", "captures", "out"] as const;
+
+/** What a set gets for `captures` and `out` when the file says nothing, relative to the set. */
 const DEFAULTS = { captures: "captures", out: "out/{locale}" };
 
 /** The placeholders an `out` pattern may use. */
@@ -59,13 +58,13 @@ export interface OutLayout {
 
 /** A set as the commands use it: where it is and what its names say. */
 export interface PanelSet {
+  /** Absolute path of the `recadro.json` the set was loaded from. */
+  config: string;
   /** Absolute path of the folder holding `panels/`. */
   dir: string;
   /** The server root: the repository the set sits in. */
   root: string;
-  /** Whether a `recadro.json` was found; everything below is a default otherwise. */
-  configured: boolean;
-  /** The captures folder, relative to `dir`, as configured. */
+  /** The captures folder, absolute. `dev` watches below it. */
   captures: string;
   /** Where renders go: the folder, and the layout of locale and slot below it. */
   out: OutLayout;
@@ -102,61 +101,34 @@ function entries(dir: string): Dirent[] {
   }
 }
 
-/** Whether `dir` is a set: it holds `panels/` with at least one `NN-slug.html`. */
-function isSet(dir: string): boolean {
-  return entries(join(dir, "panels")).some((entry) => entry.isFile() && PANEL_FILE.test(entry.name));
-}
-
 /**
- * Finds the set to use when no `--panels` is given.
- *
- * The working directory, or the nearest folder above it within the repository,
- * wins when it is a set — so a command run from `panels/` or `strings/` means
- * the set around it. Otherwise discovery looks below, up to `SEARCH_DEPTH`
- * levels, skipping hidden folders, dependencies and build output. One set found
- * is used; none or several is an error that says what to pass instead.
+ * The `recadro.json` a command uses: the file `--config` names, or the one in
+ * the folder it names; without the flag, the one in the working directory.
+ * Nothing else is searched, so where recadro looks is one rule, and a missing
+ * file is one message.
  */
-export function findSet(cwd: string): string {
-  const root = rootFor(cwd);
-  for (let dir = cwd; ; dir = dirname(dir)) {
-    if (isSet(dir)) return dir;
-    if (dir === root || dirname(dir) === dir) break;
+export function configFile(cwd: string, flag?: string): string {
+  if (flag) {
+    const path = resolve(cwd, flag);
+    const file = isDir(path) ? join(path, CONFIG_FILE) : path;
+    if (!existsSync(file)) throw new Error(`no ${CONFIG_FILE} at ${file}`);
+    return file;
   }
-
-  const found: string[] = [];
-  let level = [cwd];
-  for (let depth = 0; depth < SEARCH_DEPTH && level.length; depth++) {
-    const next: string[] = [];
-    for (const dir of level) {
-      for (const entry of entries(dir)) {
-        if (!entry.isDirectory() || entry.name.startsWith(".") || SKIPPED.has(entry.name)) continue;
-        const child = join(dir, entry.name);
-        if (isSet(child)) found.push(child);
-        else next.push(child);
-      }
-    }
-    level = next;
-  }
-
-  if (found.length === 1) return found[0];
-  if (!found.length) {
+  const file = join(cwd, CONFIG_FILE);
+  if (!existsSync(file)) {
     throw new Error(
-      `no panel set in ${cwd} or below it. A set is a folder holding panels/NN-slug.html; pass --panels <dir>.`,
+      `no ${CONFIG_FILE} here; run from the folder that has one, pass --config <path>, or make a set: recadro init <dir> --starter <name>`,
     );
   }
-  const options = found.sort().map((dir) => `  --panels ${relative(cwd, dir)}`);
-  throw new Error(`${found.length} panel sets found; pick one:\n${options.join("\n")}`);
+  return file;
 }
 
 /**
- * Reads `recadro.json` beside `panels/`, or returns the defaults when there is
- * none. Strict on purpose: a mistyped key or placeholder that was quietly
- * ignored would look exactly like captures that do not exist yet.
+ * Reads a `recadro.json`. Strict on purpose: a mistyped key or placeholder
+ * that was quietly ignored would look exactly like captures that do not exist
+ * yet. Values come back as written, relative to the file's folder.
  */
-function readConfig(dir: string): { configured: boolean; captures: string; out: string } {
-  const file = join(dir, CONFIG_FILE);
-  if (!existsSync(file)) return { configured: false, ...DEFAULTS };
-
+function readConfig(file: string): Partial<Record<(typeof KEYS)[number], string>> {
   let parsed: unknown;
   try {
     parsed = JSON.parse(readFileSync(file, "utf8"));
@@ -167,29 +139,29 @@ function readConfig(dir: string): { configured: boolean; captures: string; out: 
     throw new Error(`${file}: expected an object`);
   }
 
-  const config = { ...DEFAULTS };
+  const config: Partial<Record<(typeof KEYS)[number], string>> = {};
   for (const [key, value] of Object.entries(parsed)) {
-    if (!(key in DEFAULTS)) {
-      throw new Error(`${file}: unknown key "${key}"; ${CONFIG_FILE} takes ${Object.keys(DEFAULTS).join(", ")}`);
+    if (!(KEYS as readonly string[]).includes(key)) {
+      throw new Error(`${file}: unknown key "${key}"; ${CONFIG_FILE} takes ${KEYS.join(", ")}`);
     }
     if (typeof value !== "string" || !value.trim()) throw new Error(`${file}: "${key}" must be a path`);
-    config[key as keyof typeof DEFAULTS] = value.replace(/\/+$/, "");
+    config[key as (typeof KEYS)[number]] = value.replace(/\/+$/, "") || ".";
   }
 
-  if (config.captures.includes("{")) {
+  if (config.captures?.includes("{")) {
     throw new Error(
       `${file}: "captures" is a folder, with no placeholders; its locale and device folders are read by name`,
     );
   }
-  for (const placeholder of config.out.match(/\{[^}]*\}/g) ?? []) {
+  for (const placeholder of config.out?.match(/\{[^}]*\}/g) ?? []) {
     if (!PLACEHOLDERS.includes(placeholder)) {
       throw new Error(`${file}: "out" has ${placeholder}; the placeholders are ${PLACEHOLDERS.join(" and ")}`);
     }
   }
   // Renders are per locale whatever the pattern says, so a folder named without
   // {locale} holds one folder per locale, as the default does.
-  if (!config.out.includes("{locale}")) config.out = `${config.out}/{locale}`;
-  return { configured: true, ...config };
+  if (config.out && !config.out.includes("{locale}")) config.out = `${config.out}/{locale}`;
+  return config;
 }
 
 /**
@@ -198,12 +170,12 @@ function readConfig(dir: string): { configured: boolean; captures: string; out: 
  * other. A placeholder inside a folder name (`renders-{locale}`) is refused:
  * the layout is folders, one per locale and per slot.
  */
-function outLayout(dir: string, pattern: string): OutLayout {
+function outLayout(dir: string, pattern: string, file: string): OutLayout {
   const segments = pattern.split(/[\\/]/);
   const first = segments.findIndex((segment) => segment.includes("{"));
   const layout = segments.slice(first);
   if (layout.some((segment) => segment !== "{locale}" && segment !== "{device}")) {
-    throw new Error(`${join(dir, CONFIG_FILE)}: "out" ${pattern}: {locale} and {device} must each be a whole folder name`);
+    throw new Error(`${file}: "out" ${pattern}: {locale} and {device} must each be a whole folder name`);
   }
   return { base: resolve(dir, segments.slice(0, first).join("/")), layout: layout.join("/") };
 }
@@ -220,23 +192,6 @@ function localesIn(dir: string): string[] {
   return [...new Set(names)].sort();
 }
 
-/**
- * Loads the set at `dir`. Throws when its captures would resolve outside the
- * server root, where no page could load them.
- */
-export function loadSet(dir: string): PanelSet {
-  const root = rootFor(dir);
-  const { configured, captures, out } = readConfig(dir);
-
-  const capturesAt = resolve(dir, captures);
-  const fromRoot = relative(root, capturesAt);
-  if (fromRoot.startsWith("..") || isAbsolute(fromRoot)) {
-    throw new Error(`captures resolve to ${capturesAt}, outside the server root ${root}; a page cannot load them`);
-  }
-
-  return { dir, root, configured, captures, out: outLayout(dir, out), locales: localesIn(dir) };
-}
-
 /** Whether `path` is a folder. */
 function isDir(path: string): boolean {
   try {
@@ -244,6 +199,28 @@ function isDir(path: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Loads the set a `recadro.json` names. Its paths resolve from the file's
+ * folder; what it leaves out is a default inside the set. Throws when the
+ * captures would resolve outside the server root, where no page could load
+ * them.
+ */
+export function loadSet(file: string): PanelSet {
+  const config = readConfig(file);
+  const base = dirname(file);
+  const dir = resolve(base, config.set ?? ".");
+  const root = rootFor(dir);
+
+  const captures = config.captures ? resolve(base, config.captures) : join(dir, DEFAULTS.captures);
+  const fromRoot = relative(root, captures);
+  if (fromRoot.startsWith("..") || isAbsolute(fromRoot)) {
+    throw new Error(`${file}: captures resolve to ${captures}, outside the server root ${root}; a page cannot load them`);
+  }
+
+  const out = config.out ? outLayout(base, config.out, file) : outLayout(dir, DEFAULTS.out, file);
+  return { config: file, dir, root, captures, out, locales: localesIn(dir) };
 }
 
 /** The captures directly in `dir`, in filename order, numbers compared as numbers. */
@@ -277,11 +254,6 @@ export function slotOf(dir: string): string | null {
   return best?.[0] ?? null;
 }
 
-/** The absolute captures folder. `dev` watches below it. */
-export function capturesBase(set: PanelSet): string {
-  return resolve(set.dir, set.captures);
-}
-
 /**
  * The folder holding one slot's captures in one locale, absolute.
  *
@@ -292,7 +264,7 @@ export function capturesBase(set: PanelSet): string {
  * they would go, so a missing capture is reported at a path that makes sense.
  */
 export function capturesDir(set: PanelSet, device: string, locale: string): string {
-  const base = capturesBase(set);
+  const base = set.captures;
   const candidates: string[][] = [[locale, device], [device, locale], [locale], [device], []];
   for (const parts of candidates) {
     const dir = join(base, ...parts);
@@ -336,7 +308,7 @@ export function devicesWithCaptures(set: PanelSet, locales: readonly string[]): 
  * set without any.
  */
 export function describeCaptures(set: PanelSet, locales: readonly string[]): string {
-  const base = capturesBase(set);
+  const base = set.captures;
   const found: string[] = [];
   let perLocale = false;
   for (const slot of SLOTS) {

@@ -4,7 +4,7 @@ Compose store panels from raw simulator captures. Plain HTML in, exact slot
 sizes out.
 
 ```bash
-npx recadro init store/screenshots --starter caption   # a new set from a starter
+npx recadro init store/screenshots --starter caption   # a new set from a starter, and recadro.json here naming it
 npx recadro dev      # vite + the lineup: every panel side by side, live
 npx recadro render   # serve, shoot, tear down
 ```
@@ -20,13 +20,13 @@ the renderer sets the viewport and the scale factor, so the delivered pixels com
 out by construction. A set of panels is a folder, and recadro reads it by names:
 
 ```
-store/screenshots/          # the set, found from wherever you run recadro
+recadro.json                # where you run recadro: names the set, and where captures and renders are
+store/screenshots/          # the set
   panels/01-hero.html       # the panels; the number prefix is the order
   panels/02-feature.html
   strings/en-US.json        # one per locale; the file names are the locales
   captures/01-hero.png      # raw captures; a folder per device, and per locale, when needed
   panel.css, panel.js       # whatever the panels share; recadro never reads them
-  recadro.json              # optional: only when captures live elsewhere
   out/                      # rendered: <locale>/<device>-<NN-slug>.png
 ```
 
@@ -50,8 +50,10 @@ preference — the slot geometry — and where a set keeps its pieces.
   both go in a folder each, `iPhone/` and `iPad/`; no captures at all yet,
   every slot. Captures that differ per language go in a folder named for the
   locale.
-- **The set** is found: the folder you run in, the nearest set above it, or the
-  one set below it.
+- **The set** is what `recadro.json` names, and recadro reads that file in the
+  folder you run in — nothing is searched. `init` writes it there, three lines
+  at most, so from then on the command is `recadro dev` with no flag. A json
+  elsewhere is `--config <path>`.
 
 ## Writing a panel
 
@@ -140,8 +142,10 @@ the set itself, where nothing beside it is reachable.
 npx recadro init store/screenshots --starter overlay --captures path/to/captures
 ```
 
-`--captures` is the captures folder, from where you run the command; `init`
-writes it into `recadro.json` relative to the set.
+This makes the set and writes `recadro.json` in the folder you run in, naming
+it (`{ "set": "store/screenshots" }`), so recadro runs from that folder with no
+flag; run `init` from where you will run recadro. `--captures` is the captures
+folder, from the same place; `init` writes it into the file too.
 
 - **`overlay`** — the capture fills the panel, and a band of colour over its
   top carries the headline, with highlighted words; one panel magnifies part
@@ -176,19 +180,18 @@ the look, `strings/en-US.json` the words, and each panel's HTML what it shows
 as `--x --y --w --h` in percent of the capture in the panel's `<style>`. A
 screen lays out differently on iPad, so a region forks with
 `[data-device="iPad"]`, and with `:lang(de)` for a language that needs it.
-`--captures` is written to `recadro.json`; leave it out when captures go in
-the set's own `captures/`.
+Leave `--captures` out when captures go in the set's own `captures/`.
 
 ## When captures live elsewhere
 
-A capture flow usually writes where it writes. Tell the set with
-`recadro.json` beside `panels/`:
+A capture flow usually writes where it writes. Say so in `recadro.json`:
 
 ```json
-{ "captures": "../../e2e/screenshots" }
+{ "set": "store/screenshots", "captures": "e2e/screenshots" }
 ```
 
-Paths are relative to the set, and the folder must be inside the repository.
+Paths are relative to the file's own folder, and the folder must be inside the
+repository.
 What is below it is read by name: a folder named for a locale holds that
 locale's captures, one named for a slot holds that slot's, either inside the
 other and each optional; a folder naming no slot serves the slot its captures
@@ -198,26 +201,28 @@ as they are.
 
 The only other key is `out`, for renders somewhere other than `<set>/out`.
 Renders go one folder per locale, flat, the slot prefixed to the filename —
-the tree fastlane's `deliver` reads, so `"out": "../../fastlane/screenshots"`
+the tree fastlane's `deliver` reads, so `"out": "fastlane/screenshots"`
 is an upload with no copying in between. `{device}` in the pattern puts the
-slot in a folder instead: `"out": "out/{locale}/{device}"`. Unknown keys and
-other placeholders are an error.
+slot in a folder instead: `"out": "renders/{locale}/{device}"`. `set` left out
+means the set is the file's own folder, which is what `init .` writes. Unknown
+keys and other placeholders are an error.
 
 ## Commands
 
 ```
 recadro init   <dir> --starter <name> [--captures <dir>] [--skill | --no-skill]
-recadro dev    [--panels <dir>] [--port <n>] [--live]
-recadro render [--panels <dir>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
-recadro wait   [--panels <dir>]
-recadro reply  <id> "<what you changed>" [--panels <dir>]
+recadro init   [--config <path>] --skill
+recadro dev    [--config <path>] [--port <n>] [--live]
+recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
+recadro wait   [--config <path>]
+recadro reply  <id> "<what you changed>" [--config <path>]
 ```
 
-Flags win over `recadro.json`, which wins over the set's names. `--panels`
-defaults to the set found from the working directory, `--locales` to the names
-in `strings/` (or `en-US`), `--devices` to the slots with captures (or all),
-`--out` to `<set>/out`, keeping the layout below it. Both commands print what
-they picked and why.
+Flags win over `recadro.json`, which wins over the set's names. `--config`
+defaults to the `recadro.json` in the working directory, `--locales` to the
+names in `strings/` (or `en-US`), `--devices` to the slots with captures (or
+all), `--out` to `<set>/out`, keeping the layout below it. Both commands print
+what they picked and why.
 
 ## The lineup is the check
 
@@ -288,12 +293,12 @@ take notes from the lineup live.
 
 `init` offers to add a `/recadro` skill for Claude Code at
 `.claude/skills/recadro/SKILL.md` in the repository — asked at a terminal,
-`--skill` or `--no-skill` to answer without the question, `init <set>` on an
-existing set to add it later. The skill is one flat file: the `/recadro live`
+`--skill` or `--no-skill` to answer without the question, `init --skill` from
+the folder with `recadro.json` to add it later. The skill is one flat file: the `/recadro live`
 loop — start `dev --live`, listen with `wait`, act on each note, `reply`, stop
 when you say so — with the installed `AUTHORING.md` whole beneath it, so
 invoking it loads every rule and nothing has to be found first. It carries
-the version it was written from; after updating recadro, `init <set> --skill`
+the version it was written from; after updating recadro, `init --skill`
 rewrites it, and `dev` says so while it is behind.
 
 `init` also points agents at the document from inside the set: an `AGENTS.md`

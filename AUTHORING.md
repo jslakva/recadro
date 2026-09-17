@@ -11,26 +11,28 @@ which capture it loads — is written in the repo like any other page. The
 ## Inputs, the set, outputs
 
 ```
+recadro.json              where recadro runs: "set", and where the inputs and outputs are, nothing else
 <captures>/[<locale>/][<device>/]<file>.png   inputs: raw simulator captures; the folders are read by name, both optional
 <set>/
   panels/NN-slug.html     the panels, in filename order; the slug is the name without .html
   strings/<locale>.*      one entry per locale; the names are the locales
   panel.css, panel.js     what the panels share — the look, the loading — as any page would
-  recadro.json            optional: where the inputs and outputs are, nothing else
   AGENTS.md, CLAUDE.md    written by init; they point agents here
 <out>/<locale>/<device>-<slug>.png            outputs: the renders, flat per locale as fastlane's deliver reads them
 ```
 
-Inputs and outputs live where the repo keeps them, named in `recadro.json`;
-if not named, both are in the set, at `<set>/captures/` and `<set>/out/`.
-Both belong inside the repository: a page loads captures by URL from its
-root, and the lineup shows `out/` from there.
+`recadro.json` is the one place recadro looks: the file in the folder a command
+runs in, or the one `--config <path>` names; nothing is searched. It names the
+set (`"set"`, the file's own folder when left out) and where the inputs and
+outputs are, paths relative to the file; not named, both are in the set, at
+`<set>/captures/` and `<set>/out/`. Both belong inside the repository: a page
+loads captures by URL from its root, and the lineup shows `out/` from there.
 
-- recadro finds the set from where a command runs: that folder, the nearest
-  set above it, or the one set below it. With several sets in the repo, pass
-  `--panels <dir>`; the error lists them.
+- Run commands from the folder holding `recadro.json`, usually the repository
+  root, or pass `--config <path>`. A repository with several sets has a file
+  per set, each in its own folder.
 - Before changing one panel, read what they share — `panel.css`, `panel.js` —
-  and `recadro.json` if there is one. The conventions there are the repo's.
+  and `recadro.json`. The conventions there are the repo's.
 - The server's root is the repository: the nearest folder holding `.git`.
   Outside git it is the nearest JS workspace or `package.json`, else the set
   itself. A panel reaches anything in the repo by a relative or root-absolute
@@ -109,21 +111,22 @@ filename it wants — the slug plus `.png`, unless the panel maps names itself.
   whatever format the panels read. Adding `strings/de-DE.json` is the whole of
   adding German; recadro renders it from the name. A different type stack for
   a language is `:root:lang(de)` once the page sets `lang`.
-- **`recadro.json`** only when captures are not in `<set>/captures/` or
-  renders should not go to `<set>/out/<locale>/`:
+- **`recadro.json`** names the set, and says where captures and renders are
+  when not in `<set>/captures/` and `<set>/out/<locale>/`:
 
   ```json
-  { "captures": "../../e2e/screenshots", "out": "../../fastlane/screenshots/{locale}" }
+  { "set": "store/screenshots", "captures": "e2e/screenshots", "out": "fastlane/screenshots/{locale}" }
   ```
 
-  Create it by hand; `init --captures` writes the first key for a new set.
-  Paths are relative to the set. `captures` names the folder, laid out inside as above. `out` takes
+  `init` writes it, with `set` and, from `--captures`, the second key; add
+  `out` by hand. Paths are relative to the file's folder, not the set.
+  `captures` names the folder, laid out inside as above. `out` takes
   `{locale}` and `{device}`, each a whole folder name; without `{device}` the
   slot prefixes the filename. The default is the tree fastlane's `deliver`
   reads, which picks the slot from the pixel size;
-  `"out": "out/{locale}/{device}"` gives a folder per slot instead, the file
-  the slug alone. Those two keys are all it takes; anything else is an error.
-  Command-line flags win over it.
+  `"out": "renders/{locale}/{device}"` gives a folder per slot instead, the
+  file the slug alone. Those three keys are all it takes; anything else is an
+  error. Command-line flags win over it.
 - A panel reporting `no capture at <path>` for a file that exists has a wrong
   filename or the file in a folder serving another slot: the path is what the
   page asked for, from the repository root, so compare it with the file. A
@@ -214,7 +217,8 @@ npx recadro wait                # prints each note as it is pinned, until the se
 npx recadro reply 3 "Sub is two lines on iPad now"
 ```
 
-`wait` finds the live server for the set and does not exit while it lives.
+`wait` finds the live server for the set — the same `recadro.json`, so the
+same folder or `--config` — and does not exit while it lives.
 Run it under whatever your harness has that reports a command's output line by
 line as it arrives, not when it exits. Each note prints as one block:
 
@@ -249,8 +253,8 @@ listening, the pointer copies to the clipboard as before.
   ships.
 - **New locale:** add its strings file. **New device:** its captures in a
   folder named for the slot, and the other slot's in one too. **Captures
-  move:** change `captures` in `recadro.json`, or create the file. No panel
-  changes for any of these.
+  move:** change `captures` in `recadro.json`. **The set moves:** change
+  `set`. No panel changes for any of these.
 
 ## Starting a set
 
@@ -260,9 +264,12 @@ npx recadro init <dir> --starter <name> [--captures <path>]
 
 copies a starter — `overlay`, `caption`, `panorama`, `exploded`, `callouts` or
 `poster` — into a new folder, fills its `{capture:N}` placeholders with the
-captures already taken in filename order, writes `--captures` (the captures
-folder, from where the command runs) into `recadro.json` relative to the set, and adds
-`AGENTS.md` and `CLAUDE.md` pointing here. The placeholders are `data-capture`
+captures already taken in filename order, writes `recadro.json` in the folder
+the command runs in — naming `<dir>` as the set, and `--captures` (the captures
+folder, from the same place) — and adds `AGENTS.md` and `CLAUDE.md` pointing
+here. Run it from the folder recadro will run in, usually the repository
+root; a `recadro.json` already there is an error, since that folder has its
+set. The placeholders are `data-capture`
 in the panels' HTML, and in `panorama` also in `world.html`, the scene every
 panel shows a stretch of. Then adapt: the variables at the top of `panel.css`
 to the app's colours and fonts, the words in `strings/en-US.json`, and any
@@ -279,14 +286,15 @@ something to compare against, then:
 1. **Strings:** one file per locale in `strings/`, holding only what the panels
    read; a section of a larger file moves out on its own. Point the panels'
    fetch at `../strings/${locale}.<ext>`.
-2. **Captures:** if the capture flow writes elsewhere, write `recadro.json`
-   with `captures` naming that folder. Slot folders in it must be named
-   `iPhone` and `iPad`, locale folders for the locale; a folder named
-   otherwise is not read. Rename them in the capture flow if not.
+2. **`recadro.json`:** in the folder commands run from, `set` naming the set
+   and, if the capture flow writes elsewhere, `captures` naming that folder.
+   Slot folders in it must be named `iPhone` and `iPad`, locale folders for
+   the locale; a folder named otherwise is not read. Rename them in the
+   capture flow if not.
 3. **Panels:** replace every capture path the page builds with `?captures=`
    plus the filename. Keep whatever maps a slug to a capture filename.
-4. **Commands:** drop `--panels`, `--locales` and `--devices` from the repo's
-   scripts where the set now says the same thing.
+4. **Commands:** drop `--locales` and `--devices` from the repo's scripts
+   where the set now says the same thing, and any flag that named the set.
 5. **Compare:** shoot again into a second folder and look at both side by side.
    Nothing should have changed.
 6. **Agent files:** if the set has none, add them as `init` writes them:

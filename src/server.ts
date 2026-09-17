@@ -12,7 +12,6 @@ import { discoverPanels, urlPathFor, type Panel } from "./panels.ts";
 import { PKG } from "./pkg.ts";
 import {
   CAPTURE_FILE,
-  capturesBase,
   capturesUrls,
   DEFAULT_LOCALE,
   devicesWithCaptures,
@@ -107,10 +106,11 @@ function sendOwnFile(res: ServerResponse, file: string, type: string): void {
 
 /**
  * The lineup's manifest, from the set as it is on disk now. Read per request, so
- * a panel or a strings file added while the server runs shows on reload.
+ * a panel, a strings file or a `recadro.json` key added while the server runs
+ * shows on reload.
  */
 function manifestFor(set: PanelSet, options: ServerOptions): LineupManifest {
-  const current = loadSet(set.dir);
+  const current = loadSet(set.config);
   const locales = current.locales.length ? current.locales : [DEFAULT_LOCALE];
   const outUrl = urlPathFor(current.root, current.out.base);
   return {
@@ -135,7 +135,7 @@ function manifestFor(set: PanelSet, options: ServerOptions): LineupManifest {
  * itself has no vite client and stays; the panels inside it reload.
  */
 function watchFetched(server: ViteDevServer, set: PanelSet): void {
-  const captures = capturesBase(set);
+  const captures = set.captures;
   const panels = join(set.dir, "panels") + sep;
   server.watcher.add(captures);
   let pending: NodeJS.Timeout | undefined;

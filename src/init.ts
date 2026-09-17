@@ -2,12 +2,14 @@
  * `init`: a new set copied from a starter. A starter is a premade set in the
  * package; the copy is plain except for `{capture:N}`, filled with the Nth
  * capture already taken, so the panels open showing the app's own screens.
- * Beside it go two agent files pointing at the package's AUTHORING.md.
+ * Beside it go two agent files pointing at the package's AUTHORING.md, and
+ * where `init` runs goes the `recadro.json` naming the set, so recadro runs
+ * from there with no flag.
  */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, extname, join } from "node:path";
+import { dirname, extname, join, relative, sep } from "node:path";
 import { PKG } from "./pkg.ts";
-import { capturesDir, capturesIn, CONFIG_FILE, DEFAULT_LOCALE, loadSet } from "./set.ts";
+import { capturesDir, capturesIn, DEFAULT_LOCALE, loadSet } from "./set.ts";
 import { SLOTS } from "./slots.ts";
 
 /** Where the starters ship: one folder per starter, named for it. */
@@ -82,7 +84,7 @@ export function installSkill(root: string): SkillState {
   const loop = readFileSync(join(PKG, "skills", "recadro", "SKILL.md"), "utf8");
   // The document's one relative link points at a file that is not beside the skill.
   const authoring = readFileSync(join(PKG, "AUTHORING.md"), "utf8").replace("](README.md)", "](https://github.com/jslakva/recadro#readme)");
-  const stamp = `<!-- written by recadro ${VERSION}; recadro init <set> --skill rewrites it from the installed version -->`;
+  const stamp = `<!-- written by recadro ${VERSION}; recadro init --skill rewrites it from the installed version -->`;
   const composed =
     loop.replace(/^(---\n[\s\S]*?\n---\n)/, `$1\n${stamp}\n`) +
     `\n---\n\nThe rest of this file is recadro ${VERSION}'s AUTHORING.md, as installed.\n\n` +
@@ -98,7 +100,9 @@ export interface InitOptions {
   dir: string;
   /** The starter's name, a folder in `STARTERS_DIR`. */
   starter: string;
-  /** The captures folder for `recadro.json`, when captures are not in the set's own `captures/`. */
+  /** Absolute path of the `recadro.json` to write, in the folder `init` runs in; it must not exist. */
+  config: string;
+  /** The captures folder for `recadro.json`, relative to its folder, when captures are not in the set's own `captures/`. */
   captures?: string;
 }
 
@@ -126,8 +130,8 @@ export function listStarters(): string[] {
  * runs the same steps per device. Captures per locale are read for the default
  * locale, the one the starters' strings are written in.
  */
-function capturesTaken(dir: string): { files: string[]; from: string | null } {
-  const set = loadSet(dir);
+function capturesTaken(config: string): { files: string[]; from: string | null } {
+  const set = loadSet(config);
   for (const slot of SLOTS) {
     const files = capturesIn(capturesDir(set, slot.id, DEFAULT_LOCALE));
     if (files.length) return { files, from: slot.id };
@@ -158,27 +162,36 @@ function copyStarter(from: string, to: string, captures: string[], unfilled: Set
 
 /**
  * Creates a set from a starter. Refuses a folder that already holds anything,
- * so it never mixes with or overwrites a set. The captures pattern is written
- * and validated before anything is copied; a failure removes what was made.
+ * so it never mixes with or overwrites a set, and a `recadro.json` already
+ * where it runs, since that folder has its set: a second one is made from
+ * another folder. The file is written and read back before anything is
+ * copied, so its paths are checked first; a failure removes what was made.
  */
 export function initSet(options: InitOptions): InitResult {
-  const { dir, starter, captures } = options;
+  const { dir, starter, config, captures } = options;
   const source = join(STARTERS_DIR, starter);
   if (!existsSync(source)) {
     throw new Error(`no starter "${starter}". Starters: ${listStarters().join(", ")}`);
   }
+  if (existsSync(config)) {
+    throw new Error(`${config} already names the set at ${loadSet(config).dir}; a second set is made from another folder`);
+  }
   const existed = existsSync(dir);
   if (existed && readdirSync(dir).length) throw new Error(`${dir} is not empty; init makes a new set`);
 
+  // The set's path is left out when the set is the file's own folder, the default.
+  const set = relative(dirname(config), dir).split(sep).join("/");
+  const written = { ...(set && set !== "." ? { set } : {}), ...(captures ? { captures } : {}) };
   mkdirSync(dir, { recursive: true });
   try {
-    if (captures) writeFileSync(join(dir, CONFIG_FILE), `${JSON.stringify({ captures }, null, 2)}\n`);
-    const taken = capturesTaken(dir);
+    writeFileSync(config, `${JSON.stringify(written, null, 2)}\n`);
+    const taken = capturesTaken(config);
     const unfilled = new Set<number>();
     copyStarter(source, dir, taken.files, unfilled);
     for (const [name, text] of Object.entries(AGENT_FILES)) writeFileSync(join(dir, name), text);
     return { captures: taken.files, capturesFrom: taken.from, unfilled: [...unfilled].sort((a, b) => a - b) };
   } catch (error) {
+    rmSync(config, { force: true });
     rmSync(dir, { recursive: true, force: true });
     if (existed) mkdirSync(dir);
     throw error;

@@ -9,7 +9,7 @@ recadro renders App Store screenshot panels, plain HTML files in a set, from
 what they are named and where they are. This file has two parts: how to run
 the live loop, and, below it, recadro's own AUTHORING.md as installed — every
 rule for changing a set, so nothing here needs finding first. `recadro init
-<set> --skill` rewrites this file when the installed recadro changes.
+--skill` rewrites this file when the installed recadro changes.
 
 ## `/recadro live` — listen to the lineup
 
@@ -18,8 +18,9 @@ panels. Each note reaches you as it is written; you make the change, the
 panel reloads under their eyes, and you answer in one line.
 
 1. **Start the server with the channel**, in the background, and leave it
-   running: `npx recadro dev --live`, with `--panels <dir>` when the
-   repository holds more than one set. Wait for its `lineup` line and give the
+   running: `npx recadro dev --live`, from the folder holding the set's
+   `recadro.json` or with `--config <path>`; `wait` and `reply` below take
+   the same. Wait for its `lineup` line and give the
    person that URL. If a plain `recadro dev` is already open, this one starts
    on another port; tell them to switch to it.
 2. **Listen.** Run `npx recadro wait` under whatever your harness has that

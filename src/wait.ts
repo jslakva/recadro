@@ -14,16 +14,16 @@ const PAD = "         ";
 /** The request function for a URL's scheme. */
 const requestFor = (url: URL) => (url.protocol === "https:" ? httpsRequest : httpRequest);
 
-/** The live server for a set, or the error that says how to start one. */
-function liveFor(setDir: string, shown: string): LiveFile {
+/** The live server for a set, or the error that says how to start one. `flag` is `--config …` when the set needs it, else empty. */
+function liveFor(setDir: string, shown: string, flag: string): LiveFile {
   const live = readLive(setDir);
-  if (!live) throw new Error(`no recadro dev --live is running for ${shown}; start one with: recadro dev --live --panels ${shown}`);
+  if (!live) throw new Error(`no recadro dev --live is running for ${shown}; start one with: recadro dev --live${flag}`);
   return live;
 }
 
 /** The same error once a connection told us the announced server is not there. */
-function gone(live: LiveFile, shown: string): Error {
-  return new Error(`no recadro dev --live answers at ${live.origin} for ${shown}; start one with: recadro dev --live --panels ${shown}`);
+function gone(live: LiveFile, shown: string, flag: string): Error {
+  return new Error(`no recadro dev --live answers at ${live.origin} for ${shown}; start one with: recadro dev --live${flag}`);
 }
 
 /**
@@ -46,14 +46,14 @@ export function formatNote(note: Note): string {
  * goes away. Meant to run under whatever the agent's harness has that reports
  * a command's output line by line.
  */
-export function wait(setDir: string, shown: string): Promise<void> {
-  const live = liveFor(setDir, shown);
+export function wait(setDir: string, shown: string, flag: string): Promise<void> {
+  const live = liveFor(setDir, shown, flag);
   const url = new URL("/__recadro/notes/wait", live.origin);
   return new Promise((resolve, reject) => {
     const req = requestFor(url)(url, { method: "GET", headers: { [AGENT_HEADER]: "wait" } }, (res: IncomingMessage) => {
       if (res.statusCode !== 200) {
         res.resume();
-        reject(gone(live, shown));
+        reject(gone(live, shown, flag));
         return;
       }
       process.stdout.write(`recadro  waiting for notes from the lineup at ${live.origin}/\n${PAD}set       ${shown}\n\n`);
@@ -85,15 +85,15 @@ export function wait(setDir: string, shown: string): Promise<void> {
       });
     });
     req.on("error", (error: NodeJS.ErrnoException) => {
-      reject(error.code === "ECONNREFUSED" ? gone(live, shown) : error);
+      reject(error.code === "ECONNREFUSED" ? gone(live, shown, flag) : error);
     });
     req.end();
   });
 }
 
 /** Posts the agent's one line about a note; the lineup shows it at the pin. */
-export function reply(setDir: string, shown: string, id: number, text: string): Promise<void> {
-  const live = liveFor(setDir, shown);
+export function reply(setDir: string, shown: string, flag: string, id: number, text: string): Promise<void> {
+  const live = liveFor(setDir, shown, flag);
   const url = new URL(`/__recadro/notes/${id}/reply`, live.origin);
   const body = JSON.stringify({ text });
   return new Promise((resolve, reject) => {
@@ -114,13 +114,13 @@ export function reply(setDir: string, shown: string, id: number, text: string): 
           } else if (res.statusCode === 404 && answer.includes("no note")) {
             reject(new Error(`no note ${id} on the server at ${live.origin}; wait prints the ids`));
           } else {
-            reject(gone(live, shown));
+            reject(gone(live, shown, flag));
           }
         });
       },
     );
     req.on("error", (error: NodeJS.ErrnoException) => {
-      reject(error.code === "ECONNREFUSED" ? gone(live, shown) : error);
+      reject(error.code === "ECONNREFUSED" ? gone(live, shown, flag) : error);
     });
     req.end(body);
   });

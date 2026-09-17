@@ -53,25 +53,31 @@ sometimes per locale, so the tool resolves that folder once and hands it to
 every panel. The page still chooses the filename in it: a capture named after
 the slug, or whatever the panel names.
 
-## The set: conventions first, one optional file
+## The set: one file, always, and names for the rest
 
-A set is a folder holding `panels/`. Everything else about it is read from
-names, and the one file that exists is optional:
+A set is a folder holding `panels/`. One file, `recadro.json`, says where it
+is and where its inputs and outputs are; everything else about it is read
+from names:
 
 ```
+recadro.json              where recadro runs: "set", "captures", "out"; init writes it
 <set>/
   panels/NN-slug.html     the panels; the number prefix is the order
   strings/<locale>.*      one entry per locale; the names are the locales
   captures/               where captures are, unless recadro.json says otherwise
-  recadro.json            optional: "captures" and "out"
   out/<locale>/           renders, unless recadro.json or --out says otherwise
   panel.css, panel.js     the page's own; recadro never reads them
 ```
 
-- **Found, not flagged.** With no `--panels`, a command uses the folder it runs
-  in, or the nearest set above it within the repository, or the one set below
-  it. A repository with several sets names one. The goal is that a set runs
-  with `recadro dev` and nothing else.
+- **One place to look.** A command reads `recadro.json` in the folder it runs
+  in, or the one `--config` names, and nothing else. The alternative is to
+  find the set — the folder above, or the one set below, to some depth,
+  skipping the folders that never hold one — and it still ends in a flag for
+  a repository with two sets. A search needs a rule for what counts as a set
+  and a list of what to skip; a file needs neither, and it puts the set's
+  name at the repository root, which is where people stand when they run
+  things. The cost is a file of three lines at most, and `init` writes it
+  where it runs, so a set runs with `recadro dev` and nothing else.
 - **Locales are the names in `strings/`.** `en-US.json`, `de-DE.md`, `zh-Hans`
   as a folder: the extension and the contents are the page's. Adding a language
   is adding its strings, and nothing else changes. A strings file that other
@@ -98,10 +104,12 @@ names, and the one file that exists is optional:
   because both slots' panels share a slug. Pointing `out` at the fastlane
   folder makes an upload with nothing copied in between. A flow that wants a
   folder per slot says so with `{device}` in the pattern.
-- **`recadro.json` holds the two facts names cannot.** Where the capture flow
-  writes (`"captures": "../../maestro/screenshots"`) and, rarely, where
-  renders go. It sits in the set, so its paths are relative to the set and a
-  repository can hold several sets. It is strict: a mistyped key or
+- **`recadro.json` holds the three facts names cannot.** Where the set is
+  (`"set"`, the file's own folder when left out), where the capture flow
+  writes (`"captures": "maestro/screenshots"`) and, rarely, where renders go.
+  Its paths are relative to the file, so a repository holds several sets by
+  holding a file per set, each in its own folder, and `--config` reaches the
+  one not in the working directory. It is strict: a mistyped key or
   placeholder is an error, because one quietly ignored looks exactly like
   captures that do not exist yet.
 

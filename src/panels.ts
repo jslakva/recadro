@@ -28,11 +28,11 @@ export function urlPathFor(root: string, file: string): string {
  * `root` is the vite root the server was started on; the returned `urlPath` is
  * relative to it, so callers can navigate without knowing where on disk the
  * panels live. Throws when the directory is missing — an empty lineup is
- * indistinguishable from a mistyped `--panels`.
+ * indistinguishable from a mistyped `set` in `recadro.json`.
  */
 export function discoverPanels(panelsDir: string, root: string): Panel[] {
   const dir = join(panelsDir, "panels");
-  if (!existsSync(dir)) throw new Error(`no panels directory at ${dir}`);
+  if (!existsSync(dir)) throw new Error(`no panels directory at ${dir}; "set" in recadro.json names the folder holding panels/`);
 
   return readdirSync(dir)
     .filter((name) => name.endsWith(".html"))
