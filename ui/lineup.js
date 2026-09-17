@@ -579,10 +579,35 @@ function draw() {
 let listening = false;
 /** Every note the server knows, by id. */
 const notes = new Map();
-/** Pins the person clicked away in this tab. */
-const dismissed = new Set();
-/** Open pins the person clicked into a box in this tab. */
+/**
+ * Pins the person clicked away, kept for the tab across a reload under the
+ * key of the server run, since a new run counts notes from 1 again.
+ */
+let dismissed = new Set();
+let dismissedKey = "";
+/** Pins showing as a box: clicked open, or a reply that arrived while the page was up. */
 const opened = new Set();
+
+/** Loads what this tab dismissed under the server run the state names. */
+function loadDismissed(started) {
+  dismissedKey = `recadro-dismissed:${started}`;
+  try {
+    dismissed = new Set(JSON.parse(sessionStorage.getItem(dismissedKey) ?? "[]"));
+  } catch {
+    dismissed = new Set();
+  }
+}
+
+/** Dismisses a pin for this tab, reload included. */
+function dismiss(id) {
+  dismissed.add(id);
+  opened.delete(id);
+  try {
+    sessionStorage.setItem(dismissedKey, JSON.stringify([...dismissed]));
+  } catch {
+    // Storage refused: the pin stays away until the next reload.
+  }
+}
 /** What the open note field is about, or null while it is closed. */
 let pending = null;
 
@@ -612,8 +637,8 @@ function drawPins() {
     for (const frame of el("lineup").querySelectorAll(`figure[data-slug="${CSS.escape(note.slug)}"] .frame`)) {
       const pin = document.createElement("span");
       pin.className = `pin${noteState(note)}`;
-      // An answered pin opens on its own; an open one when clicked.
-      const box = Boolean(note.reply) || opened.has(note.id);
+      // A pin shows as a box when clicked open, or when its reply arrived under the person's eyes; after a reload every pin is a circle.
+      const box = opened.has(note.id);
       const left = box && note.spot.x > 0.5;
       const up = box && note.spot.y > 0.7;
       // A box opens away from the spot; past the middle it opens the other way, anchored by the far edge, so the frame does not clip it.
@@ -651,7 +676,7 @@ function drawPins() {
         x.addEventListener("click", (event) => {
           event.preventDefault();
           event.stopPropagation();
-          if (note.reply) dismissed.add(note.id);
+          if (note.reply) dismiss(note.id);
           else opened.delete(note.id);
           drawPins();
         });
@@ -728,9 +753,13 @@ function drawLog() {
 function takeNote(note) {
   const before = notes.get(note.id);
   notes.set(note.id, note);
+  // A reply that just came opens its box; one found on a reload waits for a click.
+  if (note.reply && !before?.reply) {
+    opened.add(note.id);
+    el("announce").textContent = `agent replied to note ${note.id}: ${note.reply}`;
+  }
   drawPins();
   drawLog();
-  if (note.reply && !before?.reply) el("announce").textContent = `agent replied to note ${note.id}: ${note.reply}`;
 }
 
 /**
@@ -785,6 +814,7 @@ if (manifest.live) {
   const events = new EventSource("/__recadro/notes/events");
   events.addEventListener("state", (event) => {
     const state = JSON.parse(event.data);
+    loadDismissed(state.started);
     notes.clear();
     for (const note of state.notes) notes.set(note.id, note);
     drawPins();

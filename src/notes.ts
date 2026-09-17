@@ -130,6 +130,8 @@ function sameOrigin(req: IncomingMessage): boolean {
 export class NoteChannel {
   private notes: Note[] = [];
   private nextId = 1;
+  /** When this server started, so a lineup can keep what it dismissed across a reload without carrying it into the next run, whose ids start over. */
+  private readonly started = Date.now();
   /** Notes no `wait` has printed yet; delivered to the first one that connects. */
   private undelivered: Note[] = [];
   private waiters = new Set<ServerResponse>();
@@ -267,7 +269,7 @@ export class NoteChannel {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-store");
     res.flushHeaders();
-    res.write(`event: state\ndata: ${JSON.stringify({ listening: this.listening, notes: this.notes })}\n\n`);
+    res.write(`event: state\ndata: ${JSON.stringify({ started: this.started, listening: this.listening, notes: this.notes })}\n\n`);
     this.lineups.add(res);
     const ping = setInterval(() => res.write(": ping\n\n"), PING_MS);
     res.on("close", () => {
