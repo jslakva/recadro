@@ -57,7 +57,7 @@ export function installSkill(root: string): string | null {
   const loop = readFileSync(join(PKG, "skills", "recadro", "SKILL.md"), "utf8");
   // The document's one relative link points at a file that is not beside the skill.
   const authoring = readFileSync(join(PKG, "AUTHORING.md"), "utf8").replace("](README.md)", "](https://github.com/jslakva/recadro#readme)");
-  const stamp = `<!-- written by recadro ${VERSION}; recadro init --skill rewrites it from the installed version -->`;
+  const stamp = `<!-- written by recadro ${VERSION}; recadro skill rewrites it from the installed version -->`;
   const composed =
     loop.replace(/^(---\n[\s\S]*?\n---\n)/, `$1\n${stamp}\n`) +
     `\n---\n\nThe rest of this file is recadro ${VERSION}'s AUTHORING.md, as installed.\n\n` +

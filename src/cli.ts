@@ -33,18 +33,18 @@ import { reply, wait } from "./wait.ts";
 const USAGE = `recadro — App Store screenshots as code
 
   recadro init   <dir> [--starter <name>] [--captures <dir>] [--skill | --no-skill]
-  recadro init   [--config <path>] --skill
   recadro dev    [--config <path>] [--port <n>] [--live]
   recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
   recadro wait   [--config <path>]
   recadro reply  <id> "<what you changed>" [--config <path>]
+  recadro skill  [--config <path>]
 
   --starter     init: the starter to copy into <dir>   (${listStarters().join(", ")}); asked at a terminal when left out, Enter for ${DEFAULT_STARTER}
                 init writes ${CONFIG_FILE} in the folder it runs in, naming <dir>; run recadro from that folder
   --captures    init: the captures folder, from here  (written to ${CONFIG_FILE})
-  --skill       init: add a /recadro skill for Claude Code at ${SKILL_PATH.split(sep).join("/")} without asking,
-                or rewrite one already there (asked first at a terminal); without <dir> and --starter,
-                init adds only the skill.  --no-skill: don't, and don't ask
+  --skill       init: add the /recadro skill without asking; --no-skill: don't, and don't ask
+                skill writes it for Claude Code at ${SKILL_PATH.split(sep).join("/")}, or rewrites one already
+                there from the installed recadro, asked first at a terminal
   --live        dev: take notes pinned in the lineup, for an agent running \`recadro wait\`
 
   --config      the set's ${CONFIG_FILE}, or the folder holding it   (default: the one in the folder you run in)
@@ -182,36 +182,25 @@ async function openBrowser(): Promise<Browser> {
 }
 
 /**
- * Whether to add the `/recadro` skill to the repository, and the summary line
- * saying what happened. Asked at a terminal, Enter meaning yes, as `render`
- * asks about Chromium; anywhere else — an agent, CI — nothing is written and
- * the line names the flag, since a half-asked question helps nobody. A skill
- * already there is the tool's own file: a new set keeps one from this version
- * and rewrites one from another without asking; `--skill` rewrites it either
- * way, asking first at a terminal, since the installed package may have
- * changed under the same version while the tool is being tried unpublished.
+ * Whether `init` adds the `/recadro` skill to the repository, and the summary
+ * line saying what happened. Asked at a terminal, Enter meaning yes, as
+ * `render` asks about Chromium; anywhere else — an agent, CI — nothing is
+ * written and the line names the command, since a half-asked question helps
+ * nobody. A skill already there is the tool's own file: one from this
+ * version is kept, one from another is rewritten, no question.
  */
 async function skillLine(set: PanelSet, yes: boolean, no: boolean): Promise<string> {
   const target = join(set.root, SKILL_PATH);
-  const later = `recadro init${configFlag(set)} --skill`;
-  const tty = process.stdin.isTTY && process.stdout.isTTY;
+  const later = `recadro skill${configFlag(set)}`;
   if (existsSync(target)) {
     if (no) return `${shown(target)} (left as it is)`;
     const from = skillVersion(set.root);
-    const rewritten = `${shown(target)} (rewritten${from && from !== VERSION ? ` from recadro ${from}` : ""})`;
-    if (yes) {
-      const was = from ? `from recadro ${from}` : "not written by recadro";
-      if (tty && !(await confirm(`${shown(target)} is already there, ${was}. Rewrite it from recadro ${VERSION}?`))) {
-        return `${shown(target)} (kept)`;
-      }
-      installSkill(set.root);
-      return rewritten;
-    }
     if (from === VERSION) return `${shown(target)} (kept)`;
     installSkill(set.root);
-    return rewritten;
+    return `${shown(target)} (rewritten${from ? ` from recadro ${from}` : ""})`;
   }
   if (no) return `not added; ${later} adds /recadro for Claude Code`;
+  const tty = process.stdin.isTTY && process.stdout.isTTY;
   if (!yes && !tty) return `not added; ${later} adds /recadro for Claude Code`;
   if (!yes && !(await confirm(`Add a /recadro skill for Claude Code at ${shown(dirname(target))}/?`))) {
     return `not added; ${later} adds it later`;
@@ -220,11 +209,35 @@ async function skillLine(set: PanelSet, yes: boolean, no: boolean): Promise<stri
   return shown(target);
 }
 
+/**
+ * `recadro skill`: writes the skill, or rewrites the one there from the
+ * installed package. Running the command is the ask, so a missing file is
+ * written without a question; one already there is asked about at a
+ * terminal, naming the version it came from, since the file may have fallen
+ * behind the package under the same version while the tool is tried
+ * unpublished. Anywhere else the command alone is the answer.
+ */
+async function writeSkill(set: PanelSet): Promise<string> {
+  const target = join(set.root, SKILL_PATH);
+  if (!existsSync(target)) {
+    installSkill(set.root);
+    return shown(target);
+  }
+  const from = skillVersion(set.root);
+  const was = from ? `from recadro ${from}` : "not written by recadro";
+  const tty = process.stdin.isTTY && process.stdout.isTTY;
+  if (tty && !(await confirm(`${shown(target)} is already there, ${was}. Rewrite it from recadro ${VERSION}?`))) {
+    return `${shown(target)} (kept)`;
+  }
+  installSkill(set.root);
+  return `${shown(target)} (rewritten${from && from !== VERSION ? ` from recadro ${from}` : ""})`;
+}
+
 /** A line for `dev` when the repository's skill was written by another version of recadro, or nothing. */
 function staleSkillLine(set: PanelSet): string | null {
   const from = skillVersion(set.root);
   if (!from || from === VERSION) return null;
-  return `skill     ${shown(join(set.root, SKILL_PATH))} is from recadro ${from}; recadro init${configFlag(set)} --skill rewrites it`;
+  return `skill     ${shown(join(set.root, SKILL_PATH))} is from recadro ${from}; recadro skill${configFlag(set)} rewrites it`;
 }
 
 async function main(): Promise<void> {
@@ -233,7 +246,7 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
-  if (!["init", "dev", "render", "wait", "reply"].includes(command)) {
+  if (!["init", "dev", "render", "wait", "reply", "skill"].includes(command)) {
     console.error(`unknown command "${command}"\n\n${USAGE}`);
     process.exitCode = 1;
     return;
@@ -258,19 +271,8 @@ async function main(): Promise<void> {
   });
 
   if (command === "init") {
-    const dir = positionals.length === 1 ? resolve(positionals[0]) : null;
-    if (positionals.length > 1 || (!dir && (values.starter || !values.skill))) {
-      throw new Error(
-        `init takes a folder: recadro init <dir> [--starter ${listStarters().join("|")}]\n` +
-          `or adds the /recadro skill to the set ${CONFIG_FILE} names: recadro init [--config <path>] --skill`,
-      );
-    }
-    // The skill is all there is to add to a set that exists.
-    if (!dir) {
-      const set = loadSet(configFile(process.cwd(), values.config));
-      console.log(`recadro  skill     ${await skillLine(set, values.skill, values["no-skill"])}`);
-      return;
-    }
+    if (positionals.length !== 1) throw new Error(`init takes a folder: recadro init <dir> [--starter ${listStarters().join("|")}]`);
+    const dir = resolve(positionals[0]);
     // The file goes where init runs, which is where recadro will run: the one
     // rule for reading it, so --config would only say where not to put it.
     if (values.config) throw new Error(`init writes ${CONFIG_FILE} in the folder it runs in; run it from where the file should be`);
@@ -319,13 +321,16 @@ async function main(): Promise<void> {
   if (positionals.length) throw new Error(`${command} takes no ${positionals[0]}; name the set's ${CONFIG_FILE} with --config`);
 
   const set = loadSet(configFile(process.cwd(), values.config));
-  const { locales, from: localesFrom } = localesFor(set, values.locales);
-  const port = values.port ? Number(values.port) : undefined;
-
+  if (command === "skill") {
+    console.log(`recadro  skill     ${await writeSkill(set)}`);
+    return;
+  }
   if (command === "wait") {
     await wait(set.dir, shown(set.dir), configFlag(set));
     return;
   }
+  const { locales, from: localesFrom } = localesFor(set, values.locales);
+  const port = values.port ? Number(values.port) : undefined;
 
   if (command === "dev") {
     const { origin, panels } = await startServer(set, { port, watchFetched: true, live: values.live });

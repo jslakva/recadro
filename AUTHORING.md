@@ -9,7 +9,7 @@ which capture it loads — is written in the repo like any other page. The
 [README](README.md) explains the tool and why it is shaped this way. How an
 agent works on a set — checking without a browser, reading what the lineup
 sends, the live loop — is in `skills/recadro/SKILL.md` beside this file,
-which `init --skill` installs with this file beneath it.
+which `recadro skill` installs with this file beneath it.
 
 ## Inputs, the set, outputs
 
@@ -138,11 +138,11 @@ starter's `panel.js`: `starters/<name>/panel.js` in the installed package, or on
 
 ```
 recadro init   <dir> [--starter <name>] [--captures <dir>] [--skill | --no-skill]
-recadro init   [--config <path>] --skill
 recadro dev    [--config <path>] [--port <n>] [--live]
 recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
 recadro wait   [--config <path>]
 recadro reply  <id> "<what you changed>" [--config <path>]
+recadro skill  [--config <path>]
 ```
 
 ### `init`
@@ -150,6 +150,13 @@ recadro reply  <id> "<what you changed>" [--config <path>]
 Makes a set from a starter: creates the panels from the chosen starter's
 design, prefills them with the captures already taken, writes `recadro.json`
 where the command runs, and offers to install the skill if absent.
+
+### `skill`
+
+Writes the `/recadro` skill for Claude Code at
+`.claude/skills/recadro/SKILL.md` in the repository, or rewrites the one
+there from the installed recadro, asking first at a terminal. `dev` says
+when the installed skill is from another version.
 
 ### `dev`
 

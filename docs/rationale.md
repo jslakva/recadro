@@ -235,7 +235,7 @@ package cannot run, a copy would stop tracking the version, and it would serve
 one agent where a document serves all. Each objection had a fix. `init` is an
 installer already, and writing `.claude/skills/recadro/SKILL.md` at the
 repository root is one more file it writes, asked about first. A copy stops tracking the version silently; this
-one carries the version it was written from, `init <set> --skill` rewrites it
+one carries the version it was written from, `recadro skill` rewrites it
 from the installed package, and `dev` says when it is behind. And a skill in a
 file format other harnesses read too is not one agent's.
 

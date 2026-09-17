@@ -166,11 +166,11 @@ keys and other placeholders are an error.
 
 ```
 recadro init   <dir> [--starter <name>] [--captures <dir>] [--skill | --no-skill]
-recadro init   [--config <path>] --skill
 recadro dev    [--config <path>] [--port <n>] [--live]
 recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
 recadro wait   [--config <path>]
 recadro reply  <id> "<what you changed>" [--config <path>]
+recadro skill  [--config <path>]
 ```
 
 Flags win over `recadro.json`, which wins over the set's names. `--config`
@@ -253,14 +253,14 @@ take notes from the lineup live.
 
 `init` offers to add a `/recadro` skill for Claude Code at
 `.claude/skills/recadro/SKILL.md` in the repository — asked at a terminal,
-`--skill` or `--no-skill` to answer without the question, `init --skill` from
-the folder with `recadro.json` to add it later. The skill is one flat file:
+`--skill` or `--no-skill` to answer without the question, `recadro skill`
+from the folder with `recadro.json` to add it later. The skill is one flat file:
 how an agent works on a set — checking its work without a browser, reading
 what the lineup sends, the `/recadro live` loop — with the installed
 `AUTHORING.md` whole beneath it, so invoking it loads every rule and nothing
 has to be found first. The first part is the package's own
 `skills/recadro/SKILL.md`, readable as a document by any agent. It carries
-the version it was written from; after updating recadro, `init --skill`
+the version it was written from; after updating recadro, `recadro skill`
 rewrites it, asking first at a terminal, and `dev` says so while it is
 behind.
 
