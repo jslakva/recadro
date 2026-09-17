@@ -247,7 +247,7 @@ async function main(): Promise<void> {
       const left = result.unfilled.map((n) => `{capture:${n}}`).join(", ");
       console.log(`         left      ${left} in strings/, for captures still to take`);
     }
-    console.log(`         agents    ${Object.keys(AGENT_FILES).join(", ")}, pointing at recadro's AUTHORING.md`);
+    console.log(`         agents    ${Object.keys(AGENT_FILES).join(", ")}, pointing at recadro's SKILL.md and AUTHORING.md`);
     console.log(`         skill     ${await skillLine(set, values.skill, values["no-skill"])}`);
     console.log(`         next      recadro dev  (from here)`);
     return;

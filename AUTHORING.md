@@ -6,7 +6,10 @@ ordinary web page, and recadro serves it, sizes it to each slot and shoots
 it.** It finds the set's pieces by their names and places and hands the page
 four query params; what the page shows — its layout, its words, its tokens,
 which capture it loads — is written in the repo like any other page. The
-[README](README.md) explains the tool and why it is shaped this way.
+[README](README.md) explains the tool and why it is shaped this way. How an
+agent works on a set — checking without a browser, reading what the lineup
+sends, the live loop — is in `skills/recadro/SKILL.md` beside this file,
+which `init --skill` installs with this file beneath it.
 
 ## Inputs, the set, outputs
 
@@ -81,9 +84,6 @@ starter's `panel.js`: `starters/<name>/panel.js` in the installed package, or on
 
 ## Don't
 
-- **Don't add keys to `recadro.json` or create another config for recadro.**
-  Strings, tokens, which panel shows which capture — the page reads those from
-  its own files, and recadro reads none of them.
 - **Don't build capture paths in a panel.** Use `?captures=`. A path written
   into `panel.js` breaks the moment captures move or become per locale, and
   `render` cannot tell that a capture asked for elsewhere is missing.
@@ -106,12 +106,13 @@ starter's `panel.js`: `starters/<name>/panel.js` in the installed package, or on
 
 - **Captures** are full-screen simulator screenshots, one per panel and slot,
   in `captures/`: `<file>` the panel's slug unless the page maps it. One
-  slot's captures can sit flat in the folder. With `iPad` as well as `iPhone`
-  (App Store Connect requires it when the app supports iPad), each slot's go
-  in a folder named exactly for it, since a panel asks for the same filename
-  on both. Captures that differ per language go in a folder named for the
-  locale, `captures/<locale>/[<slot>/]` (or `<slot>/<locale>/`); a locale
-  with no folder of its own gets the captures outside any.
+  slot's captures can sit flat in the folder. With both slots (App Store
+  Connect requires iPad screenshots when the app supports iPad), each gets a
+  folder named for it, `iPhone/` and `iPad/`, since a panel asks for the same
+  filename on both and one folder serves one slot. Captures that differ per
+  language go in a folder named for the locale, `captures/<locale>/[<slot>/]`
+  (or `<slot>/<locale>/`); a locale with no folder of its own gets the
+  captures outside any.
 - **Strings** are one file per locale in `strings/`, named for the locale, in
   whatever format the panels read. Adding `strings/de-DE.json` is the whole of
   adding German; recadro renders it from the name. A different type stack for
@@ -132,24 +133,19 @@ starter's `panel.js`: `starters/<name>/panel.js` in the installed package, or on
   The `captures` line `dev` and `render` print says which slot each folder
   serves.
 
-## Look at your work
+## Commands
 
-You have no browser, so the PNGs are your lineup. Shoot every panel, including
-ones whose capture does not exist yet, somewhere outside the set's `out`:
-
-```bash
-npx recadro render --out <scratch dir> --incomplete
+```
+recadro init   <dir> --starter <name> [--captures <dir>] [--skill | --no-skill]
+recadro init   [--config <path>] --skill
+recadro dev    [--config <path>] [--port <n>] [--live]
+recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
+recadro wait   [--config <path>]
+recadro reply  <id> "<what you changed>" [--config <path>]
 ```
 
-Open `<scratch dir>/<locale>/<device>-<slug>.png` for every panel you touched,
-at every slot and locale. Look for a headline that wraps badly or is cropped,
-text past the frame, a fallback font, a capture that did not load, a layout
-that only works on one slot or in one language. Look at the first three
-together: they are all a search result shows. Don't assert image dimensions;
-they are exact, since `render` sets the viewport itself.
-
-`npx recadro render` alone produces what ships. It prints what it picked and
-why, then one line per shot:
+**`render`** produces what ships. It prints what it picked and why, then one
+line per shot:
 
 ```
 recadro  6 panels in store/screenshots
@@ -160,55 +156,28 @@ recadro  6 panels in store/screenshots
   skipped en-US/iPhone-03-quote — no capture at <path>
 ```
 
-It exits 0 either way; read the lines. A panel is incomplete when a capture it
-asked for — a request under the `?captures=` folder — was not there, and
-`render` skips it. Each run replaces its own files for the slots and locales it
-rendered and touches nothing else, so `out/` holds only complete panels and can
-be uploaded wholesale. A panel that asks for no capture is complete and ships,
-and how a missing one looks is the page's own. A device
-missing from `devices` has no captures; `--devices` renders it anyway.
-`--out` moves the folder and keeps the layout below it. `--incomplete`
-refuses to write into the set's own `out`.
+It exits 0 either way; the lines say what happened. A panel is incomplete when
+a capture it asked for — a request under the `?captures=` folder — was not
+there, and `render` skips it. Each run replaces its own files for the slots
+and locales it rendered and touches nothing else, so `out/` holds only
+complete panels and can be uploaded wholesale. A panel that asks for no
+capture is complete and ships, and how a missing one looks is the page's own.
+A device missing from `devices` has no captures; `--devices` renders it
+anyway. `--out` moves the folder and keeps the layout below it.
+`--incomplete` shoots incomplete panels too, for looking, and refuses to
+write into the set's own `out`.
 
-`render` needs Playwright's Chromium, installed apart from the package. Where it
-is missing, `render` writes nothing and prints the pinned install command;
-run that one, not a bare `npx playwright install`, and ask before running it:
-it downloads about 200 MB. At a terminal, `render` asks instead.
+`render` needs Playwright's Chromium, installed apart from the package. Where
+it is missing, `render` writes nothing and prints the pinned install command
+(about 200 MB); that one, not a bare `npx playwright install`. At a terminal,
+`render` asks instead.
 
-`npx recadro dev` serves the lineup — every panel side by side — to a person
-with a browser, and does not exit. If you start it, run it in the background
-and stop it when you are done.
+**`dev`** serves the lineup — every panel side by side — at `/`, reloads the
+panels as their files change, and does not exit. Its pointer (`P`) copies a
+reference to one spot — slug, slot and locale, file, point, element — for
+pasting to an agent.
 
-## References from the lineup
-
-The lineup's pointer names one spot on one panel. A person may paste it to
-you, or send it as a note while you listen (next section):
-
-```
-02-voices · iPhone · en-US
-file     store/screenshots/panels/02-voices.html
-point    48.2vw 40.6vh · px 636,1164 of 1320×2868
-element  main > header > p.sub "Each character in its own voice."
-```
-
-- The first line is the slug, the slot and the locale. Look at that slot, not
-  only the default one.
-- `file` and any `src` are paths from the repository root.
-- `point` is one spot twice: in the panel's viewport units, which its CSS is
-  written in, and in the pixels of the PNG `render` writes for that slot.
-- `element` is what was under the cursor, with its own text or its image
-  source. Text a page fetched is not in its HTML, so search the repo for the
-  quoted text, not the selector. A container as `element` means the spot is
-  between its children — a gap, a margin — so read `point` for where. A
-  reference taken from the rendered `out/` view has no `element` line.
-
-The reference says where, not what is wrong; the words that come with it do.
-Shoot the panel before and after the change and look at that spot.
-
-## Notes from the lineup
-
-Started as `recadro dev --live`, the server carries notes: a person points at
-a spot, types a line, and it reaches you with the reference.
+**`dev --live`** also carries notes from the lineup to an agent:
 
 ```bash
 npx recadro dev --live          # the lineup, taking notes; leave it running
@@ -216,10 +185,10 @@ npx recadro wait                # prints each note as it is pinned, until the se
 npx recadro reply 3 "Sub is two lines on iPad now"
 ```
 
-`wait` finds the live server for the set — the same `recadro.json`, so the
-same folder or `--config` — and does not exit while it lives.
-Run it under whatever your harness has that reports a command's output line by
-line as it arrives, not when it exits. Each note prints as one block:
+`wait` finds the live server through the same `recadro.json` — the same
+folder, or `--config` — and does not exit while the server lives. Each note
+prints as one block: the reference, the person's words as typed, and the
+command that answers:
 
 ```
 recadro  note 3 from the person at the lineup
@@ -231,12 +200,8 @@ recadro  note 3 from the person at the lineup
          reply    recadro reply 3 "<what you changed>"
 ```
 
-`note` is the person's words, printed as typed and addressed to you. `reply`
-answers with one line, shown at the note's pin,
-so the person knows the reload they saw was yours; reply once per note, after
-the change, and change nothing outside the set for it. When `wait` prints that
-the server is gone, stop; a new `dev --live` needs a new `wait`. With nobody
-listening, the pointer copies to the clipboard as before.
+`reply` marks the note done in the lineup, its line shown at the pin. With no
+`wait` connected, the pointer copies to the clipboard as before.
 
 ## Changing the set
 
@@ -260,9 +225,9 @@ listening, the pointer copies to the clipboard as before.
 npx recadro init <dir> --starter <name> [--captures <path>]
 ```
 
-copies a starter — `overlay`, `caption`, `panorama`, `exploded`, `callouts` or
-`poster` — into a new folder, fills its `{capture:N}` placeholders with the
-captures already taken in filename order, writes `recadro.json` in the folder
+copies a starter — the folders in the package's `starters/`; `recadro init`
+without `--starter` lists them — into a new folder, fills its `{capture:N}`
+placeholders with the captures already taken in filename order, writes `recadro.json` in the folder
 the command runs in — naming `<dir>` as the set, and `--captures` (the captures
 folder, from the same place) — and adds `AGENTS.md` and `CLAUDE.md` pointing
 here. Run it from the folder recadro will run in, usually the repository

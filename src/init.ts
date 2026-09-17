@@ -2,7 +2,7 @@
  * `init`: a new set copied from a starter. A starter is a premade set in the
  * package; the copy is plain except for `{capture:N}`, filled with the Nth
  * capture already taken, so the panels open showing the app's own screens.
- * Beside it go two agent files pointing at the package's AUTHORING.md, and
+ * Beside it go two agent files pointing at the package's SKILL.md and AUTHORING.md, and
  * where `init` runs goes the `recadro.json` naming the set, so recadro runs
  * from there with no flag.
  */
@@ -34,9 +34,11 @@ export const AGENT_FILES: Record<string, string> = {
 
 This folder is a set of App Store screenshot panels that
 [recadro](https://github.com/jslakva/recadro) renders. Before changing anything
-in it, read \`AUTHORING.md\` in the installed recadro package, usually
-\`node_modules/recadro/AUTHORING.md\`: the instructions for coding agents,
-versioned with the tool. Where recadro is not installed, read it on GitHub:
+in it, read two files in the installed recadro package, usually under
+\`node_modules/recadro/\`: \`skills/recadro/SKILL.md\`, how an agent works on a
+set, and \`AUTHORING.md\`, the set, its rules and its commands. Both are
+versioned with the tool. Where recadro is not installed, read them on GitHub:
+https://github.com/jslakva/recadro/blob/main/skills/recadro/SKILL.md
 https://github.com/jslakva/recadro/blob/main/AUTHORING.md
 
 \`recadro init\` wrote this file and \`CLAUDE.md\`; recadro never reads either.

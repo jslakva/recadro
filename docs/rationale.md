@@ -241,9 +241,12 @@ What the skill buys is being visible and being whole. A document inside
 `node_modules` works when the agent is pointed at it, and finding it is a
 step — one that depends on where the package manager put the package and
 where the agent happened to start — that a person then wonders about. The
-skill is one flat file: how to run the live loop, then the installed
+skill is one flat file: how an agent works on a set, then the installed
 `AUTHORING.md` entire, so invoking it loads every rule with no path to
-resolve. The package keeps the one source, the skill is a stamped copy of it,
+resolve. The split between the two halves is by reader: AUTHORING.md is the
+set's reference for anyone with a change to make, a person included, and says
+nothing about how to behave; the first half is the agent's, and is where every
+"you" went. The package keeps the one source, the skill is a stamped copy of it,
 and the nested agent file stays as the quieter door for an agent that wanders
 into the set without one.
 
