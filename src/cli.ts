@@ -180,7 +180,10 @@ async function main(): Promise<void> {
 
   if (command === "init") {
     if (positionals.length !== 1 || (!values.starter && !values.skill)) {
-      throw new Error(`init takes a folder and a starter: recadro init <dir> --starter ${listStarters().join("|")}`);
+      throw new Error(
+        `init takes a folder and a starter: recadro init <dir> --starter ${listStarters().join("|")}\n` +
+          `or, for a set that exists, --skill alone: recadro init <dir> --skill adds the /recadro skill to its repository`,
+      );
     }
     const dir = resolve(positionals[0]);
     // `--skill` alone: only the skill, into the repository of a set that exists.
