@@ -1,0 +1,19 @@
+<!doctype html>
+<!-- One panel: a headline over the screen. The next panel is a copy of this file with the next number. -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../panel.css" />
+  </head>
+  <body>
+    <h1></h1>
+    <!-- More words, each filled by name from strings/; panel.js says how:
+    <p data-string="subline"></p>
+    -->
+    <img class="capture" data-capture="{capture:1}" alt="" />
+    <!-- Another screen in the same panel, N the Nth capture taken, filled by init:
+    <img class="capture" data-capture="{capture:N}" alt="" />
+    -->
+    <script type="module" src="../panel.js"></script>
+  </body>
+</html>

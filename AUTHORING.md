@@ -136,7 +136,7 @@ starter's `panel.js`: `starters/<name>/panel.js` in the installed package, or on
 ## Commands
 
 ```
-recadro init   <dir> --starter <name> [--captures <dir>] [--skill | --no-skill]
+recadro init   <dir> [--starter <name>] [--captures <dir>] [--skill | --no-skill]
 recadro init   [--config <path>] --skill
 recadro dev    [--config <path>] [--port <n>] [--live]
 recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
@@ -222,11 +222,12 @@ recadro  note 3 from the person at the lineup
 ## Starting a set
 
 ```bash
-npx recadro init <dir> --starter <name> [--captures <path>]
+npx recadro init <dir> [--starter <name>] [--captures <path>]
 ```
 
-copies a starter — the folders in the package's `starters/`; `recadro init`
-without `--starter` lists them — into a new folder, fills its `{capture:N}`
+copies a starter — the folders in the package's `starters/`; at a terminal,
+`init` without `--starter` lists them by number and asks; anywhere else the
+flag is required and the error names them — into a new folder, fills its `{capture:N}`
 placeholders with the captures already taken in filename order, writes `recadro.json` in the folder
 the command runs in — naming `<dir>` as the set, and `--captures` (the captures
 folder, from the same place) — and adds `AGENTS.md` and `CLAUDE.md` pointing
@@ -236,7 +237,9 @@ set. The placeholders are `data-capture`
 in the panels' HTML, and in `panorama` also in `world.html`, the scene every
 panel shows a stretch of. Then adapt: the variables at the top of `panel.css`
 to the app's colours and fonts, the words in `strings/en-US.json`, and any
-`{capture:N}` left to the capture still to take. The copy is the repo's:
+`{capture:N}` left to the capture still to take. `blank` is one panel and the
+four files it needs, for a layout written from nothing, and carries
+commented-out lines showing where more words and screens go. The copy is the repo's:
 starters are MIT-0, with no notice to keep, and recadro's own license covers
 the tool, not the set, the app or the renders.
 

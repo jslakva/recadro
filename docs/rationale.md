@@ -132,7 +132,10 @@ the copy changes is `{capture:N}`, replaced as plain text with the Nth capture
 already taken, so a starter opens on the app's own screens — the tool swaps a
 token in files it ships, and still parses nothing a page wrote. A placeholder
 without a capture stays as it is, which is also where the empty state comes
-from until one is taken.
+from until one is taken. Asked for no starter, `init` offers the folders it
+finds in `starters/`, by name and nothing more: a starter carries no metadata
+the tool would read, so adding one is adding a folder, and what each looks
+like is the README's to say.
 
 ## One server, two commands
 

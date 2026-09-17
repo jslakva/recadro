@@ -9,7 +9,7 @@
  * `recadro.json` where it runs, or the one `--config` names; flags win over
  * it, and it wins over the set's conventions.
  */
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
@@ -32,14 +32,14 @@ import { reply, wait } from "./wait.ts";
 
 const USAGE = `recadro — App Store screenshots as code
 
-  recadro init   <dir> --starter <name> [--captures <dir>] [--skill | --no-skill]
+  recadro init   <dir> [--starter <name>] [--captures <dir>] [--skill | --no-skill]
   recadro init   [--config <path>] --skill
   recadro dev    [--config <path>] [--port <n>] [--live]
   recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
   recadro wait   [--config <path>]
   recadro reply  <id> "<what you changed>" [--config <path>]
 
-  --starter     init: the starter to copy into <dir>   (${listStarters().join(", ")})
+  --starter     init: the starter to copy into <dir>   (${listStarters().join(", ")}); asked at a terminal when left out
                 init writes ${CONFIG_FILE} in the folder it runs in, naming <dir>; run recadro from that folder
   --captures    init: the captures folder, from here  (written to ${CONFIG_FILE})
   --skill       init: add a /recadro skill for Claude Code at ${SKILL_PATH.split(sep).join("/")} without asking,
@@ -113,6 +113,43 @@ async function confirm(question: string): Promise<boolean> {
   } finally {
     prompt.close();
   }
+}
+
+/**
+ * Asks which of `options` on the terminal, listed by number; a number or a
+ * name answers, anything else asks again, Ctrl+C quits.
+ */
+async function choose(question: string, options: string[]): Promise<string> {
+  const prompt = createInterface({ input: process.stdin, output: process.stdout });
+  prompt.on("SIGINT", () => {
+    process.stdout.write("\n");
+    process.exit(130);
+  });
+  try {
+    for (;;) {
+      const answer = (await prompt.question(`${question} [1-${options.length}] `)).trim();
+      const chosen = /^\d+$/.test(answer) ? options[Number(answer) - 1] : options.find((option) => option === answer);
+      if (chosen) return chosen;
+    }
+  } finally {
+    prompt.close();
+  }
+}
+
+/**
+ * The starter for a new set when `--starter` names none: asked at a terminal,
+ * from the folders in the package's `starters/`, so a starter added there is
+ * offered with no list to keep. Anywhere else — an agent, CI — the flag is
+ * required, and the error names what it takes.
+ */
+async function chooseStarter(dir: string): Promise<string> {
+  const starters = listStarters();
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    throw new Error(`init needs a starter when not run at a terminal: recadro init ${shown(dir)} --starter <name>   (${starters.join(", ")})`);
+  }
+  console.log("Starters:");
+  starters.forEach((name, i) => console.log(`  ${String(i + 1).padStart(2)}  ${name}`));
+  return choose(`Copy which into ${shown(dir)}?`, starters);
 }
 
 /**
@@ -207,9 +244,9 @@ async function main(): Promise<void> {
 
   if (command === "init") {
     const dir = positionals.length === 1 ? resolve(positionals[0]) : null;
-    if (values.starter ? !dir : dir || !values.skill) {
+    if (positionals.length > 1 || (!dir && (values.starter || !values.skill))) {
       throw new Error(
-        `init takes a folder and a starter: recadro init <dir> --starter ${listStarters().join("|")}\n` +
+        `init takes a folder: recadro init <dir> [--starter ${listStarters().join("|")}]\n` +
           `or adds the /recadro skill to the set ${CONFIG_FILE} names: recadro init [--config <path>] --skill`,
       );
     }
@@ -229,10 +266,13 @@ async function main(): Promise<void> {
     // --captures is given from here, which is the file's folder, so it is
     // written as given, normalised, with forward slashes on every platform.
     const captures = values.captures && (relative(process.cwd(), resolve(values.captures)).split(sep).join("/") || ".");
-    const result = initSet({ dir, starter: values.starter!, config, captures });
+    // Everything that stops init is checked before it asks, so a question is never answered for nothing.
+    if (existsSync(dir) && readdirSync(dir).length) throw new Error(`${shown(dir)} is not empty; init makes a new set`);
+    const starter = values.starter ?? (await chooseStarter(dir));
+    const result = initSet({ dir, starter, config, captures });
     const set = loadSet(config);
     const names = [set.dir !== process.cwd() ? `set ${shown(set.dir)}` : "", captures ? `captures ${captures}` : ""].filter(Boolean);
-    console.log(`recadro  ${shown(dir)} from the ${values.starter} starter`);
+    console.log(`recadro  ${shown(dir)} from the ${starter} starter`);
     console.log(`         config    ${shown(config)}  (${names.length ? names.join(", ") : "the set is this folder"})`);
     console.log(`         captures  ${shown(set.captures)}/  (${describeCaptures(set, [DEFAULT_LOCALE])})`);
     if (result.capturesFrom) {
@@ -245,7 +285,7 @@ async function main(): Promise<void> {
     }
     if (result.unfilled.length) {
       const left = result.unfilled.map((n) => `{capture:${n}}`).join(", ");
-      console.log(`         left      ${left} in strings/, for captures still to take`);
+      console.log(`         left      ${left} in the set, for captures still to take`);
     }
     console.log(`         agents    ${Object.keys(AGENT_FILES).join(", ")}, pointing at recadro's SKILL.md and AUTHORING.md`);
     console.log(`         skill     ${await skillLine(set, values.skill, values["no-skill"])}`);

@@ -57,75 +57,25 @@ preference — the slot geometry — and where a set keeps its pieces.
 
 ## Writing a panel
 
-A panel reads its four params and fetches everything else itself. This is a
-complete working set:
+A panel reads its four params and fetches everything else itself. The
+smallest set that works is the [`blank`](starters/blank) starter, four files:
 
-```html
-<!-- store/screenshots/panels/01-hero.html -->
-<!doctype html>
-<meta charset="utf-8">
-<link rel="stylesheet" href="../panel.css">
-<h1></h1>
-<img class="capture" alt="">
-<script type="module" src="../panel.js"></script>
-```
+- [`panels/01-hero.html`](starters/blank/panels/01-hero.html) — a headline
+  and an `<img>` naming its capture, and the script that fills them.
+- [`panel.js`](starters/blank/panel.js) — reads the params, sets the
+  headline from the strings file and the image from the captures folder. A
+  capture not taken yet is asked for and not there — that is how `render`
+  knows to skip the panel — and the broken `<img>` is hidden.
+- [`panel.css`](starters/blank/panel.css) — the headline over the screen,
+  and one fork for iPad.
+- [`strings/en-US.json`](starters/blank/strings/en-US.json) — the headline.
 
-```js
-// store/screenshots/panel.js
-const params = new URLSearchParams(location.search);
-const panel = params.get("panel");       // "01-hero": the filename without .html
-const device = params.get("device");     // "iPhone" or "iPad"
-const locale = params.get("locale");     // "en-US"
-const captures = params.get("captures"); // this locale and device's captures folder
-
-document.documentElement.lang = locale;
-document.documentElement.dataset.device = device;
-
-// Relative URLs resolve against the page, panels/01-hero.html.
-const strings = await fetch(`../strings/${locale}.json`).then((r) => r.json());
-document.querySelector("h1").textContent = strings[panel];
-
-const capture = document.querySelector("img.capture");
-if (capture) {
-  // A capture that does not exist yet is asked for and not there — that is
-  // how render knows to skip the panel — and the broken <img> is hidden.
-  capture.addEventListener("error", () => { capture.style.visibility = "hidden"; });
-  capture.src = `${captures}${panel}.png`;
-}
-```
-
-```css
-/* store/screenshots/panel.css */
-html, body { margin: 0; width: 100vw; height: 100vh; overflow: hidden; }
-
-body {
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5vh;
-  padding: 8vh 8vw 0;
-  background: #1f3a5f;
-  color: #fff;
-  font: 700 8vw/1.1 system-ui, sans-serif;
-}
-
-h1 { margin: 0; font: inherit; text-align: center; text-wrap: balance; }
-
-img.capture {
-  height: 70vh;
-  aspect-ratio: 9 / 19.5;
-  object-fit: cover;
-  border-radius: 4vh;
-  background: rgb(255 255 255 / 0.1);
-}
-
-[data-device="iPad"] body { font-size: 5vw; }
-[data-device="iPad"] img.capture { aspect-ratio: 3 / 4; border-radius: 2vh; }
-```
+Commented-out lines in each show where more words, more screens and a
+language's own type go. `npx recadro init store/screenshots --starter blank`
+copies it, with the first capture already taken filled in.
 
 `strings/en-US.json` maps each slug to its headline. Its format is this
-example's choice, not recadro's: the strings could be a Markdown table, the
+starter's choice, not recadro's: the strings could be a Markdown table, the
 colours your web app's tokens. Sizes are in `vw`/`vh` and the iPad forks on an
 attribute, so no device dimension appears anywhere.
 
@@ -142,11 +92,15 @@ the set itself, where nothing beside it is reachable.
 npx recadro init store/screenshots --starter overlay --captures path/to/captures
 ```
 
-This makes the set and writes `recadro.json` in the folder you run in, naming
-it (`{ "set": "store/screenshots" }`), so recadro runs from that folder with no
-flag; run `init` from where you will run recadro. `--captures` is the captures
-folder, from the same place; `init` writes it into the file too.
+Without `--starter`, `init` at a terminal lists the starters installed and
+asks which. This makes the set and writes `recadro.json` in the folder you
+run in, naming it (`{ "set": "store/screenshots" }`), so recadro runs from
+that folder with no flag; run `init` from where you will run recadro.
+`--captures` is the captures folder, from the same place; `init` writes it
+into the file too.
 
+- **`blank`** — one panel, a headline over the screen, and nothing else: the
+  set above, for a layout you write yourself or hand to an agent.
 - **`overlay`** — the capture fills the panel, and a band of colour over its
   top carries the headline, with highlighted words; one panel magnifies part
   of the screen.
@@ -210,7 +164,7 @@ keys and other placeholders are an error.
 ## Commands
 
 ```
-recadro init   <dir> --starter <name> [--captures <dir>] [--skill | --no-skill]
+recadro init   <dir> [--starter <name>] [--captures <dir>] [--skill | --no-skill]
 recadro init   [--config <path>] --skill
 recadro dev    [--config <path>] [--port <n>] [--live]
 recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
