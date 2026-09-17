@@ -34,8 +34,10 @@ import { reply, wait } from "./wait.ts";
 const INIT_LINE = `recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--config <path>] [--skill | --no-skill]`;
 
 const INIT_FLAGS = `  --starter     the starter to copy into <dir>  (${listStarters().join(", ")}); asked at a terminal when left out, Enter for ${DEFAULT_STARTER}
-  --captures    the captures folder, from here  (written to ${CONFIG_FILE})
-  --out         where renders go, from here     (written to ${CONFIG_FILE}; {locale} and {device} stand for a folder each)
+  --captures    the captures folder, relative to the current directory  (written to ${CONFIG_FILE})
+  --out         where renders go, relative to the current directory     (written to ${CONFIG_FILE})
+                a pattern: fastlane/{locale} gives fastlane/en-US/iPhone-01-hello.png,
+                renders/{locale}/{device} gives renders/en-US/iPhone/01-hello.png
   --skill       add the /recadro skill without asking; --no-skill: don't, and don't ask
                 init writes ${CONFIG_FILE} in the folder it runs in, naming <dir>, so recadro runs from there with no flag;
                 --config puts it elsewhere, a folder or a .json name, and recadro then takes the same --config`;
@@ -312,7 +314,7 @@ async function main(): Promise<void> {
           `name another file or folder with --config, run init from another folder, or remove that file first`,
       );
     }
-    // --captures and --out are given from here and written relative to the
+    // --captures and --out are given relative to the current directory and written relative to the
     // file, with forward slashes on every platform; --out's placeholders are
     // plain segments to relative(), and loadSet checks the pattern before
     // anything is copied.
