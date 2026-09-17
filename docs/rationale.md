@@ -180,13 +180,30 @@ fallback. The same limit is why captures must resolve inside the root: a
 `recadro.json` pointing above it is an error at startup rather than a set of
 panels that can never load their captures.
 
-## Agents get a document, not a skill
+## The knowledge is a document; the door is a skill
 
-`AUTHORING.md` ships inside the package and a consumer's own agent file points
-at it. A skill would need an installer the package cannot run, a copy of it
-would stop tracking the installed version, and it would serve one agent where a
-document serves all of them. What a skill adds is being loaded unasked, and the
-one line in the consumer's agent file does that.
+`AUTHORING.md` ships inside the package and is versioned with it: what an agent
+needs to know about a set is read from the copy that matches the installed
+tool, never from a copy that drifted. A consumer's own agent file points at it,
+and `init` writes one into the set.
+
+That was the whole answer for a while — a skill would need an installer the
+package cannot run, a copy would stop tracking the version, and it would serve
+one agent where a document serves all. Each objection had a fix. `init` is an
+installer already, and writing `.claude/skills/recadro/SKILL.md` at the
+repository root is the same act as writing `AGENTS.md` in the set, one folder
+up, and asked about first. A copy stops tracking the version only if it holds
+knowledge, so the skill holds none: its first instruction is to read the
+installed `AUTHORING.md`, and the rest is the one loop that needs a harness's
+own tools — `dev --live`, `wait` under something that reports output as it
+comes, `reply`, stop when told. And a skill in a file format other harnesses
+read too is not one agent's.
+
+What the skill buys is being visible. A document inside `node_modules` works
+when the agent is pointed at it and leaves the person wondering whether it
+was; an entry in the harness's own list needs no pointing and no wondering. The
+document keeps the knowledge, the skill is the door, and the nested agent file
+stays as the quieter door for an agent that wanders into the set.
 
 ## The lineup is the tool's UI, not a panel
 
@@ -201,9 +218,44 @@ the part that needs it.
 The lineup's pointer is the one place the tool looks inside a rendered panel, and
 it does so the way DevTools does: it names the element under the cursor, gives
 the spot in viewport units and delivered pixels, and writes that to the
-clipboard for a person to paste to an agent. It names and never judges. A
+clipboard for a person to paste to an agent — or, under `dev --live`, sends it
+with the person's note to an agent's `wait`. It names and never judges. A
 pointer that said a headline overflows would be the validation this section
-argues against, and nothing it reads ever reaches the tool.
+argues against. What it reads goes to the person, or through the tool to the
+agent unread; the tool learns nothing from it.
+
+## Notes go to the agent as they come, through the server that is already there
+
+A person at the lineup and an agent in a terminal are one edit apart, and the
+clipboard was the gap between them. `dev --live` closes it with what the tool
+already had: the one vite server carries a note from the lineup to a `wait`
+that prints it, and a `reply` back to a pin. No second process, no port of its
+own, no script written into anyone's page.
+
+`wait` streams and does not exit. The older shape for this — a poll that
+exits, so the harness wakes the agent — was chosen when running a command was
+all a harness could do; harnesses that report a command's output line by line
+as it arrives make a note that lands mid-edit its own event, with no re-run per
+round and no burst window. A person's note is not a queue item to lease and
+redeliver: once printed it is in the agent's context, so a note printed is a
+note delivered, and one nobody has printed yet waits for the first `wait`.
+
+The channel exists only on `--live`. Plain `dev` writes no file, serves no
+endpoint and shows no dot, so a person who never talks to an agent sees the
+tool they had. Under `--live`, `dev` announces itself in the OS temp directory
+under a hash of the set's path — nothing in the repository, so no consumer
+gains a gitignore line — and `wait` connects to what it finds there;
+connecting is the liveness test, and a server that refuses or answers with
+someone else's 404 gets the same one line naming `dev --live`.
+
+Any page in the same browser can POST to localhost, and here that would be a
+way to put words in the agent's mouth. Browsers send `Origin` on every
+cross-origin POST, so the server takes a note from a page on its own origin
+and no other; the agent's endpoints require a header a page cannot send
+cross-origin without a preflight nobody answers, so no page can drain the
+notes with an image tag. No token, nothing secret to carry. The server prints
+no instructions of its own into `wait`'s output: the note is marked as the
+person's words and is all that arrives.
 
 ## Why not an existing tool
 
