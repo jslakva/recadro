@@ -305,7 +305,9 @@ export function devicesWithCaptures(set: PanelSet, locales: readonly string[]): 
  * with captures and whether its folder is named or told by shape — and, in a
  * folder told by shape, how many captures are shaped for another slot, since
  * those are never found — and whether they are per locale. "none yet" for a
- * set without any.
+ * set without any, naming the folders that were passed over because they are
+ * neither a slot nor one of the locales, since a folder named for a size or a
+ * device family is the usual reason nothing is found.
  */
 export function describeCaptures(set: PanelSet, locales: readonly string[]): string {
   const base = set.captures;
@@ -324,7 +326,15 @@ export function describeCaptures(set: PanelSet, locales: readonly string[]): str
     const others = odd.length ? `; ${odd.map(([id, n]) => `${n} shaped for ${id}`).join(", ")}, never found` : "";
     found.push(`${slot.id} by shape${others}`);
   }
-  if (!found.length) return "none yet";
+  if (!found.length) {
+    const known = new Set<string>([...SLOTS.map((slot) => slot.id), ...locales]);
+    const passed = entries(base)
+      .filter((entry) => entry.isDirectory() && !known.has(entry.name))
+      .map((entry) => `${entry.name}/`);
+    if (!passed.length) return "none yet";
+    const slots = SLOTS.map((slot) => slot.id).join(" and ");
+    return `none yet; ${passed.join(", ")} passed over, neither a slot nor a locale — the slots are ${slots}`;
+  }
   return `${found.join(", ")}${perLocale ? ", per locale" : ""}`;
 }
 
