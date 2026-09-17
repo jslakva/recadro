@@ -50,3 +50,8 @@ panel reloads under their eyes, and you answer in one line.
 
 If `wait` prints that the dev server is gone, say so and stop listening; a
 new `dev --live` needs a new `wait`.
+
+Where the repository runs recadro from a checkout of its source rather than
+from npm, every `npx recadro` above is that checkout's
+`node_modules/.bin/tsx src/cli.ts` instead; the commands and their output are
+the same.
