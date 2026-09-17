@@ -199,6 +199,19 @@ function aimFor(panel, context, frame) {
   aim.addEventListener("click", async (event) => {
     const { x, y, node } = probe(event);
     const text = referenceFor(panel, context, x, y, node);
+    // With an agent listening, the spot takes a note instead; shift keeps the clipboard.
+    if (listening && !event.shiftKey) {
+      openNote(event, {
+        reference: text,
+        slug: panel.slug,
+        spot: { x: x / context.logicalW, y: y / context.logicalH },
+        label: tag.textContent,
+      });
+      // The field says where; the tag under it would say it twice.
+      tag.textContent = "";
+      hit.hidden = true;
+      return;
+    }
     try {
       await navigator.clipboard.writeText(text);
       flash = { text: "copied", until: Date.now() + 1200 };
@@ -546,7 +559,165 @@ function draw() {
     for (const panel of group.panels) strip.append(figureFor(panel, context));
     lineup.append(strip);
   }
+  drawPins();
   applyFocus();
+}
+
+/*
+ * The notes channel, under `dev --live` only. The lineup hears from the server
+ * whether an agent's `recadro wait` is connected and what became of each note;
+ * with one listening, the pointer's click opens a note field at the spot and
+ * the note goes to the agent with the reference. Without the channel — plain
+ * `dev`, or the lineup served as a static page — none of this exists and the
+ * pointer copies as it always did.
+ */
+
+/** Whether a `recadro wait` is connected right now. */
+let listening = false;
+/** Every note the server knows, by id. */
+const notes = new Map();
+/** Pins the person clicked away in this tab. */
+const dismissed = new Set();
+/** What the open note field is about, or null while it is closed. */
+let pending = null;
+
+/** Shows whether an agent is listening: the dot, its words, and what a pointer click will do. */
+function setListening(on) {
+  listening = on;
+  el("agent").classList.toggle("on", on);
+  el("agent-text").textContent = on ? "agent listening" : "no agent listening";
+  el("agent").title = on
+    ? "A recadro wait is connected: a pointer click sends it a note"
+    : "Run `recadro wait` in your agent to take notes from the pointer";
+  el("point").title = on
+    ? "Point at a spot to send the agent a note, shift-click to copy a reference (P, Esc)"
+    : "Point at a spot to copy a reference for a coding agent (P, Esc)";
+  if (!on) closeNote();
+}
+
+/**
+ * Draws every note as a pin on its panel's frame, at the spot the note was
+ * pinned to, in every frame showing that panel. Numbered as `wait` prints
+ * them; the words on hover, with the agent's line once it came.
+ */
+function drawPins() {
+  for (const pin of el("lineup").querySelectorAll(".pin")) pin.remove();
+  for (const note of notes.values()) {
+    if (!note.spot || dismissed.has(note.id)) continue;
+    for (const frame of el("lineup").querySelectorAll(`figure[data-slug="${CSS.escape(note.slug)}"] .frame`)) {
+      const pin = document.createElement("span");
+      pin.className = `pin${note.reply ? " done" : ""}`;
+      pin.style.left = `${note.spot.x * 100}%`;
+      pin.style.top = `${note.spot.y * 100}%`;
+      pin.textContent = note.id;
+      pin.title = note.reply ? `${note.note}\n↳ ${note.reply}` : note.note;
+      // A done pin is dismissed by a click; an open one stays until the agent answers.
+      pin.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!note.reply) return;
+        dismissed.add(note.id);
+        drawPins();
+      });
+      frame.append(pin);
+    }
+  }
+}
+
+/** Takes one note's state from the server, redraws, and says what changed. */
+function takeNote(note) {
+  const before = notes.get(note.id);
+  notes.set(note.id, note);
+  drawPins();
+  if (note.reply && !before?.reply) el("announce").textContent = `agent replied to note ${note.id}: ${note.reply}`;
+}
+
+/**
+ * Opens the note field beside the spot just clicked: below and right of the
+ * cursor as the tag sits, flipped to stay inside the window. A second click
+ * elsewhere moves it there; the words typed so far stay.
+ */
+function openNote(event, about) {
+  pending = about;
+  const form = el("note");
+  el("note-ref").textContent = about.label || about.slug;
+  el("note-hint").textContent = "Enter sends · Esc cancels";
+  el("note-hint").classList.remove("failed");
+  form.hidden = false;
+  const { offsetWidth: w, offsetHeight: h } = form;
+  form.style.left = `${Math.max(8, Math.min(event.clientX + 12, innerWidth - w - 8))}px`;
+  form.style.top = `${event.clientY + 18 + h <= innerHeight - 8 ? event.clientY + 18 : Math.max(8, event.clientY - h - 8)}px`;
+  el("note-text").focus();
+}
+
+/** Closes the note field, keeping nothing. */
+function closeNote() {
+  pending = null;
+  el("note").hidden = true;
+  el("note-text").value = "";
+}
+
+/** Sends the note with its reference; the pin appears when the server tells every lineup. */
+async function sendNote() {
+  const text = el("note-text").value.trim();
+  if (!pending || !text) return;
+  const about = pending;
+  try {
+    const res = await fetch("/__recadro/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reference: about.reference, note: text, slug: about.slug, spot: about.spot }),
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    const { id } = await res.json();
+    el("announce").textContent = `note ${id} sent to the agent`;
+    closeNote();
+  } catch {
+    el("note-hint").textContent = "not sent — is dev --live still running?";
+    el("note-hint").classList.add("failed");
+  }
+}
+
+if (manifest.live) {
+  el("agent").hidden = false;
+  setListening(false);
+  const events = new EventSource("/__recadro/notes/events");
+  events.addEventListener("state", (event) => {
+    const state = JSON.parse(event.data);
+    notes.clear();
+    for (const note of state.notes) notes.set(note.id, note);
+    drawPins();
+    setListening(state.listening);
+  });
+  events.addEventListener("listening", (event) => setListening(JSON.parse(event.data).listening));
+  events.addEventListener("note", (event) => takeNote(JSON.parse(event.data)));
+  // The server is gone, or restarting: nobody is listening until it says otherwise.
+  events.addEventListener("error", () => setListening(false));
+
+  el("note").addEventListener("submit", (event) => {
+    event.preventDefault();
+    sendNote();
+  });
+  el("note-text").addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendNote();
+    } else if (event.key === "Escape") {
+      event.stopPropagation();
+      closeNote();
+    }
+  });
+  el("note-copy").addEventListener("click", async () => {
+    if (!pending) return;
+    try {
+      await navigator.clipboard.writeText(pending.reference);
+      el("announce").textContent = `reference to ${pending.slug} copied`;
+    } catch {
+      console.log(pending.reference);
+      el("announce").textContent = "not copied — see console";
+    }
+    closeNote();
+  });
 }
 
 /** One key in this browser's storage, read and written without failing where storage is unavailable. */
@@ -686,6 +857,7 @@ window.addEventListener("hashchange", applyFocus);
 function setPointing(on) {
   document.body.classList.toggle("pointing", on);
   el("point").setAttribute("aria-pressed", String(on));
+  if (!on) closeNote();
 }
 
 /**
@@ -698,7 +870,7 @@ function onKey(event) {
     else if (focusedSlug()) location.hash = "";
     return;
   }
-  const typing = event.target.matches?.("input:not([type=range]), select");
+  const typing = event.target.matches?.("input:not([type=range]), select, textarea");
   if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.key === "p") setPointing(!document.body.classList.contains("pointing"));
   else if (event.key === "ArrowLeft" && focusedSlug()) step(-1);

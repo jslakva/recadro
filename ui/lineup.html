@@ -16,7 +16,10 @@
 
   The pointer copies a reference to one spot — file, point, element — for a
   person to paste to a coding agent. It reads what is under the cursor and
-  judges nothing.
+  judges nothing. Under `dev --live`, with an agent's `recadro wait` connected,
+  a click opens a note field at the spot instead, and the note goes to the
+  agent with the reference; a pin marks it until the agent's one line comes
+  back. The clipboard stays a shift-click, or a button, away.
 
   "Wrap three" is on by default, because the first three panels are the ones a
   search result shows on their own and the rest are only reached by opening the
@@ -217,6 +220,37 @@
         .strip { gap: 8px; padding: 10px 12px 0; }
         .focusing .pager { column-gap: 8px; }
       }
+      /* Under dev --live: whether an agent's `recadro wait` is connected. A dot
+         in the tool's mark colour when one is, the control edge's grey when not. */
+      .agent { display: flex; align-items: center; gap: 6px; height: 26px; font-size: 11px; color: var(--dim); cursor: help; }
+      .agent .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--control-edge); }
+      .agent.on { color: var(--ink); }
+      .agent.on .dot { background: var(--mark); box-shadow: 0 0 0 3px rgba(120, 226, 194, .22); }
+      /* The note field: fixed to the window, so no frame clips it, beside the
+         spot as the tag is. Dark like the chrome, whatever the ground. */
+      .note { position: fixed; z-index: 3; display: grid; gap: 6px; width: 260px; padding: 8px; border-radius: 8px;
+              background: rgba(0, 0, 0, .9); color: var(--ink); color-scheme: dark; font-size: 12px;
+              box-shadow: 0 6px 24px rgba(0, 0, 0, .35); }
+      .note .ref { font: 10px/1.3 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-ligatures: none;
+                   color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .note textarea { font: inherit; line-height: 1.35; color: var(--ink); background: var(--control);
+                       border: 1px solid var(--control-edge); border-radius: 5px; padding: 5px 7px; resize: none; }
+      .note textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+      .note .row { display: flex; align-items: center; gap: 6px; }
+      .note .hint { flex: 1; font-size: 10px; color: var(--dim); }
+      .note .hint.failed { color: #ff9f0a; }
+      .note button { height: 24px; padding: 0 10px; font: inherit; font-size: 12px; color: var(--ink); cursor: pointer;
+                     background: var(--control); border: 1px solid var(--control-edge); border-radius: 6px; }
+      .note button[type="submit"] { background: var(--focus); border-color: var(--focus); }
+      .note button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+      /* A pin: one sent note at its spot, numbered as `wait` prints it; blue
+         while open, the mark colour once the agent's line came back, which the
+         pin then shows on hover and a click dismisses. */
+      .pin { position: absolute; z-index: 2; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%;
+             display: grid; place-items: center; font: 600 10px/1 "Mona Sans", ui-sans-serif, system-ui, sans-serif;
+             background: var(--focus); color: #fff; cursor: help;
+             box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .9), 0 1px 3px rgba(0, 0, 0, .4); }
+      .pin.done { background: var(--mark); color: #000; cursor: pointer; }
       /* The pointer copies a spot for pasting into an agent; a touch screen
          has neither the hover nor, usually, the agent. P still toggles it. Nor
          does it have the keys the panel shown alone hints at. */
@@ -270,6 +304,9 @@
                 title="The first three on their own row, as a search result shows them">wrap three</button>
         <button class="toggle" id="point" type="button" aria-pressed="false"
                 title="Point at a spot to copy a reference for a coding agent (P, Esc)">pointer</button>
+        <span class="agent" id="agent" hidden title="Run `recadro wait` in your agent to take notes from the pointer">
+          <span class="dot"></span><span id="agent-text">no agent listening</span>
+        </span>
       </div>
     </header>
     <main>
@@ -280,6 +317,15 @@
       <div id="lineup"></div>
     </main>
     <p class="visually-hidden" id="announce" aria-live="polite"></p>
+    <form class="note" id="note" hidden>
+      <div class="ref" id="note-ref"></div>
+      <textarea id="note-text" rows="2" placeholder="Note to the agent" aria-label="Note to the agent"></textarea>
+      <div class="row">
+        <span class="hint" id="note-hint">Enter sends · Esc cancels</span>
+        <button type="button" id="note-copy" title="Copy the reference instead">copy</button>
+        <button type="submit">send</button>
+      </div>
+    </form>
 
     <script type="module" src="/__recadro/lineup.js"></script>
   </body>

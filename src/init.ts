@@ -5,7 +5,7 @@
  * Beside it go two agent files pointing at the package's AUTHORING.md.
  */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { extname, join } from "node:path";
+import { dirname, extname, join } from "node:path";
 import { PKG } from "./pkg.ts";
 import { capturesDir, CONFIG_FILE, DEFAULT_LOCALE, loadSet } from "./set.ts";
 import { SLOTS } from "./slots.ts";
@@ -44,6 +44,23 @@ https://github.com/jslakva/recadro/blob/main/AUTHORING.md
 `,
   "CLAUDE.md": "@AGENTS.md\n",
 };
+
+/**
+ * Where the package's skill goes in a consumer's repository, from its root.
+ * The skill is thin — read AUTHORING.md, then how to run the `live` loop — so
+ * a copy stays right across versions; the knowledge keeps tracking the
+ * installed package.
+ */
+export const SKILL_PATH = join(".claude", "skills", "recadro", "SKILL.md");
+
+/** Writes the package's skill into a repository; "kept" when one is already there, and it is left alone. */
+export function installSkill(root: string): "written" | "kept" {
+  const target = join(root, SKILL_PATH);
+  if (existsSync(target)) return "kept";
+  mkdirSync(dirname(target), { recursive: true });
+  copyFileSync(join(PKG, "skills", "recadro", "SKILL.md"), target);
+  return "written";
+}
 
 /** What `init` was asked to make. */
 export interface InitOptions {

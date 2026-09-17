@@ -195,9 +195,11 @@ other than `<set>/out`. Unknown keys are an error.
 ## Commands
 
 ```
-recadro init   <dir> --starter <name> [--captures <pattern>]
-recadro dev    [--panels <dir>] [--port <n>]
+recadro init   <dir> --starter <name> [--captures <pattern>] [--skill | --no-skill]
+recadro dev    [--panels <dir>] [--port <n>] [--live]
 recadro render [--panels <dir>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
+recadro wait   [--panels <dir>]
+recadro reply  <id> "<what you changed>" [--panels <dir>]
 ```
 
 Flags win over `recadro.json`, which wins over the set's names. `--panels`
@@ -234,6 +236,13 @@ The pointer (`P`) copies a reference to one spot on one panel — its file, the
 point in viewport units and delivered pixels, the element there — for pasting
 into a coding agent. [AUTHORING.md](AUTHORING.md) tells the agent how to read it.
 
+Started as `dev --live`, the lineup sends notes instead of copying them: with
+an agent running `recadro wait` — a dot in the header says when one is — a
+pointer click opens a field at the spot, the note goes to the agent with the
+reference, and a pin marks it until the agent's `recadro reply` comes back,
+shown on hover. The panel reloads under your eyes as the agent saves. With
+nobody listening, the click copies as before; shift-click copies regardless.
+
 There is deliberately no validation. Overflow, a cropped headline, the wrong face
 — the eye catches all of these instantly, and a check that duplicates the eye is
 dead weight. Asserting the output's dimensions would assert only that the script
@@ -262,10 +271,20 @@ the set's own `out`, where an empty frame would ship.
 
 [`AUTHORING.md`](AUTHORING.md) ships in the package: the contract as
 instructions, the mistakes an agent reliably makes with a tool that reads names
-and not contents, and how to look at its own work without a browser.
+and not contents, how to look at its own work without a browser, and how to
+take notes from the lineup live.
 
-`init` points agents at it from inside the set: an `AGENTS.md` that says to read
-it, and a `CLAUDE.md` that imports that. Claude Code and Cursor load them when
+`init` offers to add a `/recadro` skill for Claude Code at
+`.claude/skills/recadro/SKILL.md` in the repository — asked at a terminal,
+`--skill` or `--no-skill` to answer without the question, `--skill` alone to
+add it to an existing set. The skill is thin on purpose: it says to read the
+installed `AUTHORING.md` first, so what it knows tracks the version you have,
+and it carries the one loop that needs a harness's own tools, `/recadro live`:
+start `dev --live`, listen with `wait`, act on each note, `reply`, stop when
+you say so.
+
+`init` also points agents at the document from inside the set: an `AGENTS.md`
+that says to read it, and a `CLAUDE.md` that imports that. Claude Code and Cursor load them when
 they work in the set. Codex reads `AGENTS.md` only from the repository root
 down to the folder it was started in, and Copilot reads one in a subfolder only
 behind a setting; for those, or for a set `init` did not make, add one line to

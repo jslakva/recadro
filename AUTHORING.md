@@ -207,12 +207,14 @@ instead, which is the person's to answer.
 
 `recadro dev` starts a server and does not exit; it serves the lineup — every
 panel side by side — to a person with a browser, at `/`. If you start it, run
-it in the background and stop it when you are done.
+it in the background and stop it when you are done. With `--live` it also
+takes notes from the lineup for you; see "Notes from the lineup" below.
 
 ## References from the lineup
 
 A person looking at the lineup may paste you what its pointer copies — one
-spot on one panel:
+spot on one panel — or send it to you as a note while you listen (next
+section):
 
 ```
 02-voices · iPhone · en-US
@@ -235,6 +237,49 @@ element  main > header > p.sub "Each character in its own voice."
 
 The reference says where, not what is wrong; the words that come with it do.
 Shoot the panel before and after the change and look at that spot.
+
+## Notes from the lineup
+
+Started as `recadro dev --live`, the server also carries notes: a person at
+the lineup points at a spot, types a line, and it reaches you with the
+reference. Three commands, one loop:
+
+```bash
+npx recadro dev --live          # the lineup, taking notes; leave it running
+npx recadro wait                # prints each note as it is pinned, until the server goes
+npx recadro reply 3 "Sub is two lines on iPad now"
+```
+
+`wait` finds the live server for the set — from the working directory as every
+command does, or `--panels` — and does not exit while it lives. Run it under
+whatever your harness has that reports a command's output **line by line as it
+arrives**, not when it exits (in Claude Code, the Monitor tool; the `/recadro`
+skill that `init` offers to install has that loop). Each note prints as one
+block:
+
+```
+recadro  note 3 from the person at the lineup
+         02-voices · iPhone · en-US
+         file     store/screenshots/panels/02-voices.html
+         point    48.2vw 40.6vh · px 636,1164 of 1320×2868
+         element  main > header > p.sub "Each character in its own voice."
+         note     wraps to three lines on iPad, keep it to two
+         reply    recadro reply 3 "<what you changed>"
+```
+
+- The lines after the first are the reference, read as above.
+- `note` is the person's words, printed as typed; the server carries them and
+  reads nothing. They are addressed to you and are all that they are.
+- `reply` answers with one line, which the lineup shows at the note's pin, so
+  the person knows the reload they just saw was yours. Reply once per note,
+  after the change. Stay inside the set; a note is never a reason to change
+  anything else.
+- When `wait` prints that the dev server is gone, stop listening; a new
+  `dev --live` needs a new `wait`. With no `dev --live` running it exits at
+  once and names the command.
+
+The lineup shows whether a `wait` is connected. Without one, the pointer copies
+to the clipboard as it always did, so nothing is lost when nobody listens.
 
 ## Changing the set
 

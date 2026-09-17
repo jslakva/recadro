@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import type { ServerResponse } from "node:http";
 import { join, sep } from "node:path";
 import { createServer, loadConfigFromFile, mergeConfig, type InlineConfig, type Plugin, type ViteDevServer } from "vite";
+import { announceLive, NoteChannel } from "./notes.ts";
 import { discoverPanels, urlPathFor, type Panel } from "./panels.ts";
 import { PKG } from "./pkg.ts";
 import {
@@ -38,11 +39,15 @@ export interface ServerOptions {
   port?: number;
   /** Reload the panels when a capture or a file they fetch changes. For `dev`; `render` has nothing to reload. */
   watchFetched?: boolean;
+  /** Serve the notes channel and announce the server for `wait`. `dev --live` only. */
+  live?: boolean;
 }
 
 /**
  * What the lineup needs and cannot glob for itself. Served at
  * `/__recadro/panels.json`; the flow is one-way — no page ever reports back.
+ * The lineup itself is not a page in that sense: with `live`, it carries the
+ * person's notes to the channel.
  */
 interface LineupManifest {
   panels: { slug: string; urlPath: string }[];
@@ -55,6 +60,8 @@ interface LineupManifest {
   devicesWithCaptures: string[];
   /** Root-absolute URL of the output folder, or null when it lies outside the root and cannot be shown. */
   outUrl: string | null;
+  /** Whether the notes channel is served, so the lineup offers a note field beside the clipboard. */
+  live: boolean;
 }
 
 /**
@@ -99,7 +106,7 @@ function sendOwnFile(res: ServerResponse, file: string, type: string): void {
  * The lineup's manifest, from the set as it is on disk now. Read per request, so
  * a panel or a strings file added while the server runs shows on reload.
  */
-function manifestFor(set: PanelSet): LineupManifest {
+function manifestFor(set: PanelSet, options: ServerOptions): LineupManifest {
   const current = loadSet(set.dir);
   const locales = current.locales.length ? current.locales : [DEFAULT_LOCALE];
   const outUrl = urlPathFor(current.root, current.outDir);
@@ -110,6 +117,7 @@ function manifestFor(set: PanelSet): LineupManifest {
     capturesUrl: capturesUrl(current),
     devicesWithCaptures: devicesWithCaptures(current, locales),
     outUrl: outUrl.startsWith("/..") ? null : outUrl,
+    live: Boolean(options.live),
   };
 }
 
@@ -157,6 +165,7 @@ function watchFetched(server: ViteDevServer, set: PanelSet): void {
  * files under root and keep vite's transform and HMR.
  */
 function recadroPlugin(set: PanelSet, options: ServerOptions): Plugin {
+  const notes = options.live ? new NoteChannel() : null;
   return {
     name: "recadro",
     configureServer(server) {
@@ -168,9 +177,11 @@ function recadroPlugin(set: PanelSet, options: ServerOptions): Plugin {
         if (path === "/__recadro/panels.json") {
           res.setHeader("Content-Type", "application/json");
           res.setHeader("Cache-Control", "no-store");
-          res.end(JSON.stringify(manifestFor(set)));
+          res.end(JSON.stringify(manifestFor(set, options)));
           return;
         }
+
+        if (notes?.handle(req, res)) return;
 
         const own = OWN_FILES[path];
         if (own) {
@@ -208,6 +219,8 @@ export async function startServer(set: PanelSet, options: ServerOptions = {}): P
 
   const resolved = vite.resolvedUrls?.local[0];
   if (!resolved) throw new Error("vite reported no local URL");
+  const origin = resolved.replace(/\/$/, "");
+  if (options.live) announceLive(set.dir, origin);
 
-  return { vite, origin: resolved.replace(/\/$/, ""), panels: discoverPanels(set.dir, set.root) };
+  return { vite, origin, panels: discoverPanels(set.dir, set.root) };
 }

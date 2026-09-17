@@ -4,15 +4,16 @@
  *
  * `init` copies a starter into a new set. `dev` and `render` drive one vite
  * server: `dev` opens the lineup and watches, `render` shoots the same
- * URLs at slot pixels. Flags win over the set's `recadro.json`, which wins over
- * the set's conventions.
+ * URLs at slot pixels. `wait` and `reply` are an agent's side of `dev --live`:
+ * notes pinned in the lineup, and one line back. Flags win over the set's
+ * `recadro.json`, which wins over the set's conventions.
  */
-import { mkdirSync } from "node:fs";
-import { relative, resolve, sep } from "node:path";
+import { existsSync, mkdirSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 import type { Browser } from "playwright";
-import { AGENT_FILES, initSet, listStarters } from "./init.ts";
+import { AGENT_FILES, initSet, installSkill, listStarters, SKILL_PATH } from "./init.ts";
 import { startServer } from "./server.ts";
 import {
   capturesUrl,
@@ -24,15 +25,21 @@ import {
   type PanelSet,
 } from "./set.ts";
 import { SLOTS, selectSlots } from "./slots.ts";
+import { reply, wait } from "./wait.ts";
 
 const USAGE = `recadro — App Store screenshots as code
 
-  recadro init   <dir> --starter <name> [--captures <pattern>]
-  recadro dev    [--panels <dir>] [--port <n>]
+  recadro init   <dir> --starter <name> [--captures <pattern>] [--skill | --no-skill]
+  recadro dev    [--panels <dir>] [--port <n>] [--live]
   recadro render [--panels <dir>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
+  recadro wait   [--panels <dir>]
+  recadro reply  <id> "<what you changed>" [--panels <dir>]
 
   --starter     init: the starter to copy          (${listStarters().join(", ")})
   --captures    init: the folder holding a folder per device, from here (written to ${CONFIG_FILE})
+  --skill       init: add a /recadro skill for Claude Code at ${SKILL_PATH.split(sep).join("/")} without asking;
+                alone, on an existing set, adds only the skill.  --no-skill: don't, and don't ask
+  --live        dev: take notes pinned in the lineup, for an agent running \`recadro wait\`
 
   --panels      the set: a folder holding panels/       (default: found from here)
   --out         output directory       (default: ${CONFIG_FILE} "out", else <set>/out)
@@ -120,13 +127,34 @@ async function openBrowser(): Promise<Browser> {
   return installed;
 }
 
+/**
+ * Whether to add the `/recadro` skill to the repository, and the summary line
+ * saying what happened. Asked at a terminal, Enter meaning yes, as `render`
+ * asks about Chromium; anywhere else — an agent, CI — nothing is written and
+ * the line names the flag, since a half-asked question helps nobody. A skill
+ * already there is kept and not asked about.
+ */
+async function skillLine(root: string, dir: string, yes: boolean, no: boolean): Promise<string> {
+  const target = join(root, SKILL_PATH);
+  if (existsSync(target)) return `${shown(target)} (kept)`;
+  const later = `recadro init ${shown(dir)} --skill`;
+  if (no) return `not added; ${later} adds /recadro for Claude Code`;
+  const tty = process.stdin.isTTY && process.stdout.isTTY;
+  if (!yes && !tty) return `not added; ${later} adds /recadro for Claude Code`;
+  if (!yes && !(await confirm(`Add a /recadro skill for Claude Code at ${shown(dirname(target))}/?`))) {
+    return `not added; ${later} adds it later`;
+  }
+  installSkill(root);
+  return shown(target);
+}
+
 async function main(): Promise<void> {
   const [command, ...argv] = process.argv.slice(2);
   if (!command || command === "--help" || command === "-h") {
     console.log(USAGE);
     return;
   }
-  if (command !== "init" && command !== "dev" && command !== "render") {
+  if (!["init", "dev", "render", "wait", "reply"].includes(command)) {
     console.error(`unknown command "${command}"\n\n${USAGE}`);
     process.exitCode = 1;
     return;
@@ -144,14 +172,24 @@ async function main(): Promise<void> {
       devices: { type: "string" },
       locales: { type: "string" },
       incomplete: { type: "boolean", default: false },
+      live: { type: "boolean", default: false },
+      skill: { type: "boolean", default: false },
+      "no-skill": { type: "boolean", default: false },
     },
   });
 
   if (command === "init") {
-    if (positionals.length !== 1 || !values.starter) {
+    if (positionals.length !== 1 || (!values.starter && !values.skill)) {
       throw new Error(`init takes a folder and a starter: recadro init <dir> --starter ${listStarters().join("|")}`);
     }
     const dir = resolve(positionals[0]);
+    // `--skill` alone: only the skill, into the repository of a set that exists.
+    if (!values.starter) {
+      const root = loadSet(dir).root;
+      const state = installSkill(root);
+      console.log(`recadro  skill     ${shown(join(root, SKILL_PATH))}${state === "kept" ? " (kept)" : ""}`);
+      return;
+    }
     // Given from where the command runs, like --panels and --out; recadro.json
     // holds it relative to the set, with forward slashes on every platform.
     const captures = values.captures && relative(dir, resolve(values.captures)).split(sep).join("/");
@@ -172,7 +210,18 @@ async function main(): Promise<void> {
       console.log(`         left      ${left} in strings/, for captures still to take`);
     }
     console.log(`         agents    ${Object.keys(AGENT_FILES).join(", ")}, pointing at recadro's AUTHORING.md`);
+    console.log(`         skill     ${await skillLine(set.root, dir, values.skill, values["no-skill"])}`);
     console.log(`         next      recadro dev --panels ${shown(dir)}`);
+    return;
+  }
+
+  if (command === "reply") {
+    const [id, ...words] = positionals;
+    if (!/^\d+$/.test(id ?? "") || !words.length) {
+      throw new Error(`reply takes a note's id and one line: recadro reply <id> "<what you changed>"`);
+    }
+    const set = loadSet(values.panels ? resolve(values.panels) : findSet(process.cwd()));
+    await reply(set.dir, shown(set.dir), Number(id), words.join(" "));
     return;
   }
   if (positionals.length) throw new Error(`${command} takes no ${positionals[0]}; name the set with --panels`);
@@ -181,12 +230,18 @@ async function main(): Promise<void> {
   const { locales, from: localesFrom } = localesFor(set, values.locales);
   const port = values.port ? Number(values.port) : undefined;
 
+  if (command === "wait") {
+    await wait(set.dir, shown(set.dir));
+    return;
+  }
+
   if (command === "dev") {
-    const { origin, panels } = await startServer(set, { port, watchFetched: true });
+    const { origin, panels } = await startServer(set, { port, watchFetched: true, live: values.live });
     console.log(`recadro  ${counted(panels.length, "panel")} in ${shown(set.dir)}`);
     console.log(`         locales   ${locales.join(", ")}  (${localesFrom})`);
     console.log(`         captures  ${shown(resolve(set.dir, set.captures))}/`);
     console.log(`         lineup    ${origin}/`);
+    if (values.live) console.log(`         live      recadro wait  (prints each note pinned in the lineup; recadro reply <id> "…" answers)`);
     return;
   }
 
