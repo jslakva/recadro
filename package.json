@@ -25,7 +25,7 @@
     "type": "git",
     "url": "git+https://github.com/jslakva/recadro.git"
   },
-  "homepage": "https://github.com/jslakva/recadro#readme",
+  "homepage": "https://recadro.dev",
   "bugs": "https://github.com/jslakva/recadro/issues",
   "keywords": [
     "app-store",
