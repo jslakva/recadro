@@ -763,21 +763,48 @@ function takeNote(note) {
 }
 
 /**
+ * Fits the note's text field to its words: the two lines it has at rest, then
+ * a line at a time up to the height its CSS allows, and past that it scrolls.
+ * Measured with the scrollbar off, since one that shows mid-measure narrows
+ * the lines and adds a row that is not there.
+ */
+function fitNote() {
+  const text = el("note-text");
+  text.style.overflowY = "hidden";
+  text.style.height = "auto";
+  const wanted = text.scrollHeight + 2; // its two 1px borders, the box being border-box
+  text.style.height = `${wanted}px`;
+  if (wanted > parseFloat(getComputedStyle(text).maxHeight)) text.style.overflowY = "auto";
+}
+
+/**
  * Opens the note field beside the spot just clicked: below and right of the
- * cursor as the tag sits, flipped to stay inside the window. A second click
- * elsewhere moves it there; the words typed so far stay.
+ * cursor as the tag sits, or above it where below has no room. The side is
+ * chosen for the field at its tallest, so typing never moves it across the
+ * spot: below, it grows down from its top; above, it is held by its bottom
+ * edge and grows up. A second click elsewhere moves it there; the words typed
+ * so far stay.
  */
 function openNote(event, about) {
   pending = about;
   const form = el("note");
+  const text = el("note-text");
   el("note-ref").textContent = about.label || about.slug;
   el("note-hint").textContent = "Enter sends · Esc cancels";
   el("note-hint").classList.remove("failed");
   form.hidden = false;
+  fitNote();
   const { offsetWidth: w, offsetHeight: h } = form;
+  const tallest = h + parseFloat(getComputedStyle(text).maxHeight) - text.offsetHeight;
+  // `bottom` is measured from the viewport, which a horizontal scrollbar makes shorter than the window.
+  const height = document.documentElement.clientHeight;
+  const below = height - 8 - (event.clientY + 18);
+  const above = event.clientY - 8 - 8;
+  const down = below >= tallest || below >= above;
   form.style.left = `${Math.max(8, Math.min(event.clientX + 12, innerWidth - w - 8))}px`;
-  form.style.top = `${event.clientY + 18 + h <= innerHeight - 8 ? event.clientY + 18 : Math.max(8, event.clientY - h - 8)}px`;
-  el("note-text").focus();
+  form.style.top = down ? `${event.clientY + 18}px` : "auto";
+  form.style.bottom = down ? "auto" : `${height - (event.clientY - 8)}px`;
+  text.focus();
 }
 
 /** Closes the note field, keeping nothing. */
@@ -785,6 +812,9 @@ function closeNote() {
   pending = null;
   el("note").hidden = true;
   el("note-text").value = "";
+  // Back to its two lines; a hidden field has no height to measure.
+  el("note-text").style.height = "";
+  el("note-text").style.overflowY = "";
 }
 
 /** Sends the note with its reference; the pin appears when the server tells every lineup. */
@@ -835,6 +865,7 @@ if (manifest.live) {
     event.preventDefault();
     sendNote();
   });
+  el("note-text").addEventListener("input", fitNote);
   el("note-text").addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
