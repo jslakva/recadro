@@ -3,7 +3,7 @@
   "version": "0.2.1",
   "description": "App Store screenshots as code. Compose store panels from raw simulator captures. Plain HTML in, exact slot sizes out.",
   "author": "Johnny Slakva (https://slakva.me/)",
-  "license": "FSL-1.1-ALv2",
+  "license": "Apache-2.0",
   "type": "module",
   "bin": {
     "recadro": "dist/cli.js"
@@ -16,7 +16,8 @@
     "skills",
     "README.md",
     "AUTHORING.md",
-    "LICENSE"
+    "LICENSE",
+    "NOTICE"
   ],
   "engines": {
     "node": ">=20.11"

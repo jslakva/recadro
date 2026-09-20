@@ -105,9 +105,6 @@ nothing of you or your app. The screenshots are yours, and so is a set you
 start from a starter: `starters/` is [MIT-0](starters/LICENSE), with no notice
 to keep.
 
-recadro itself is [FSL-1.1-ALv2](LICENSE), the Functional Source License. Use
-it, change it and share it for any purpose except a commercial product or
-service that does what recadro does; free tools may build on it. Each version
-becomes Apache 2.0 two years after its release. A commercial product built on a
-version younger than that needs a license from
-[Johnny Slakva](https://slakva.me/).
+recadro itself is open source, under [Apache 2.0](LICENSE). Use it, change it
+and redistribute it, in free tools and commercial ones alike; a copy you pass
+on keeps the license and the [NOTICE](NOTICE) file.
