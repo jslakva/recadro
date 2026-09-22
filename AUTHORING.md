@@ -119,6 +119,24 @@ the smallest set that works, four files.
   holds off `networkidle` and delays or times out the render.
 - **Don't hardcode an origin or port.** Relative or root-absolute URLs only.
 
+## What App Review reads
+
+Screenshots are metadata, and App Review holds them to the guidelines the
+description meets. Listings on the store show it: their screenshots say what
+the app does and nothing about what it costs.
+
+- **Nothing about cost** (guideline 2.3.7: screenshots "should not include
+  prices, terms, or descriptions that are not specific to the metadata
+  type"). No amount, no currency, and no "free", "trial", "discount" or
+  "sale": App Review counts free and discounted as prices, and rejects "Try
+  it free" as it rejects "$4.99". Nor "subscribe" or "premium": a paid
+  feature is shown like any other, and sold as free by no word. The store
+  page draws the line, with the price and its In-App Purchases label, and
+  the description says the terms (guideline 2.3.2).
+- **The app in use** (guideline 2.3.3: "not merely the title art, login page,
+  or splash screen"). Captures are the app running. Overlays that explain
+  it, text or a touch point, are allowed, and are what a panel adds.
+
 ## Captures and strings
 
 - **Captures** are full-screen simulator screenshots, one per panel and slot.
