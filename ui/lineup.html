@@ -16,8 +16,8 @@
 
   The pointer copies a reference to one spot — file, point, element — for a
   person to paste to a coding agent. It reads what is under the cursor and
-  judges nothing. Under `dev --live`, with an agent's `recadro wait` connected,
-  a click opens a note field at the spot instead, and the note goes to the
+  judges nothing. Under `dev --live`, with an agent's `recadro wait` connected
+  or the agent between two, a click opens a note field at the spot instead, and the note goes to the
   agent with the reference; a pin marks it — turning while the agent has it,
   open as a box with the agent's line once it comes back — and a log at the
   bottom right lists every note with its answer. The clipboard stays a
@@ -222,12 +222,18 @@
         .strip { gap: 8px; padding: 10px 12px 0; }
         .focusing .pager { column-gap: 8px; }
       }
-      /* Under dev --live: whether an agent's `recadro wait` is connected. A dot
-         in the tool's mark colour when one is, the control edge's grey when not. */
+      /* Under dev --live: whether an agent is there. A dot in the tool's mark
+         colour while its `recadro wait` is connected, breathing while it is
+         between two, the control edge's grey when neither. */
       .agent { display: flex; align-items: center; gap: 6px; height: 26px; font-size: 11px; color: var(--dim); cursor: help; }
       .agent .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--control-edge); }
       .agent.on { color: var(--ink); }
       .agent.on .dot { background: var(--mark); box-shadow: 0 0 0 3px rgba(120, 226, 194, .22); }
+      /* Between two waits: the mark colour without the ring, breathing, since the agent is busy, not gone. */
+      .agent.working { color: var(--ink); }
+      .agent.working .dot { background: var(--mark); animation: agent-working 1.6s ease-in-out infinite; }
+      @keyframes agent-working { 50% { opacity: .35; } }
+      @media (prefers-reduced-motion: reduce) { .agent.working .dot { animation: none; opacity: .6; } }
       /* The note field: fixed to the window, so no frame clips it, beside the
          spot as the tag is. Dark like the chrome, whatever the ground. */
       .note { position: fixed; z-index: 3; display: grid; gap: 6px; width: 260px; padding: 8px; border-radius: 8px;

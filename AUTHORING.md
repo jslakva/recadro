@@ -177,7 +177,7 @@ the app does and nothing about what it costs.
 recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--config <path>] [--skill | --no-skill]
 recadro dev    [--config <path>] [--port <n>] [--live]
 recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
-recadro wait   [--config <path>]
+recadro wait   [--config <path>] [--once [--timeout <s>]]
 recadro reply  <id> "<what you changed>" [--config <path>]
 recadro skill  [--config <path>]
 ```
@@ -254,7 +254,7 @@ Options:
 
 - `--port <n>` — The port to serve on. Default: 5173, or the next one free.
 - `--live` — Also carry notes from the lineup to an agent running `wait`
-  (below). With none connected, the pointer copies as before.
+  (below). With no agent there, the pointer copies as before.
 
 ### `render`
 
@@ -309,7 +309,8 @@ npx recadro reply 3 "Sub is two lines on iPad now"
 ```
 
 `wait` finds the live server through the same `recadro.json` — the same
-folder, or `--config` — and does not exit while the server lives. Each note
+folder, or `--config` — and, without `--once`, does not exit while the
+server lives. Each note
 prints as one block: the reference, the person's words as typed, and the
 command that answers:
 
@@ -325,6 +326,24 @@ recadro  note 3 from the person at the lineup
 
 `reply` marks the note done in the lineup, its line opening at the pin and
 listed in the lineup's log.
+
+- `--once` — Print the notes of one round and exit: those already waiting,
+  or the first to come, and any that follow within 200 ms. For a harness
+  that hands an agent a command's output only when the command ends. Run it
+  again after each round. Default: off; `wait` prints every note until the
+  server goes.
+- `--timeout <s>` — Exit after `<s>` seconds with no note, printing a line
+  that says so. Requires `--once`. Default: 600.
+
+The lineup's dot says whether an agent is there. It reads `agent listening`
+while a `wait` is connected. Between two `wait --once` runs it reads
+`agent on note N`, while a printed note has no reply, and `agent working`
+for 60 s after the last run ended. The pointer takes notes in both, and the next `wait` prints
+them. Otherwise it reads `no agent listening`, and the pointer copies.
+
+A printed note that gets no reply in 10 minutes goes back to waiting. The
+next `wait`, or the one connected, prints it again, its first line ending
+`again: no reply came in 10 minutes`.
 
 The channel exists only under `--live`: plain `dev` serves no endpoint for
 it. It writes nothing into the repository, and the server takes a note only

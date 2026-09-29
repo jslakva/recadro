@@ -568,14 +568,16 @@ function draw() {
 
 /*
  * The notes channel, under `dev --live` only. The lineup hears from the server
- * whether an agent's `recadro wait` is connected and what became of each note;
- * with one listening, the pointer's click opens a note field at the spot and
- * the note goes to the agent with the reference. Without the channel — plain
+ * whether an agent is there and what became of each note: listening, while a
+ * `recadro wait` is connected; working, between two of them while it has a
+ * note or has just had one. In both, the pointer's click opens a note field at
+ * the spot and the note goes to the agent with the reference, the next `wait`
+ * printing it when none is connected. Without the channel — plain
  * `dev`, or the lineup served as a static page — none of this exists and the
  * pointer copies as it always did.
  */
 
-/** Whether a `recadro wait` is connected right now. */
+/** Whether an agent takes notes: a `recadro wait` connected, or the agent between two. */
 let listening = false;
 /** Every note the server knows, by id. */
 const notes = new Map();
@@ -611,14 +613,30 @@ function dismiss(id) {
 /** What the open note field is about, or null while it is closed. */
 let pending = null;
 
-/** Shows whether an agent is listening: the dot, its words, and what a pointer click will do. */
-function setListening(on) {
+/**
+ * Shows whether an agent is there — the server's `{ state, on }`, state being
+ * listening, working or none — as the dot, its words, and what a pointer
+ * click will do.
+ */
+function setAgent({ state, on: ids }) {
+  const on = state !== "none";
   listening = on;
-  el("agent").classList.toggle("on", on);
-  el("agent-text").textContent = on ? "agent listening" : "no agent listening";
-  el("agent").title = on
-    ? "A recadro wait is connected: a pointer click sends it a note"
-    : "Run `recadro wait` in your agent to take notes from the pointer";
+  el("agent").classList.toggle("on", state === "listening");
+  el("agent").classList.toggle("working", state === "working");
+  el("agent-text").textContent =
+    state === "listening"
+      ? "agent listening"
+      : state === "working"
+        ? ids.length
+          ? `agent on note${ids.length === 1 ? "" : "s"} ${ids.join(", ")}`
+          : "agent working"
+        : "no agent listening";
+  el("agent").title =
+    state === "listening"
+      ? "A recadro wait is connected: a pointer click sends it a note"
+      : state === "working"
+        ? "The agent is between two recadro wait runs: a pointer click still pins a note, and its next wait prints it"
+        : "Run `recadro wait` in your agent to take notes from the pointer";
   el("point").title = on
     ? "Point at a spot to send the agent a note, shift-click to copy a reference (P, Esc)"
     : "Point at a spot to copy a reference for a coding agent (P, Esc)";
@@ -840,7 +858,7 @@ async function sendNote() {
 
 if (manifest.live) {
   el("agent").hidden = false;
-  setListening(false);
+  setAgent({ state: "none", on: [] });
   const events = new EventSource("/__recadro/notes/events");
   events.addEventListener("state", (event) => {
     const state = JSON.parse(event.data);
@@ -849,12 +867,12 @@ if (manifest.live) {
     for (const note of state.notes) notes.set(note.id, note);
     drawPins();
     drawLog();
-    setListening(state.listening);
+    setAgent(state.agent);
   });
-  events.addEventListener("listening", (event) => setListening(JSON.parse(event.data).listening));
+  events.addEventListener("agent", (event) => setAgent(JSON.parse(event.data)));
   events.addEventListener("note", (event) => takeNote(JSON.parse(event.data)));
   // The server is gone, or restarting: nobody is listening until it says otherwise.
-  events.addEventListener("error", () => setListening(false));
+  events.addEventListener("error", () => setAgent({ state: "none", on: [] }));
 
   el("log-head").addEventListener("click", () => {
     const closed = el("log").classList.toggle("closed");

@@ -1,12 +1,14 @@
 /**
  * `wait` and `reply`: the agent's side of the notes channel. `wait` connects to
  * the server `dev --live` announced for the set and prints each note as it
- * arrives, in the CLI's voice, for as long as that server lives; `reply` posts
- * one line back and exits. Neither reads the set; both only find it.
+ * arrives, in the CLI's voice, for as long as that server lives — or, with
+ * `--once`, the notes of one round and then exits, for a harness that wakes an
+ * agent only when a command ends; `reply` posts one line back and exits.
+ * Neither reads the set; both only find it.
  */
 import { request as httpRequest, type IncomingMessage } from "node:http";
 import { request as httpsRequest } from "node:https";
-import { AGENT_HEADER, readLive, type LiveFile, type Note } from "./notes.ts";
+import { AGENT_HEADER, readLive, REDELIVER_MS, type LiveFile, type Note } from "./notes.ts";
 
 /** The column the CLI's detail lines start in. */
 const PAD = "         ";
@@ -32,7 +34,8 @@ function gone(live: LiveFile, shown: string, flag: string): Error {
  * as given; nothing here rephrases or adds to them.
  */
 export function formatNote(note: Note): string {
-  const lines = [`recadro  note ${note.id} from the person at the lineup`];
+  const again = note.repeat ? `, again: no reply came in ${REDELIVER_MS / 60_000} minutes` : "";
+  const lines = [`recadro  note ${note.id} from the person at the lineup${again}`];
   for (const line of note.reference.split("\n").filter(Boolean)) lines.push(PAD + line);
   const [first, ...rest] = note.note.split("\n");
   lines.push(`${PAD}note     ${first}`);
@@ -41,14 +44,28 @@ export function formatNote(note: Note): string {
   return `${lines.join("\n")}\n`;
 }
 
+/** How long `wait --once` waits for a note when not told, in seconds. */
+export const DEFAULT_TIMEOUT_S = 600;
+
+/** How `wait` runs: a stream, or one round (`once`) that gives up after `timeout` seconds. */
+export interface WaitOptions {
+  once: boolean;
+  timeout: number;
+}
+
 /**
  * Prints every note from the lineup as it comes, and returns when the server
  * goes away. Meant to run under whatever the agent's harness has that reports
- * a command's output line by line.
+ * a command's output line by line. With `once`, returns after the first round
+ * of notes instead, or after `timeout` seconds with a line saying none came.
  */
-export function wait(setDir: string, shown: string, flag: string): Promise<void> {
+export function wait(setDir: string, shown: string, flag: string, options: WaitOptions): Promise<void> {
   const live = liveFor(setDir, shown, flag);
   const url = new URL("/__recadro/notes/wait", live.origin);
+  if (options.once) {
+    url.searchParams.set("once", "1");
+    url.searchParams.set("timeout", String(options.timeout));
+  }
   return new Promise((resolve, reject) => {
     const req = requestFor(url)(url, { method: "GET", headers: { [AGENT_HEADER]: "wait" } }, (res: IncomingMessage) => {
       if (res.statusCode !== 200) {
@@ -56,8 +73,10 @@ export function wait(setDir: string, shown: string, flag: string): Promise<void>
         reject(gone(live, shown, flag));
         return;
       }
-      process.stdout.write(`recadro  waiting for notes from the lineup at ${live.origin}/\n${PAD}set       ${shown}\n\n`);
+      if (!options.once) process.stdout.write(`recadro  waiting for notes from the lineup at ${live.origin}/\n${PAD}set       ${shown}\n\n`);
       let buffer = "";
+      let printed = 0;
+      let timedOut = false;
       res.setEncoding("utf8");
       res.on("data", (chunk: string) => {
         buffer += chunk;
@@ -65,7 +84,13 @@ export function wait(setDir: string, shown: string, flag: string): Promise<void>
         buffer = lines.pop() ?? "";
         for (const line of lines) {
           if (!line.trim()) continue;
-          process.stdout.write(`${formatNote(JSON.parse(line) as Note)}\n`);
+          const message = JSON.parse(line) as Note | { timeout: number };
+          if ("timeout" in message) {
+            timedOut = true;
+            continue;
+          }
+          printed += 1;
+          process.stdout.write(`${formatNote(message)}\n`);
         }
       });
       // The server closing the connection — stopped, or killed — arrives as
@@ -74,6 +99,16 @@ export function wait(setDir: string, shown: string, flag: string): Promise<void>
       const finish = () => {
         if (ended) return;
         ended = true;
+        if (options.once && timedOut) {
+          process.stdout.write(`recadro  no note in ${options.timeout} s; run recadro wait --once${flag} again\n`);
+          resolve();
+          return;
+        }
+        // A round that printed its notes ends here; the server going mid-round is the same end for this run.
+        if (options.once && printed) {
+          resolve();
+          return;
+        }
         process.stdout.write(`recadro  the dev server at ${live.origin} is gone; wait ends\n`);
         resolve();
       };

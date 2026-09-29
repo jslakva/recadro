@@ -23,6 +23,18 @@ const MAX_BODY = 64 * 1024;
 /** How often the lineup's event stream is touched so no idle proxy closes it. */
 const PING_MS = 30_000;
 
+/** How long a one-shot `wait` stays open after a note, for the next one to join it. */
+const BURST_MS = 200;
+
+/** How long after a `wait` ends the agent still counts as working, for the next `wait` to connect. */
+const BETWEEN_WAITS_MS = 60_000;
+
+/** How long a printed note may go without a reply before the next `wait` prints it again. */
+export const REDELIVER_MS = 600_000;
+
+/** The longest a one-shot `wait` may be asked to wait, in seconds. */
+export const MAX_TIMEOUT_S = 24 * 60 * 60;
+
 /** What `dev --live` leaves for `wait` and `reply` to find the server by. */
 export interface LiveFile {
   /** The server's origin, e.g. `http://localhost:5173`. */
@@ -80,6 +92,8 @@ export interface Note {
   spot: { x: number; y: number } | null;
   /** Whether a `wait` has printed it, so the lineup can show it as with the agent. */
   delivered: boolean;
+  /** How many times it went back to waiting because no reply came, so `wait` can say it prints it again. */
+  repeat: number;
   /** The agent's one line, once it replied. */
   reply: string | null;
 }
@@ -124,6 +138,28 @@ function sameOrigin(req: IncomingMessage): boolean {
 }
 
 /**
+ * Whether an agent is there, as the lineup shows it: `listening` while a
+ * `wait` is connected; `working` between two of them, while a printed note has
+ * no reply or the last `wait` ended moments ago; `none` otherwise. The lineup
+ * takes notes in the first two and copies in the last.
+ */
+export interface AgentState {
+  state: "listening" | "working" | "none";
+  /** The notes printed and not answered, while working. */
+  on: number[];
+}
+
+/** A connected `wait`. A one-shot one ends after its notes, or at its timeout. */
+interface Waiter {
+  res: ServerResponse;
+  once: boolean;
+  /** Set once it printed a note: ends it when no other note came within `BURST_MS`. */
+  burst?: NodeJS.Timeout;
+  /** Ends a one-shot `wait` that got no note in the time it asked for. */
+  timeout?: NodeJS.Timeout;
+}
+
+/**
  * The channel's state: every note since the server started, the `wait`
  * connections that print new ones, and the lineup connections told about them.
  */
@@ -134,8 +170,16 @@ export class NoteChannel {
   private readonly started = Date.now();
   /** Notes no `wait` has printed yet; delivered to the first one that connects. */
   private undelivered: Note[] = [];
-  private waiters = new Set<ServerResponse>();
+  private waiters = new Set<Waiter>();
   private lineups = new Set<ServerResponse>();
+  /** When the last `wait` went away, for the working state between two of them. */
+  private lastWaitEnded = 0;
+  /** Ends the working state the last `wait` left behind. */
+  private betweenWaits?: NodeJS.Timeout;
+  /** Puts a printed note back to waiting when no reply came, by id. */
+  private redeliver = new Map<number, NodeJS.Timeout>();
+  /** The agent state last sent to the lineups, so they hear only a change. */
+  private told = "";
 
   /** Handles a request under the channel's paths; false when the path is not the channel's. */
   handle(req: IncomingMessage, res: ServerResponse): boolean {
@@ -153,7 +197,14 @@ export class NoteChannel {
         sendJson(res, 403, { error: `${AGENT_HEADER} header required` });
         return true;
       }
-      this.wait(res);
+      const query = new URLSearchParams((req.url ?? "").split("?")[1] ?? "");
+      const once = query.get("once") === "1";
+      const timeout = Number(query.get("timeout") ?? "");
+      if (once && query.has("timeout") && !(Number.isInteger(timeout) && timeout > 0 && timeout <= MAX_TIMEOUT_S)) {
+        sendJson(res, 400, { error: `timeout is whole seconds from 1 to ${MAX_TIMEOUT_S}` });
+        return true;
+      }
+      this.wait(res, once, once && query.has("timeout") ? timeout : null);
       return true;
     }
     const reply = path.match(new RegExp(`^${BASE}/(\\d+)/reply$`));
@@ -168,9 +219,21 @@ export class NoteChannel {
     return false;
   }
 
-  /** Whether any `wait` is connected right now. */
-  get listening(): boolean {
-    return this.waiters.size > 0;
+  /** Whether an agent is there, and on which notes; see `AgentState`. */
+  get agent(): AgentState {
+    if (this.waiters.size) return { state: "listening", on: [] };
+    const on = this.notes.filter((n) => n.delivered && !n.reply).map((n) => n.id);
+    const recent = this.lastWaitEnded > 0 && Date.now() - this.lastWaitEnded < BETWEEN_WAITS_MS;
+    return { state: on.length || recent ? "working" : "none", on };
+  }
+
+  /** Tells the lineups the agent state, when it changed since they last heard. */
+  private tellAgent(): void {
+    const agent = this.agent;
+    const said = JSON.stringify(agent);
+    if (said === this.told) return;
+    this.told = said;
+    this.tellLineups("agent", agent);
   }
 
   /** A note from the lineup: kept, handed to a waiting agent, shown as a pin. */
@@ -199,6 +262,7 @@ export class NoteChannel {
       slug: typeof body.slug === "string" ? body.slug : "",
       spot: typeof spot?.x === "number" && typeof spot?.y === "number" ? { x: spot.x, y: spot.y } : null,
       delivered: false,
+      repeat: 0,
       reply: null,
     };
     this.notes.push(note);
@@ -211,33 +275,78 @@ export class NoteChannel {
   private deliver(note: Note): void {
     if (!this.waiters.size) {
       this.undelivered.push(note);
+      this.tellAgent();
       return;
     }
+    for (const waiter of this.waiters) this.print(waiter, note);
+    this.delivered(note);
+  }
+
+  /** Writes a note to one `wait`; a one-shot one then ends unless another follows within `BURST_MS`. */
+  private print(waiter: Waiter, note: Note): void {
+    waiter.res.write(`${JSON.stringify(note)}\n`);
+    if (!waiter.once) return;
+    clearTimeout(waiter.timeout);
+    clearTimeout(waiter.burst);
+    waiter.burst = setTimeout(() => waiter.res.end(), BURST_MS);
+  }
+
+  /**
+   * Marks a note printed, and arms its redelivery: with no reply in
+   * `REDELIVER_MS` it goes back to waiting, and the next `wait` — or the one
+   * connected — prints it again, marked as a repeat. An agent that lost its
+   * turn, or its note, between `wait` and `reply` gets it back.
+   */
+  private delivered(note: Note): void {
     note.delivered = true;
-    const line = `${JSON.stringify(note)}\n`;
-    for (const waiter of this.waiters) waiter.write(line);
+    this.tellLineups("note", note);
+    clearTimeout(this.redeliver.get(note.id));
+    const timer = setTimeout(() => {
+      this.redeliver.delete(note.id);
+      if (note.reply) return;
+      note.delivered = false;
+      note.repeat += 1;
+      this.tellLineups("note", note);
+      this.deliver(note);
+    }, REDELIVER_MS);
+    timer.unref();
+    this.redeliver.set(note.id, timer);
   }
 
   /**
    * A `wait` connection: one JSON line per note, the ones nobody printed yet
-   * first, then each new one as it comes, until the server or the client goes.
+   * first, then each new one as it comes. A stream runs until the server or the
+   * client goes; a one-shot one (`once`) ends `BURST_MS` after its last note,
+   * or with a `{"timeout":…}` line when none came in `timeout` seconds.
    */
-  private wait(res: ServerResponse): void {
+  private wait(res: ServerResponse, once: boolean, timeout: number | null): void {
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/x-ndjson");
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
-    this.waiters.add(res);
+    const waiter: Waiter = { res, once };
+    this.waiters.add(waiter);
+    clearTimeout(this.betweenWaits);
     for (const note of this.undelivered.splice(0)) {
-      note.delivered = true;
-      res.write(`${JSON.stringify(note)}\n`);
-      this.tellLineups("note", note);
+      this.print(waiter, note);
+      this.delivered(note);
     }
-    this.tellLineups("listening", { listening: true });
+    if (once && timeout !== null && !waiter.burst) {
+      waiter.timeout = setTimeout(() => res.end(`${JSON.stringify({ timeout })}\n`), timeout * 1000);
+    }
+    this.tellAgent();
     res.on("close", () => {
-      this.waiters.delete(res);
-      this.tellLineups("listening", { listening: this.listening });
+      clearTimeout(waiter.burst);
+      clearTimeout(waiter.timeout);
+      this.waiters.delete(waiter);
+      if (!this.waiters.size) {
+        this.lastWaitEnded = Date.now();
+        clearTimeout(this.betweenWaits);
+        this.betweenWaits = setTimeout(() => this.tellAgent(), BETWEEN_WAITS_MS + 50);
+        this.betweenWaits.unref();
+      }
+      this.tellAgent();
     });
   }
 
@@ -256,12 +365,17 @@ export class NoteChannel {
       return;
     }
     note.reply = typeof body.text === "string" && body.text.trim() ? body.text.trim() : "done";
+    clearTimeout(this.redeliver.get(id));
+    this.redeliver.delete(id);
+    // Answered while waiting to be printed again: nobody needs it now.
+    this.undelivered = this.undelivered.filter((n) => n !== note);
     this.tellLineups("note", note);
+    this.tellAgent();
     sendJson(res, 200, { id: note.id, slug: note.slug });
   }
 
   /**
-   * The lineup's event stream: whether anyone is listening and every note's
+   * The lineup's event stream: whether an agent is there and every note's
    * state, the whole of it first so a reloaded lineup draws its pins again.
    */
   private events(res: ServerResponse): void {
@@ -269,7 +383,7 @@ export class NoteChannel {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-store");
     res.flushHeaders();
-    res.write(`event: state\ndata: ${JSON.stringify({ started: this.started, listening: this.listening, notes: this.notes })}\n\n`);
+    res.write(`event: state\ndata: ${JSON.stringify({ started: this.started, agent: this.agent, notes: this.notes })}\n\n`);
     this.lineups.add(res);
     const ping = setInterval(() => res.write(": ping\n\n"), PING_MS);
     res.on("close", () => {

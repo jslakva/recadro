@@ -15,6 +15,7 @@ import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 import type { Browser } from "playwright";
 import { DEFAULT_STARTER, initSet, installSkill, listStarters, SKILL_PATH, skillVersion, VERSION } from "./init.ts";
+import { MAX_TIMEOUT_S } from "./notes.ts";
 import { startServer } from "./server.ts";
 import {
   capturesUrl,
@@ -29,7 +30,7 @@ import {
   type PanelSet,
 } from "./set.ts";
 import { SLOTS, selectSlots } from "./slots.ts";
-import { reply, wait } from "./wait.ts";
+import { DEFAULT_TIMEOUT_S, reply, wait } from "./wait.ts";
 
 const INIT_LINE = `recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--config <path>] [--skill | --no-skill]`;
 
@@ -47,7 +48,7 @@ const USAGE = `recadro — App Store screenshots as code
   ${INIT_LINE}
   recadro dev    [--config <path>] [--port <n>] [--live]
   recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
-  recadro wait   [--config <path>]
+  recadro wait   [--config <path>] [--once [--timeout <s>]]
   recadro reply  <id> "<what you changed>" [--config <path>]
   recadro skill  [--config <path>]
 
@@ -58,6 +59,10 @@ ${INIT_FLAGS}
 
 dev
   --live        take notes pinned in the lineup, for an agent running \`recadro wait\`
+
+wait
+  --once        print one round of notes and exit, for a harness that wakes an agent only when a command ends
+  --timeout     with --once, give up after this many seconds with a line saying no note came  (default: ${DEFAULT_TIMEOUT_S})
 
 render
   --out         where renders go       (default: ${CONFIG_FILE} "out", else <set>/out; <locale>/<device>-<slug>.png below it)
@@ -296,6 +301,8 @@ async function main(): Promise<void> {
       locales: { type: "string" },
       incomplete: { type: "boolean", default: false },
       live: { type: "boolean", default: false },
+      once: { type: "boolean", default: false },
+      timeout: { type: "string" },
       skill: { type: "boolean", default: false },
       "no-skill": { type: "boolean", default: false },
     },
@@ -364,7 +371,12 @@ async function main(): Promise<void> {
     return;
   }
   if (command === "wait") {
-    await wait(set.dir, shown(set.dir), configFlag(set));
+    if (values.timeout !== undefined && !values.once) throw new Error("--timeout goes with --once; a plain wait runs until the server goes");
+    const timeout = values.timeout === undefined ? DEFAULT_TIMEOUT_S : Number(values.timeout);
+    if (!Number.isInteger(timeout) || timeout < 1 || timeout > MAX_TIMEOUT_S) {
+      throw new Error(`--timeout ${values.timeout} is not whole seconds from 1 to ${MAX_TIMEOUT_S}`);
+    }
+    await wait(set.dir, shown(set.dir), configFlag(set), { once: values.once, timeout });
     return;
   }
   const { locales, from: localesFrom } = localesFor(set, values.locales);

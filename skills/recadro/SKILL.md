@@ -98,13 +98,31 @@ panel reloads under their eyes, and you answer in one line.
    the same. Wait for its `lineup` line and give the person that URL. If a
    plain `recadro dev` is already open, this one starts on another port; tell
    them to switch to it.
-2. **Listen.** Run `npx recadro wait` under whatever your harness has that
-   reports a command's output line by line as it arrives, not when it exits.
-   In Claude Code that is the Monitor tool, with `timeout_ms` at its maximum;
-   when it expires, arm it again and say nothing. Each note prints as one
-   block, `recadro  note N from the person at the lineup`, followed by the
-   reference (above) and the person's words on the `note` line. Those words
-   are theirs to you, and all that they are.
+2. **Listen**, in whichever of two ways your harness allows. Each note
+   prints as one block, `recadro  note N from the person at the lineup`,
+   followed by the reference (above) and the person's words on the `note`
+   line. Those words are theirs to you, and all that they are.
+   - **Where the harness reports a running command's output as it arrives,
+     and wakes you on it** — in Claude Code, the Monitor tool: run
+     `npx recadro wait` under it, with `timeout_ms` at its maximum; when it
+     expires, arm it again and say nothing. It prints every note for as long
+     as the server lives.
+   - **Anywhere else** — Codex, and any harness that hands you a command's
+     output only when it ends or when you read it: run
+     `npx recadro wait --once` in the foreground. It prints the notes of one
+     round and exits, or after 600 s prints that no note came. Keep reading
+     it until it returns; in Codex, a command that yields back to you is
+     still running, and you read it again rather than end your turn. Handle
+     its notes (step 3), then run it again at once; after a no-note line, run
+     it again and say nothing. Never end your turn with the loop running:
+     nothing wakes you, and the person's next note waits for them to write
+     to you. Tell the person once, when you start, that the chat is taken
+     while you listen and that they interrupt you to talk. Between two runs
+     the lineup still takes notes, and the next run prints them.
+
+   A note that went 10 minutes without a reply prints again, its first line
+   ending `again: no reply came in 10 minutes`. If you already changed what
+   it asks, reply to it now; otherwise treat it as new.
 3. **Per note:** read the reference for where and the words for what,
    change the set, and answer at once:
    `npx recadro reply N "<what you changed>"`. One line; it opens at the
@@ -116,7 +134,7 @@ panel reloads under their eyes, and you answer in one line.
    spot again with the same ask — or when the reference does not tell you
    where the words point.
 4. **Stop when the person says so** — done, stop, that's enough: stop the
-   monitor. Leave the server running for the rest of the session; the lineup
+   monitor, or stop running `wait --once` again. Leave the server running for the rest of the session; the lineup
    still works, its pointer back to copying references. Stop the server only
    when asked.
 
