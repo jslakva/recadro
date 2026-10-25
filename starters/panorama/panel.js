@@ -78,12 +78,14 @@ for (const list of document.querySelectorAll("[data-list]")) {
 }
 
 root.style.setProperty("--i", String(Number.parseInt(panel, 10) - 1));
-root.style.setProperty("--panels", String(Object.keys(strings).length));
+// The panels are the entries named with a number; the creative assets' are not.
+root.style.setProperty("--panels", String(Object.keys(strings).filter((key) => /^\d/.test(key)).length));
 
+// A creative asset in creative/ draws its own scene, with no world to fetch.
 const world = document.querySelector(".world");
-world.innerHTML = await fetch("../world.html").then((r) => r.text());
+if (world) world.innerHTML = await fetch("../world.html").then((r) => r.text());
 
-for (const phone of world.querySelectorAll("[data-capture]")) {
+for (const phone of document.querySelectorAll(".phone[data-capture]")) {
   const box = phone.getBoundingClientRect();
   if (box.right <= 0 || box.left >= innerWidth) {
     phone.remove();

@@ -19,5 +19,12 @@
       "What it costs, plainly.",
       "Nothing to set up, if true."
     ]
+  },
+  "header": {
+    "headline": "A few words that *add* to the picture.",
+    "subline": "The first thing on the product page."
+  },
+  "search": {
+    "headline": "Say plainly what it *does*."
   }
 }

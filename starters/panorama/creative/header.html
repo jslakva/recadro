@@ -1,0 +1,29 @@
+<!doctype html>
+<!--
+  The product page header: the top of the product page, 21:9, shot once per
+  locale. The words stay in the middle, where every device shows them; what
+  stands either side may be cropped. Its words are "header" in strings/.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../panel.css" />
+  </head>
+  <body>
+    <style>
+      .left { --x: 9; --y: 68; --h: 96; --r: -12; }
+      .right { --x: 91; --y: 70; --h: 100; --r: 10; --ry: -24; --rx: 10; }
+    </style>
+    <div class="wave back"></div>
+    <div class="wave"></div>
+    <div class="phones" data-frame="steel">
+      <div class="phone left" data-capture="{capture:1}"><div class="screen"><img alt="" /></div></div>
+      <div class="phone deep right" data-capture="{capture:2}"><div class="screen"><img alt="" /></div></div>
+    </div>
+    <header class="copy">
+      <h1 data-string="headline"></h1>
+      <p data-string="subline"></p>
+    </header>
+    <script type="module" src="../panel.js"></script>
+  </body>
+</html>

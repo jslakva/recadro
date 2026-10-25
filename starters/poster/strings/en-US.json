@@ -3,14 +3,25 @@
     "headline": "Say what it *does*.",
     "subline": "One line on who it is for."
   },
-  "02-moment": { "subline": "No headline: let the screen talk." },
+  "02-moment": {
+    "subline": "No headline: let the screen talk."
+  },
   "03-difference": {
     "headline": "Name what *only* it does.",
     "subline": "Two screens, when one can't say it."
   },
-  "04-everyday": { "headline": "Two words." },
+  "04-everyday": {
+    "headline": "Two words."
+  },
   "05-start": {
     "headline": "End on how to start.",
     "subline": "Nothing to set up — whatever is true."
+  },
+  "header": {
+    "headline": "A few words that *add* to it.",
+    "subline": "The first thing on the product page."
+  },
+  "search": {
+    "headline": "Say plainly what it *does*."
   }
 }

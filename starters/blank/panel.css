@@ -81,3 +81,32 @@ img.capture {
   font-size: 7vw;
 }
 */
+
+/*
+ * The creative assets in creative/: the product page header and the search
+ * result image, one per locale and no device. Apple crops both on some
+ * devices, so the words stay in the middle; the screens around them may lose
+ * their edges. Sizes follow the short side, in vh.
+ */
+[data-form="creative"] body {
+  justify-content: center;
+  padding: 0 10vw;
+  font-size: 9vh;
+}
+
+[data-form="creative"] h1 {
+  flex: none;
+  max-width: 54vw;
+}
+
+[data-device="search"] body {
+  justify-content: flex-start;
+  padding-top: 26vh;
+}
+
+[data-device="search"] img.capture {
+  flex: none;
+  height: 100vh;
+  aspect-ratio: var(--screen);
+  border-radius: 5vh;
+}

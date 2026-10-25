@@ -418,3 +418,77 @@ body {
     font-size: 2.6vh;
   }
 }
+
+/*
+ * The creative assets in creative/: the product page header and the search
+ * result image, one per locale and no device. Apple crops both on some
+ * devices, so the words stay in the middle; the screens around them may lose
+ * their edges. Sizes follow the short side, in vh.
+ */
+[data-form="creative"] body {
+  background:
+    radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--accent) 40%, transparent) 0, transparent 30%),
+    linear-gradient(100deg, var(--ground), color-mix(in srgb, var(--ground) 72%, var(--accent)));
+}
+
+[data-form="creative"] .copy {
+  position: absolute;
+  left: 50%;
+  width: 46vw;
+  padding: 0;
+  translate: -50% 0;
+}
+
+[data-form="creative"] .copy h1 {
+  font-size: 9vh;
+}
+
+[data-form="creative"] .copy p {
+  font-size: 4vh;
+}
+
+[data-form="creative"] .phone {
+  border-radius: 7vh;
+}
+
+[data-form="creative"] .screen {
+  border-radius: 7vh;
+}
+
+[data-form="creative"] [data-frame="steel"] .phone {
+  padding: 1.1vh;
+  border-radius: 8vh;
+}
+
+[data-form="creative"] [data-frame="steel"] .screen {
+  border-width: 0.4vh;
+  border-radius: 7vh;
+}
+
+[data-form="creative"] .phone.deep {
+  box-shadow:
+    calc(0.4vh * var(--side, 1)) 0.1vh 0 color-mix(in srgb, var(--edge) 90%, white),
+    calc(0.8vh * var(--side, 1)) 0.2vh 0 var(--edge),
+    calc(1.2vh * var(--side, 1)) 0.3vh 0 color-mix(in srgb, var(--edge) 85%, black),
+    calc(1.6vh * var(--side, 1)) 0.4vh 0 color-mix(in srgb, var(--edge) 72%, black),
+    calc(2vh * var(--side, 1)) 0.5vh 0 color-mix(in srgb, var(--edge) 60%, black),
+    calc(3vh * var(--side, 1)) 5vh 9vh rgb(0 0 0 / 0.5);
+}
+
+[data-form="creative"] .screen::before {
+  top: 1.5%;
+  left: 50%;
+  width: 28%;
+  height: 2.6%;
+  translate: -50% 0;
+}
+
+[data-device="header"] .copy {
+  top: 50%;
+  translate: -50% -50%;
+}
+
+[data-device="search"] .copy {
+  top: 26vh;
+  width: 54vw;
+}

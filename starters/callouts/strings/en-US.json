@@ -22,5 +22,13 @@
   "05-start": {
     "headline": "End on how to start.",
     "first": "Show where to *begin*."
+  },
+  "header": {
+    "headline": "A few words that *add* to the picture.",
+    "subline": "The first thing on the product page."
+  },
+  "search": {
+    "headline": "Say plainly what it *does*.",
+    "first": "The part that *matters*."
   }
 }

@@ -304,3 +304,73 @@ body {
     border-radius: 1vh;
   }
 }
+
+/*
+ * The creative assets in creative/: the product page header and the search
+ * result image, one per locale and no device. Apple crops both on some
+ * devices, so the words stay in the middle; the screens around them may lose
+ * their edges. Sizes follow the short side, in vh.
+ */
+[data-form="creative"] {
+  --lift: 7vh;
+}
+
+[data-form="creative"] .copy {
+  padding: 0;
+}
+
+[data-form="creative"] .copy h1 {
+  font-size: 9vh;
+}
+
+[data-form="creative"] .copy p {
+  font-size: 4vh;
+}
+
+[data-form="creative"] .stage::before,
+[data-form="creative"] .stage::after {
+  border-radius: 8vh;
+}
+
+[data-form="creative"] .screen {
+  border-radius: 6vh;
+  box-shadow: 0 0 0 0.22vh color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+[data-form="creative"] .socket,
+[data-form="creative"] .layer {
+  border-radius: 1.6vh;
+}
+
+[data-form="creative"] .layer {
+  box-shadow: 0 0 0 0.35vh #fff, 0 1.6vh 3.2vh color-mix(in srgb, var(--ink) 28%, transparent);
+}
+
+/* The header: the words in the middle, the phone tipped back at the right. */
+[data-device="header"] .copy {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 42vw;
+  translate: -50% -50%;
+}
+
+[data-device="header"] .stage {
+  left: 86%;
+  top: 70%;
+  height: 120vh;
+  aspect-ratio: var(--screen);
+}
+
+/* The search result: the headline over the phone, its top lifted. */
+[data-device="search"] .copy {
+  padding: 26vh 0 0;
+  margin: 0 auto;
+  max-width: 54vw;
+}
+
+[data-device="search"] .stage {
+  top: 100%;
+  height: 110vh;
+  aspect-ratio: var(--screen);
+}

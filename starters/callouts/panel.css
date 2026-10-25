@@ -408,3 +408,94 @@ img.capture {
     margin-left: -0.95vh;
   }
 }
+
+/*
+ * The creative assets in creative/: the product page header and the search
+ * result image, one per locale and no device. Apple crops both on some
+ * devices, so the words stay in the middle; the screens around them may lose
+ * their edges. Sizes follow the short side, in vh.
+ */
+[data-form="creative"] .copy {
+  padding: 0;
+}
+
+[data-form="creative"] .copy h1 {
+  font-size: 9vh;
+}
+
+[data-form="creative"] .copy p {
+  font-size: 4vh;
+}
+
+[data-form="creative"] body {
+  --bezel: 1.6vh;
+}
+
+[data-form="creative"] .device {
+  border-radius: 8vh;
+  box-shadow: 0 0 0 0.3vh color-mix(in srgb, var(--ink) 16%, transparent), 0 4vh 8vh rgb(0 0 0 / 0.4);
+}
+
+[data-form="creative"] .screen,
+[data-form="creative"] .marks {
+  border-radius: 6.6vh;
+}
+
+[data-form="creative"] .note .label {
+  max-width: 16vw;
+  padding: 1.2vh 2.4vh;
+  font-size: 3.6vh;
+}
+
+[data-form="creative"] .note::before {
+  height: 0.5vh;
+}
+
+[data-form="creative"] .note::after {
+  width: 3vh;
+  box-shadow: 0 0 0 0.6vh var(--frame), 0 0 0 1.1vh var(--accent);
+}
+
+[data-form="creative"] .note.right::after {
+  margin-left: -1.5vh;
+}
+
+/* The header: the words in the middle, the phone past the right edge of them. */
+[data-device="header"] .copy {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 42vw;
+  translate: -50% -50%;
+}
+
+[data-device="header"] body {
+  --device-h: 120vh;
+}
+
+[data-device="header"] .device {
+  top: 22vh;
+  left: auto;
+  right: 4vw;
+  translate: none;
+  rotate: 6deg;
+}
+
+/* The search result: the headline over the phone, a note on its screen. */
+[data-device="search"] .copy {
+  padding: 26vh 0 0;
+  margin: 0 auto;
+  max-width: 54vw;
+}
+
+[data-device="search"] body {
+  --device-h: 110vh;
+}
+
+[data-device="search"] .device {
+  top: 48vh;
+}
+
+[data-device="search"] .note.right {
+  right: calc(24vw - var(--edge));
+}

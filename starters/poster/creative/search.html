@@ -1,0 +1,29 @@
+<!doctype html>
+<!--
+  The search result image: shown in place of the screenshots in a search
+  result, 3:2, shot once per locale. Say plainly what the app does; the
+  headline and the top of the screen sit in the middle, where it is never
+  cropped. Its words are "search" in strings/.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../panel.css" />
+  </head>
+  <body data-swatch="2">
+    <style>
+      .back { --x: 28; --y: 60; --h: 80; --r: -7; }
+      .front { --x: 52; --y: 54; --h: 84; --r: 5; }
+    </style>
+    <header class="copy">
+      <h1 data-string="headline"></h1>
+    </header>
+    <div class="phone back">
+      <div class="screen"><img class="capture" data-capture="{capture:2}" alt="" /></div>
+    </div>
+    <div class="phone front">
+      <div class="screen"><img class="capture" data-capture="{capture:1}" alt="" /></div>
+    </div>
+    <script type="module" src="../panel.js"></script>
+  </body>
+</html>
