@@ -1,10 +1,11 @@
 /*
- * The overlay starter: the capture fills the panel edge to edge, and a band of
- * colour over its top carries the headline, with a highlighted word and, on one
- * panel, a magnifier over part of the screen. The variables are the look —
- * point them at the app's own colours and fonts. Sizes are in vw/vh, the
- * iPad forks on [data-device] and a slot on its side on the orientation
- * query, so no device size appears here.
+ * The overlay starter: the capture fills the panel edge to edge, and a band
+ * of colour over its top carries the headline, with a highlighted word and,
+ * on one panel, a magnifier over part of the screen. The variables are the
+ * look — point them at the app's own colours and fonts. Sizes are in vw/vh;
+ * the squarer slots, iPad and iPhone Duo, fork on [data-form], a slot on its
+ * side on the orientation query, and a screen takes its proportions from
+ * --screen, which are the page's, so no device size appears here.
  */
 :root {
   --ground: #16181d;
@@ -139,23 +140,23 @@ img.capture {
   font: 600 4vw var(--font-text);
 }
 
-[data-device="iPad"] .band {
+[data-form="tablet"] .band {
   padding: 5vh 6vw 7vh;
 }
 
-[data-device="iPad"] .loupe {
+[data-form="tablet"] .loupe {
   box-shadow: 0 0 0 0.9vw #fff, 0 3vh 6vh rgb(0 0 0 / 0.45);
 }
 
-[data-device="iPad"] .band h1 {
+[data-form="tablet"] .band h1 {
   font-size: 7.4vw;
 }
 
-[data-device="iPad"] .band p {
+[data-form="tablet"] .band p {
   font-size: 2.8vw;
 }
 
-[data-device="iPad"][data-empty] body::after {
+[data-form="tablet"][data-empty] body::after {
   font-size: 2.4vw;
 }
 
@@ -199,23 +200,23 @@ img.capture {
     font-size: 4vh;
   }
 
-  [data-device="iPad"] .band {
+  [data-form="tablet"] .band {
     padding: 7vh 5vw calc(4vh + 100vw * tan(var(--slant)));
   }
 
-  [data-device="iPad"] .loupe {
+  [data-form="tablet"] .loupe {
     box-shadow: 0 0 0 0.9vh #fff, 0 3vh 6vh rgb(0 0 0 / 0.45);
   }
 
-  [data-device="iPad"] .band h1 {
+  [data-form="tablet"] .band h1 {
     font-size: 7.4vh;
   }
 
-  [data-device="iPad"] .band p {
+  [data-form="tablet"] .band p {
     font-size: 2.8vh;
   }
 
-  [data-device="iPad"][data-empty] body::after {
+  [data-form="tablet"][data-empty] body::after {
     font-size: 2.4vh;
   }
 }

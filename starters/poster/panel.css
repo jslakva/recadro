@@ -1,11 +1,12 @@
 /*
  * The poster starter: type first. A heavy condensed headline fills the top of
- * each panel, set left on a flat colour that changes from panel to panel, over
- * phones drawn in a thick outline with a hard shadow; one panel fans two
+ * each panel, set left on a flat colour that changes from panel to panel,
+ * over phones drawn in a thick outline with a hard shadow; one panel fans two
  * screens. The variables are the look: the swatches are the panels' colours,
- * picked by data-swatch on each panel's <body>. Sizes are in vw/vh, the iPad
- * forks on [data-device] and a slot on its side on the orientation query, so
- * no device size appears here.
+ * picked by data-swatch on each panel's <body>. Sizes are in vw/vh; the
+ * squarer slots, iPad and iPhone Duo, fork on [data-form], a slot on its side
+ * on the orientation query, and a screen takes its proportions from --screen,
+ * which are the page's, so no device size appears here.
  */
 :root {
   --ink: #141414;
@@ -105,7 +106,7 @@ body[data-swatch="5"] {
   --r: 0;
 }
 
-:where([data-device="iPad"] .phone) {
+:where([data-form="tablet"] .phone) {
   --x: 19;
   --y: 33;
   --h: 70;
@@ -118,7 +119,7 @@ body[data-swatch="5"] {
   top: calc(var(--y) * 1vh);
   box-sizing: border-box;
   height: calc(var(--h) * 1vh);
-  aspect-ratio: 9 / 19.5;
+  aspect-ratio: var(--screen);
   padding: 1.5vw;
   border: 0.9vw solid var(--ink);
   border-radius: 11vw;
@@ -160,28 +161,28 @@ img.capture {
   );
 }
 
-[data-device="iPad"] .copy {
+[data-form="tablet"] .copy {
   padding: 5vh 6vw 0;
 }
 
-[data-device="iPad"] .copy h1 {
+[data-form="tablet"] .copy h1 {
   font-size: 10vw;
 }
 
-[data-device="iPad"] .copy p {
+[data-form="tablet"] .copy p {
   padding: 0.9vh 2.2vw;
   font-size: 2.6vw;
 }
 
-[data-device="iPad"] .phone {
-  aspect-ratio: 3 / 4;
+[data-form="tablet"] .phone {
+  aspect-ratio: var(--screen);
   padding: 1vw;
   border-width: 0.55vw;
   border-radius: 3.4vw;
   box-shadow: 1.6vw 1.6vw 0 var(--ink);
 }
 
-[data-device="iPad"] .screen {
+[data-form="tablet"] .screen {
   border-width: 0.3vw;
   border-radius: 2.2vw;
 }
@@ -196,7 +197,7 @@ img.capture {
  */
 @media (orientation: landscape) {
   :where(.phone),
-  :where([data-device="iPad"] .phone) {
+  :where([data-form="tablet"] .phone) {
     --x: 46;
     --y: 24;
     --h: 66;
@@ -204,7 +205,7 @@ img.capture {
   }
 
   .copy,
-  [data-device="iPad"] .copy {
+  [data-form="tablet"] .copy {
     max-width: 40vw;
     padding: 8vh 0 0 6vw;
   }
@@ -220,7 +221,7 @@ img.capture {
   }
 
   .phone {
-    aspect-ratio: 19.5 / 9;
+    aspect-ratio: var(--screen);
     padding: 1.5vh;
     border-width: 0.9vh;
     border-radius: 11vh;
@@ -240,24 +241,24 @@ img.capture {
     );
   }
 
-  [data-device="iPad"] .copy h1 {
+  [data-form="tablet"] .copy h1 {
     font-size: 10vh;
   }
 
-  [data-device="iPad"] .copy p {
+  [data-form="tablet"] .copy p {
     padding: 0.9vh 2.2vh;
     font-size: 2.6vh;
   }
 
-  [data-device="iPad"] .phone {
-    aspect-ratio: 4 / 3;
+  [data-form="tablet"] .phone {
+    aspect-ratio: var(--screen);
     padding: 1vh;
     border-width: 0.55vh;
     border-radius: 3.4vh;
     box-shadow: 1.6vh 1.6vh 0 var(--ink);
   }
 
-  [data-device="iPad"] .screen {
+  [data-form="tablet"] .screen {
     border-width: 0.3vh;
     border-radius: 2.2vh;
   }

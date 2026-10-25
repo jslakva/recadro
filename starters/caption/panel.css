@@ -1,12 +1,13 @@
 /*
  * The caption starter: a headline and a subline over the screen, framed in a
- * device that rises from the bottom edge, and one review panel with no screen.
- * Along the way it shows what a panel can add: a highlighted word, a stroke under it,
- * a blurred backdrop, an enlarged detail, a background image, a sticker. The
- * variables are the look —
- * point them at the app's own colours and fonts. Sizes are in vw/vh, the
- * iPad forks on [data-device] and a slot on its side on the orientation
- * query, so no device size appears here.
+ * device that rises from the bottom edge, and one review panel with no
+ * screen. Along the way it shows what a panel can add: a highlighted word, a
+ * stroke under it, a blurred backdrop, an enlarged detail, a background
+ * image, a sticker. The variables are the look — point them at the app's own
+ * colours and fonts. Sizes are in vw/vh; the squarer slots, iPad and iPhone
+ * Duo, fork on [data-form], a slot on its side on the orientation query, and
+ * a screen takes its proportions from --screen, which are the page's, so no
+ * device size appears here.
  */
 :root {
   --ground: #f3efe8;
@@ -118,7 +119,7 @@ body[data-ground="blur"]::before {
   flex: none;
   box-sizing: border-box;
   height: 80vh;
-  aspect-ratio: 9 / 19.5;
+  aspect-ratio: var(--screen);
   padding: 2.4vw;
   border-radius: 12vw;
   background: var(--ink);
@@ -271,68 +272,68 @@ img.capture {
   font: 500 3.6vw var(--font-text);
 }
 
-[data-device="iPad"] body {
+[data-form="tablet"] body {
   gap: 4vh;
   padding-top: 6vh;
 }
 
-/* On iPad the words fit one line each, so the room is one of each. */
-[data-device="iPad"] .copy {
+/* On a squarer slot the words fit one line each, so the room is one of each. */
+[data-form="tablet"] .copy {
   --headline-size: 5.6vw;
   --subline-size: 2.5vw;
   min-height: calc(1.08 * var(--headline-size) + 1.8vh + 1.35 * var(--subline-size));
 }
 
-[data-device="iPad"] .strip {
+[data-form="tablet"] .strip {
   bottom: 14vh;
   aspect-ratio: 5 / 1;
   border-block-width: 0.45vw;
 }
 
-[data-device="iPad"] .badge {
+[data-form="tablet"] .badge {
   top: 4vh;
   right: -3vw;
   width: 13vw;
   font-size: 3vw;
 }
 
-[data-device="iPad"] .stars {
+[data-form="tablet"] .stars {
   font-size: 5vw;
 }
 
-[data-device="iPad"] .review blockquote {
+[data-form="tablet"] .review blockquote {
   max-width: 72vw;
   font-size: 4.4vw;
 }
 
-[data-device="iPad"] .review blockquote::before {
+[data-form="tablet"] .review blockquote::before {
   font-size: 9vw;
 }
 
-[data-device="iPad"] .review .name {
+[data-form="tablet"] .review .name {
   font-size: 2.6vw;
 }
 
-[data-device="iPad"] .review .role {
+[data-form="tablet"] .review .role {
   font-size: 2.2vw;
 }
 
-[data-device="iPad"] .device {
+[data-form="tablet"] .device {
   height: 86vh;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: var(--screen);
   padding: 1.4vw;
   border-radius: 3.6vw;
 }
 
-[data-device="iPad"] .screen {
+[data-form="tablet"] .screen {
   border-radius: 2.4vw;
 }
 
-[data-device="iPad"] .screen::before {
+[data-form="tablet"] .screen::before {
   display: none;
 }
 
-[data-device="iPad"][data-empty] .screen::after {
+[data-form="tablet"][data-empty] .screen::after {
   font-size: 2vw;
 }
 
@@ -354,7 +355,7 @@ img.capture {
   }
 
   .copy,
-  [data-device="iPad"] .copy {
+  [data-form="tablet"] .copy {
     --headline-size: 8.4vh;
     --subline-size: 4.2vh;
     min-height: calc(1.08 * var(--headline-size) + 1.8vh + 1.35 * var(--subline-size));
@@ -362,7 +363,7 @@ img.capture {
 
   .device {
     height: 82vh;
-    aspect-ratio: 19.5 / 9;
+    aspect-ratio: var(--screen);
     padding: 2.4vh;
     border-radius: 12vh;
   }
@@ -428,57 +429,57 @@ img.capture {
     font-size: 3.6vh;
   }
 
-  [data-device="iPad"] .copy {
+  [data-form="tablet"] .copy {
     --headline-size: 5.6vh;
     --subline-size: 2.5vh;
   }
 
-  [data-device="iPad"] .device {
+  [data-form="tablet"] .device {
     height: 84vh;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: var(--screen);
     padding: 1.4vh;
     border-radius: 3.6vh;
   }
 
-  [data-device="iPad"] .screen {
+  [data-form="tablet"] .screen {
     border-radius: 2.4vh;
   }
 
-  [data-device="iPad"] .strip {
+  [data-form="tablet"] .strip {
     bottom: 12vh;
     aspect-ratio: 7 / 1;
     border-block-width: 0.45vh;
   }
 
-  [data-device="iPad"] .badge {
+  [data-form="tablet"] .badge {
     top: -3vh;
     right: 6vh;
     width: 15vh;
     font-size: 3.4vh;
   }
 
-  [data-device="iPad"] .stars {
+  [data-form="tablet"] .stars {
     font-size: 5vh;
   }
 
-  [data-device="iPad"] .review blockquote {
+  [data-form="tablet"] .review blockquote {
     max-width: 64vw;
     font-size: 4.4vh;
   }
 
-  [data-device="iPad"] .review blockquote::before {
+  [data-form="tablet"] .review blockquote::before {
     font-size: 9vh;
   }
 
-  [data-device="iPad"] .review .name {
+  [data-form="tablet"] .review .name {
     font-size: 2.6vh;
   }
 
-  [data-device="iPad"] .review .role {
+  [data-form="tablet"] .review .role {
     font-size: 2.2vh;
   }
 
-  [data-device="iPad"][data-empty] .screen::after {
+  [data-form="tablet"][data-empty] .screen::after {
     font-size: 2vh;
   }
 }

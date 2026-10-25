@@ -19,6 +19,13 @@ const root = document.documentElement;
 root.lang = locale;
 root.dataset.device = params.get("device");
 
+// The page's shape, for the CSS: a phone's tall one, or "tablet" for the
+// squarer one of an iPad or an iPhone Duo display, either way up; and the
+// screen's proportions as --screen, which are the page's, since a capture
+// fills its device's screen and the panel is that device's shape.
+root.dataset.form = Math.min(innerWidth, innerHeight) / Math.max(innerWidth, innerHeight) > 0.6 ? "tablet" : "phone";
+root.style.setProperty("--screen", String(innerWidth / innerHeight));
+
 const strings = await fetch(`../strings/${locale}.json`).then((r) => r.json());
 const entry = strings[panel];
 if (!entry) throw new Error(`no "${panel}" in strings/${locale}.json`);

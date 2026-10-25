@@ -2,9 +2,9 @@
 <!--
   What only this app does, on two screens fanned out. Each phone stands where
   its rule below puts it: --x and --y its top left corner in vw and vh, --h its
-  height in vh, --r its tilt. iPad phones are wider, so they fork on
-  [data-device="iPad"], and on its side on the orientation query, which
-  repeats the iPad's places since the upright iPad rule outranks a bare one;
+  height in vh, --r its tilt. Phones on the squarer slots are wider, so they fork on
+  [data-form="tablet"], and on its side on the orientation query, which
+  repeats their places since their upright rule outranks a bare one;
   fork a language the same way with :lang(de).
 -->
 <html>
@@ -14,13 +14,13 @@
     <style>
       .back { --x: 5; --y: 41; --h: 62; --r: -8; }
       .front { --x: 41; --y: 35; --h: 66; --r: 5; }
-      [data-device="iPad"] .back { --x: 3; --y: 38; --h: 56; --r: -6; }
-      [data-device="iPad"] .front { --x: 42; --y: 32; --h: 62; --r: 4; }
+      [data-form="tablet"] .back { --x: 3; --y: 38; --h: 56; --r: -6; }
+      [data-form="tablet"] .front { --x: 42; --y: 32; --h: 62; --r: 4; }
       @media (orientation: landscape) {
         .back { --x: 40; --y: 46; --h: 50; --r: -6; }
         .front { --x: 56; --y: 18; --h: 54; --r: 4; }
-        [data-device="iPad"] .back { --x: 40; --y: 46; --h: 50; --r: -6; }
-        [data-device="iPad"] .front { --x: 56; --y: 18; --h: 54; --r: 4; }
+        [data-form="tablet"] .back { --x: 40; --y: 46; --h: 50; --r: -6; }
+        [data-form="tablet"] .front { --x: 56; --y: 18; --h: 54; --r: 4; }
       }
     </style>
   </head>

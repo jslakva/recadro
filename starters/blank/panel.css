@@ -1,7 +1,9 @@
 /*
  * The blank starter: a headline and the screen, laid out once, to write the
- * rest yourself. Sizes are in vw/vh, the iPad forks on [data-device] and a
- * slot on its side on the orientation query, so no device size appears here.
+ * rest yourself. Sizes are in vw/vh; the squarer slots, iPad and iPhone Duo,
+ * fork on [data-form], a slot on its side on the orientation query, and a
+ * screen takes its proportions from --screen, which are the page's, so no
+ * device size appears here.
  */
 html,
 body {
@@ -32,18 +34,18 @@ h1 {
 
 img.capture {
   height: 70vh;
-  aspect-ratio: 9 / 19.5;
+  aspect-ratio: var(--screen);
   object-fit: cover;
   object-position: top;
   border-radius: 4vh;
 }
 
-[data-device="iPad"] body {
+[data-form="tablet"] body {
   font-size: 5vw;
 }
 
-[data-device="iPad"] img.capture {
-  aspect-ratio: 3 / 4;
+[data-form="tablet"] img.capture {
+  aspect-ratio: var(--screen);
   border-radius: 2vh;
 }
 
@@ -60,16 +62,16 @@ img.capture {
 
   img.capture {
     height: 72vh;
-    aspect-ratio: 19.5 / 9;
+    aspect-ratio: var(--screen);
     border-radius: 6vh;
   }
 
-  [data-device="iPad"] body {
+  [data-form="tablet"] body {
     font-size: 6vh;
   }
 
-  [data-device="iPad"] img.capture {
-    aspect-ratio: 4 / 3;
+  [data-form="tablet"] img.capture {
+    aspect-ratio: var(--screen);
     border-radius: 2.5vh;
   }
 }

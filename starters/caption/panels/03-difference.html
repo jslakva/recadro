@@ -4,7 +4,7 @@
   the whole panel. The slice is --x --y --w --h below, in percent of the
   capture: x and y its top left corner, w and h its size. The strip fills with
   the slice's width and centres on its middle. A screen lays out differently on
-  iPad, so the slice forks on [data-device="iPad"], and on its side, on the
+  a squarer display, so the slice forks on [data-form="tablet"], and on its side, on the
   orientation query; fork a language the same way with :lang(de).
 -->
 <html>
@@ -13,10 +13,10 @@
     <link rel="stylesheet" href="../panel.css" />
     <style>
       .detail { --x: 12; --y: 54; --w: 76; --h: 12; }
-      [data-device="iPad"] .detail { --x: 6; --y: 85; --w: 88; --h: 13; }
+      [data-form="tablet"] .detail { --x: 6; --y: 85; --w: 88; --h: 13; }
       @media (orientation: landscape) {
         .detail { --x: 30; --y: 50; --w: 66; --h: 12; }
-        [data-device="iPad"] .detail { --x: 31; --y: 35.5; --w: 66; --h: 12; }
+        [data-form="tablet"] .detail { --x: 31; --y: 35.5; --w: 66; --h: 12; }
       }
     </style>
   </head>

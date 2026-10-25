@@ -1,10 +1,11 @@
 /*
  * The callouts starter: the phone straight on, with notes pinned to points on
  * its screen — a label, a leader line and a dot where the line lands — and a
- * spotlight that dims everything but one region. For an app whose screens need
- * a word of explanation. The variables are the look. Sizes are in vw/vh, the
- * iPad forks on [data-device] and a slot on its side on the orientation
- * query, so no device size appears here.
+ * spotlight that dims everything but one region. For an app whose screens
+ * need a word of explanation. The variables are the look. Sizes are in vw/vh;
+ * the squarer slots, iPad and iPhone Duo, fork on [data-form], a slot on its
+ * side on the orientation query, and a screen takes its proportions from
+ * --screen, which are the page's, so no device size appears here.
  */
 :root {
   --ground: #123b33;
@@ -67,7 +68,7 @@ body {
  */
 body {
   --device-h: 66vh;
-  --device-w: calc(var(--device-h) * 9 / 19.5);
+  --device-w: calc(var(--device-h) * var(--screen));
   --bezel: 1.8vw;
   --edge: calc(50vw - var(--device-w) / 2 + var(--bezel));
 }
@@ -208,60 +209,60 @@ img.capture {
   box-shadow: none;
 }
 
-[data-device="iPad"] .copy {
+[data-form="tablet"] .copy {
   padding-top: 6vh;
 }
 
-[data-device="iPad"] .copy h1 {
+[data-form="tablet"] .copy h1 {
   font-size: 5.8vw;
 }
 
-[data-device="iPad"] .copy p {
+[data-form="tablet"] .copy p {
   font-size: 2.5vw;
 }
 
-[data-device="iPad"] body {
+[data-form="tablet"] body {
   --device-h: 64vh;
-  --device-w: calc(var(--device-h) * 3 / 4);
+  --device-w: calc(var(--device-h) * var(--screen));
   --bezel: 1.1vw;
 }
 
-[data-device="iPad"] .device {
+[data-form="tablet"] .device {
   top: 25vh;
   border-radius: 3vw;
 }
 
-[data-device="iPad"] .screen,
-[data-device="iPad"] .marks {
+[data-form="tablet"] .screen,
+[data-form="tablet"] .marks {
   border-radius: 2vw;
 }
 
-[data-device="iPad"] .spot {
+[data-form="tablet"] .spot {
   border-width: 0.35vw;
   border-radius: 1vw;
 }
 
-[data-device="iPad"] .note .label {
+[data-form="tablet"] .note .label {
   max-width: 24vw;
   padding: 1vh 1.8vw;
   font-size: 2.2vw;
 }
 
-[data-device="iPad"] .note::before {
+[data-form="tablet"] .note::before {
   min-width: 2.5vw;
   height: 0.32vw;
 }
 
-[data-device="iPad"] .note::after {
+[data-form="tablet"] .note::after {
   width: 1.9vw;
   box-shadow: 0 0 0 0.4vw var(--frame), 0 0 0 0.75vw var(--accent);
 }
 
-[data-device="iPad"] .note.left::after {
+[data-form="tablet"] .note.left::after {
   margin-right: -0.95vw;
 }
 
-[data-device="iPad"] .note.right::after {
+[data-form="tablet"] .note.right::after {
   margin-left: -0.95vw;
 }
 
@@ -289,7 +290,7 @@ img.capture {
 
   body {
     --device-h: 56vh;
-    --device-w: calc(var(--device-h) * 19.5 / 9);
+    --device-w: calc(var(--device-h) * var(--screen));
     --bezel: 1.8vh;
   }
 
@@ -350,60 +351,60 @@ img.capture {
     );
   }
 
-  [data-device="iPad"] .copy {
+  [data-form="tablet"] .copy {
     padding-top: 5vh;
   }
 
-  [data-device="iPad"] .copy h1 {
+  [data-form="tablet"] .copy h1 {
     font-size: 5.8vh;
   }
 
-  [data-device="iPad"] .copy p {
+  [data-form="tablet"] .copy p {
     font-size: 2.5vh;
   }
 
-  [data-device="iPad"] body {
+  [data-form="tablet"] body {
     --device-h: 62vh;
-    --device-w: calc(var(--device-h) * 4 / 3);
+    --device-w: calc(var(--device-h) * var(--screen));
     --bezel: 1.1vh;
   }
 
-  [data-device="iPad"] .device {
+  [data-form="tablet"] .device {
     top: 24vh;
     border-radius: 3vh;
   }
 
-  [data-device="iPad"] .screen,
-  [data-device="iPad"] .marks {
+  [data-form="tablet"] .screen,
+  [data-form="tablet"] .marks {
     border-radius: 2vh;
   }
 
-  [data-device="iPad"] .spot {
+  [data-form="tablet"] .spot {
     border-width: 0.35vh;
     border-radius: 1vh;
   }
 
-  [data-device="iPad"] .note .label {
+  [data-form="tablet"] .note .label {
     max-width: 12vw;
     padding: 1vh 1.8vh;
     font-size: 2.2vh;
   }
 
-  [data-device="iPad"] .note::before {
+  [data-form="tablet"] .note::before {
     min-width: 2vw;
     height: 0.32vh;
   }
 
-  [data-device="iPad"] .note::after {
+  [data-form="tablet"] .note::after {
     width: 1.9vh;
     box-shadow: 0 0 0 0.4vh var(--frame), 0 0 0 0.75vh var(--accent);
   }
 
-  [data-device="iPad"] .note.left::after {
+  [data-form="tablet"] .note.left::after {
     margin-right: -0.95vh;
   }
 
-  [data-device="iPad"] .note.right::after {
+  [data-form="tablet"] .note.right::after {
     margin-left: -0.95vh;
   }
 }

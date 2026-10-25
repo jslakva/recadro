@@ -9,12 +9,19 @@
  */
 const params = new URLSearchParams(location.search);
 const panel = params.get("panel"); // "01-hero": the filename without .html
-const device = params.get("device"); // "iPhone" or "iPad"
+const device = params.get("device"); // "iPhone", "iPad", "DuoOuter" or "DuoInner"
 const locale = params.get("locale"); // "en-US"
 const captures = params.get("captures"); // this locale and device's captures folder, ending in a slash
 
 document.documentElement.lang = locale;
 document.documentElement.dataset.device = device;
+
+// The page's shape, for the CSS: a phone's tall one, or "tablet" for the
+// squarer one of an iPad or an iPhone Duo display, either way up; and the
+// screen's proportions as --screen, which are the page's, since a capture
+// fills its device's screen and the panel is that device's shape.
+document.documentElement.dataset.form = Math.min(innerWidth, innerHeight) / Math.max(innerWidth, innerHeight) > 0.6 ? "tablet" : "phone";
+document.documentElement.style.setProperty("--screen", String(innerWidth / innerHeight));
 
 // Relative URLs resolve against the page, panels/01-hero.html.
 const strings = await fetch(`../strings/${locale}.json`).then((r) => r.json());

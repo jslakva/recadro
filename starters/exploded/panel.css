@@ -1,9 +1,11 @@
 /*
  * The exploded starter: the phone tipped back in an orthographic view — no
- * perspective, so nothing shrinks with distance — with parts of its own screen
- * lifted straight up off it in layers. The variables are the look. Sizes are in
- * vw/vh, the iPad forks on [data-device] and a slot on its side on the
- * orientation query, so no device size appears here.
+ * perspective, so nothing shrinks with distance — with parts of its own
+ * screen lifted straight up off it in layers. The variables are the look.
+ * Sizes are in vw/vh; the squarer slots, iPad and iPhone Duo, fork on
+ * [data-form], a slot on its side on the orientation query, and a screen
+ * takes its proportions from --screen, which are the page's, so no device
+ * size appears here.
  */
 :root {
   --ground: #e8ebf0;
@@ -74,7 +76,7 @@ body {
   left: 50%;
   top: 58%;
   height: 70vh;
-  aspect-ratio: 9 / 19.5;
+  aspect-ratio: var(--screen);
   translate: -50% -50%;
   transform: rotateX(calc(var(--tilt) * 1deg)) rotateZ(calc(var(--turn) * 1deg));
   transform-style: preserve-3d;
@@ -190,34 +192,34 @@ body {
   background: color-mix(in srgb, white 60%, var(--ground));
 }
 
-[data-device="iPad"] .copy {
+[data-form="tablet"] .copy {
   padding-top: 6vh;
 }
 
-[data-device="iPad"] .copy h1 {
+[data-form="tablet"] .copy h1 {
   font-size: 5.8vw;
 }
 
-[data-device="iPad"] .copy p {
+[data-form="tablet"] .copy p {
   font-size: 2.5vw;
 }
 
-[data-device="iPad"] .stage {
+[data-form="tablet"] .stage {
   height: 70vh;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: var(--screen);
 }
 
-[data-device="iPad"] .screen {
+[data-form="tablet"] .screen {
   border-radius: 2.6vw;
 }
 
-[data-device="iPad"] .stage::before,
-[data-device="iPad"] .stage::after {
+[data-form="tablet"] .stage::before,
+[data-form="tablet"] .stage::after {
   border-radius: 4vw;
 }
 
-[data-device="iPad"] .socket,
-[data-device="iPad"] .layer {
+[data-form="tablet"] .socket,
+[data-form="tablet"] .layer {
   border-radius: 1vw;
 }
 
@@ -244,7 +246,7 @@ body {
   .stage {
     top: 61%;
     height: 56vh;
-    aspect-ratio: 19.5 / 9;
+    aspect-ratio: var(--screen);
   }
 
   .stage::before,
@@ -270,35 +272,35 @@ body {
     background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--ink) 6%, var(--ground)) 0 2.5vh, color-mix(in srgb, var(--ink) 11%, var(--ground)) 2.5vh 5vh);
   }
 
-  [data-device="iPad"] .copy {
+  [data-form="tablet"] .copy {
     padding-top: 5vh;
   }
 
-  [data-device="iPad"] .copy h1 {
+  [data-form="tablet"] .copy h1 {
     font-size: 5.8vh;
   }
 
-  [data-device="iPad"] .copy p {
+  [data-form="tablet"] .copy p {
     font-size: 2.5vh;
   }
 
-  [data-device="iPad"] .stage {
+  [data-form="tablet"] .stage {
     top: 58%;
     height: 64vh;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: var(--screen);
   }
 
-  [data-device="iPad"] .screen {
+  [data-form="tablet"] .screen {
     border-radius: 2.6vh;
   }
 
-  [data-device="iPad"] .stage::before,
-  [data-device="iPad"] .stage::after {
+  [data-form="tablet"] .stage::before,
+  [data-form="tablet"] .stage::after {
     border-radius: 4vh;
   }
 
-  [data-device="iPad"] .socket,
-  [data-device="iPad"] .layer {
+  [data-form="tablet"] .socket,
+  [data-form="tablet"] .layer {
     border-radius: 1vh;
   }
 }

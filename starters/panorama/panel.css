@@ -3,8 +3,10 @@
  * waves, tilted phones — with every panel showing its own stretch, so the
  * panels read as one picture side by side. The variables are the look, and
  * --panorama-image replaces the drawn world with a picture of your own. Sizes
- * are in vw/vh, the iPad forks on [data-device] and a slot on its side on the
- * orientation query, so no device size appears.
+ * are in vw/vh; the squarer slots, iPad and iPhone Duo, fork on [data-form],
+ * a slot on its side on the orientation query, and a screen takes its
+ * proportions from --screen, which are the page's, so no device size appears
+ * here.
  */
 :root {
   --ground: #14173a;
@@ -79,7 +81,7 @@ body {
   top: calc(var(--y) * 1vh);
   box-sizing: border-box;
   height: calc(var(--h, 60) * 1vh);
-  aspect-ratio: 9 / 19.5;
+  aspect-ratio: var(--screen);
   border-radius: 9vw;
   translate: -50% -50%;
   rotate: calc(var(--r, 0) * 1deg);
@@ -232,55 +234,55 @@ body {
   font-style: normal;
 }
 
-[data-device="iPad"] .points {
+[data-form="tablet"] .points {
   top: 12vh;
   left: 15vw;
   right: 10vw;
   gap: 4vh;
 }
 
-[data-device="iPad"] .points li {
+[data-form="tablet"] .points li {
   padding-left: 6.5vw;
   font-size: 3.8vw;
 }
 
-[data-device="iPad"] .points li::before {
+[data-form="tablet"] .points li::before {
   width: 4.4vw;
   height: 4.4vw;
 }
 
-[data-device="iPad"] .phone {
-  aspect-ratio: 3 / 4;
+[data-form="tablet"] .phone {
+  aspect-ratio: var(--screen);
   border-radius: 2vw;
 }
 
-[data-device="iPad"] .screen {
+[data-form="tablet"] .screen {
   border-radius: 2vw;
 }
 
-[data-device="iPad"] [data-frame="steel"] .phone {
+[data-form="tablet"] [data-frame="steel"] .phone {
   padding: 0.8vw;
   border-radius: 2.7vw;
 }
 
-[data-device="iPad"] [data-frame="steel"] .screen {
+[data-form="tablet"] [data-frame="steel"] .screen {
   border-width: 0.35vw;
   border-radius: 1.9vw;
 }
 
-[data-device="iPad"] .screen::before {
+[data-form="tablet"] .screen::before {
   display: none;
 }
 
-[data-device="iPad"] .copy {
+[data-form="tablet"] .copy {
   padding-top: 6vh;
 }
 
-[data-device="iPad"] .copy h1 {
+[data-form="tablet"] .copy h1 {
   font-size: 6vw;
 }
 
-[data-device="iPad"] .copy p {
+[data-form="tablet"] .copy p {
   font-size: 2.6vw;
 }
 
@@ -293,7 +295,7 @@ body {
  */
 @media (orientation: landscape) {
   .phone {
-    aspect-ratio: 19.5 / 9;
+    aspect-ratio: var(--screen);
     border-radius: 9vh;
     transform: perspective(140vw) rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg));
   }
@@ -353,7 +355,7 @@ body {
   }
 
   .points,
-  [data-device="iPad"] .points {
+  [data-form="tablet"] .points {
     top: 18vh;
     bottom: 38vh;
     left: 30vw;
@@ -371,48 +373,48 @@ body {
     height: 7vh;
   }
 
-  [data-device="iPad"] .points {
+  [data-form="tablet"] .points {
     left: 32vw;
   }
 
-  [data-device="iPad"] .points li {
+  [data-form="tablet"] .points li {
     padding-left: 6.5vh;
     font-size: 3.8vh;
   }
 
-  [data-device="iPad"] .points li::before {
+  [data-form="tablet"] .points li::before {
     width: 4.4vh;
     height: 4.4vh;
   }
 
-  [data-device="iPad"] .phone {
-    aspect-ratio: 4 / 3;
+  [data-form="tablet"] .phone {
+    aspect-ratio: var(--screen);
     border-radius: 2vh;
   }
 
-  [data-device="iPad"] .screen {
+  [data-form="tablet"] .screen {
     border-radius: 2vh;
   }
 
-  [data-device="iPad"] [data-frame="steel"] .phone {
+  [data-form="tablet"] [data-frame="steel"] .phone {
     padding: 0.8vh;
     border-radius: 2.7vh;
   }
 
-  [data-device="iPad"] [data-frame="steel"] .screen {
+  [data-form="tablet"] [data-frame="steel"] .screen {
     border-width: 0.35vh;
     border-radius: 1.9vh;
   }
 
-  [data-device="iPad"] .copy {
+  [data-form="tablet"] .copy {
     padding-top: 5vh;
   }
 
-  [data-device="iPad"] .copy h1 {
+  [data-form="tablet"] .copy h1 {
     font-size: 6vh;
   }
 
-  [data-device="iPad"] .copy p {
+  [data-form="tablet"] .copy p {
     font-size: 2.6vh;
   }
 }

@@ -381,9 +381,11 @@ from the lineup's own page, never from another site open in the same browser.
 - **A panel's copy:** in `strings/<locale>.*`, never in the HTML.
 - **A region a panel enlarges or lifts:** `--x --y --w --h` in the panel's own
   `<style>`, in percent of the capture. Fit it to the app's screen on each
-  slot, forking with `[data-device="iPad"]`, and with `:lang(de)` only where a
-  language moves the screen. Look at the capture for that slot before choosing
-  numbers.
+  slot. The starters fork the squarer slots, iPad and both Duo displays,
+  with `[data-form="tablet"]`, and their `panel.js` sets it; fork one slot
+  alone with `[data-device="DuoInner"]` where its screen lays out apart, and
+  with `:lang(de)` only where a language moves the screen. Look at the
+  capture for that slot before choosing numbers.
 - **New panel:** add `panels/NN-slug.html`. Renaming or renumbering changes the
   output filenames, and the upload order follows them.
 - **Text-only panel:** ask for no capture; with nothing to miss, it ships.
