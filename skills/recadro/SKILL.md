@@ -28,7 +28,9 @@ Run it from the folder holding the set's `recadro.json`, or add
 every panel you touched, at every slot and locale. Look for a headline that
 wraps badly or is cropped, text past the frame, a fallback font, a capture
 that did not load, a layout that only works on one slot or in one language.
-Look at the first three together: they are all a search result shows. Shoot
+Look at the first three together: they are all a search result shows, or the
+first alone for a slot `landscape` names, since a search result shows one
+screenshot on its side. Shoot
 before and after a change and compare the spot. Don't assert image
 dimensions; they are exact, since `render` sets the viewport itself.
 
@@ -37,7 +39,9 @@ dimensions; they are exact, since `render` sets the viewport itself.
 - A set tells one story across its panels, one point each. The first three
   are all a search result shows, so they must read as a complete story on
   their own: a beginning, the point, a close. The panels after them may
-  expand it; the first three must never read as cut off.
+  expand it; the first three must never read as cut off. On its side, a
+  search result shows the first panel alone, so that one carries the whole
+  pitch.
 - Look in the repository for the app's own artwork — icon, illustrations,
   brand colours and type — and use it around the screen, not only inside it.
   The starters do: the panorama's phone crossing a panel edge, the callouts'

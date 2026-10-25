@@ -47,6 +47,14 @@ el("locale-only").hidden = manifest.locales.length > 1;
 el("locale-only").textContent = el("locale").value;
 if (!manifest.outUrl) radio("mode", "out").disabled = true;
 
+/**
+ * How many panels a search result shows: three upright, one on its side, as
+ * the store lays out the first screenshots of either shape.
+ */
+function inSearch(slot) {
+  return slot.width > slot.height ? 1 : 3;
+}
+
 /** A slot as a person names it: "6.9″ iPhone". */
 function slotName(slot) {
   return slot.device ? `${slot.display} ${slot.device}` : slot.id;
@@ -423,16 +431,17 @@ function fitWidth(figure, logicalW, logicalH) {
 let zoomMoved = false;
 
 /**
- * The frame width that puts three panels side by side across a phone-sized
- * window, from the strip's own gutters, as a search result shows them there.
- * Null on a wider window.
+ * The frame width that puts as many panels side by side across a phone-sized
+ * window as a search result shows there, from the strip's own gutters: three,
+ * or one on its side. Null on a wider window.
  */
-function threeAcross() {
+function searchAcross(slot) {
   const strip = el("lineup").querySelector(".strip");
   if (!strip || !matchMedia("(max-width: 600px)").matches) return null;
+  const n = inSearch(slot);
   const style = getComputedStyle(strip);
   const inner = document.documentElement.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-  return Math.floor((inner - 2 * parseFloat(style.columnGap)) / 3);
+  return Math.floor((inner - (n - 1) * parseFloat(style.columnGap)) / n);
 }
 
 /**
@@ -445,7 +454,7 @@ function resize() {
   const logicalW = slot.width / slot.scale;
   const logicalH = slot.height / slot.scale;
   const focused = el("lineup").querySelector("figure.focused");
-  if (!focused && !zoomMoved) el("zoom").value = String(threeAcross() ?? el("zoom").defaultValue);
+  if (!focused && !zoomMoved) el("zoom").value = String(searchAcross(slot) ?? el("zoom").defaultValue);
   const thumbW = focused ? fitWidth(focused, logicalW, logicalH) : Number(el("zoom").value);
   const k = thumbW / logicalW;
   const lineup = el("lineup").style;
@@ -535,10 +544,15 @@ function draw() {
     .filter(Boolean)
     .join(" · ");
 
+  // The wrap button names the first group; a slot on its side has one.
+  const first = inSearch(slot);
+  const count = first === 1 ? "one" : "three";
+  el("wrap").textContent = `wrap ${count}`;
+  el("wrap").title = `The first ${first === 1 ? "panel on its own" : "three on their own row"}, as a search result shows ${first === 1 ? "it" : "them"}`;
   const groups = pressed("wrap")
     ? [
-        { label: "First three — all a search result shows", panels: manifest.panels.slice(0, 3) },
-        { label: "The rest — only on the product page", panels: manifest.panels.slice(3) },
+        { label: `First ${count} — all a search result shows`, panels: manifest.panels.slice(0, first) },
+        { label: "The rest — only on the product page", panels: manifest.panels.slice(first) },
       ]
     : [{ label: null, panels: manifest.panels }];
 

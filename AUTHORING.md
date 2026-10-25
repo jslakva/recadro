@@ -242,9 +242,10 @@ when the installed skill is from another version.
 ### `dev`
 
 Serves the lineup at `/` — every panel side by side, the first three grouped
-on their own, as a search result shows them. Reloads the panels as their
-files change, captures and strings included. Pointer mode (`P`) copies a
-reference to a spot in a panel, for pasting to an agent.
+on their own, as a search result shows them; the first alone for a slot on its
+side, since a search result shows one landscape screenshot. Reloads the
+panels as their files change, captures and strings included. Pointer mode
+(`P`) copies a reference to a spot in a panel, for pasting to an agent.
 
 - It shows the live panels, or the contents of `out` on a toggle, where a
   panel not rendered is a hole naming the file it looked for.
@@ -260,7 +261,8 @@ reference to a spot in a panel, for pasting to an agent.
   - `show` — `live`, the panels as pages, or `out`, the renders.
   - `store` — `light` or `dark`, the ground behind the panels. Remembered.
   - `size` — A panel's width, 80 to 420. Remembered.
-  - `wrap` — `on` or `off`: the first three on a row of their own.
+  - `wrap` — `on` or `off`: the first three on a row of their own, or the
+    first for a slot on its side.
     Remembered.
 
   A remembered setting is kept by the browser for next time; the address
