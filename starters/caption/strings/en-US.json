@@ -21,5 +21,12 @@
     "headline": "End on how to start.",
     "subline": "No account, nothing to set up — whatever is true.",
     "badge": "Today"
+  },
+  "header": {
+    "headline": "A few words that *add* to the picture.",
+    "subline": "The first thing on the product page."
+  },
+  "search": {
+    "headline": "Say plainly what it *does*."
   }
 }

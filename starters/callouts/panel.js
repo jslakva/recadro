@@ -23,9 +23,28 @@ root.dataset.device = params.get("device");
 // The page's shape, for the CSS: a phone's tall one, or "tablet" for the
 // squarer one of an iPad or an iPhone Duo display, either way up; and the
 // screen's proportions as --screen, which are the page's, since a capture
-// fills its device's screen and the panel is that device's shape.
-root.dataset.form = Math.min(innerWidth, innerHeight) / Math.max(innerWidth, innerHeight) > 0.6 ? "tablet" : "phone";
+// fills its device's screen and the panel is that device's shape. A creative
+// asset in creative/ belongs to no device: its form is "creative", and its
+// screens take the shape of the first capture to load. Listened for on the
+// document, since a load event never reaches the window from an element.
+const creative = ["header", "search", "universal"].includes(params.get("device"));
+root.dataset.form = creative
+  ? "creative"
+  : Math.min(innerWidth, innerHeight) / Math.max(innerWidth, innerHeight) > 0.6 ? "tablet" : "phone";
 root.style.setProperty("--screen", String(innerWidth / innerHeight));
+let shaped = false;
+if (creative) {
+  document.addEventListener(
+    "load",
+    ({ target }) => {
+      if (target instanceof HTMLImageElement && target.naturalWidth && !shaped) {
+        shaped = true;
+        root.style.setProperty("--screen", String(target.naturalWidth / target.naturalHeight));
+      }
+    },
+    { capture: true },
+  );
+}
 
 const strings = await fetch(`../strings/${locale}.json`).then((r) => r.json());
 const entry = strings[panel];

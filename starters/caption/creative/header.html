@@ -1,0 +1,22 @@
+<!doctype html>
+<!--
+  The product page header: the top of the product page, 21:9, shot once per
+  locale. The words stay in the middle, where every device shows them; the
+  screens either side may be cropped. Its words are "header" in strings/.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../panel.css" />
+  </head>
+  <body data-ground="image" data-decor="underline">
+    <header class="copy">
+      <h1 data-string="headline"></h1>
+      <p data-string="subline"></p>
+    </header>
+    <div class="device">
+      <div class="screen"><img class="capture" data-capture="{capture:1}" alt="" /></div>
+    </div>
+    <script type="module" src="../panel.js"></script>
+  </body>
+</html>
