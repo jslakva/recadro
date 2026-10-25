@@ -3,7 +3,8 @@
  * waves, tilted phones — with every panel showing its own stretch, so the
  * panels read as one picture side by side. The variables are the look, and
  * --panorama-image replaces the drawn world with a picture of your own. Sizes
- * are in vw/vh and the iPad forks on [data-device], so no device size appears.
+ * are in vw/vh, the iPad forks on [data-device] and a slot on its side on the
+ * orientation query, so no device size appears.
  */
 :root {
   --ground: #14173a;
@@ -281,4 +282,137 @@ body {
 
 [data-device="iPad"] .copy p {
   font-size: 2.6vw;
+}
+
+/*
+ * On its side, each stretch of the world is wider than tall. The sizes above
+ * that are in vw follow the short side instead, in vh, so the type and the
+ * frames keep their size; the headline fits one line, and the phones turn
+ * with the page, as captures taken on their side are. world.html places them
+ * again for this shape.
+ */
+@media (orientation: landscape) {
+  .phone {
+    aspect-ratio: 19.5 / 9;
+    border-radius: 9vh;
+    transform: perspective(140vw) rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg));
+  }
+
+  .phone.deep {
+    box-shadow:
+      calc(0.45vh * var(--side, 1)) 0.1vh 0 color-mix(in srgb, var(--edge) 90%, white),
+      calc(0.9vh * var(--side, 1)) 0.2vh 0 var(--edge),
+      calc(1.35vh * var(--side, 1)) 0.3vh 0 color-mix(in srgb, var(--edge) 85%, black),
+      calc(1.8vh * var(--side, 1)) 0.4vh 0 color-mix(in srgb, var(--edge) 72%, black),
+      calc(2.2vh * var(--side, 1)) 0.5vh 0 color-mix(in srgb, var(--edge) 60%, black),
+      calc(3vh * var(--side, 1)) 5vh 9vh rgb(0 0 0 / 0.5);
+  }
+
+  .screen {
+    border-radius: 9vh;
+  }
+
+  [data-frame="steel"] .phone {
+    padding: 1.3vh;
+    border-radius: 10.2vh;
+  }
+
+  [data-frame="steel"] .screen {
+    border-width: 0.45vh;
+    border-radius: 8.9vh;
+  }
+
+  [data-frame="hairline"] .phone:not(.deep) {
+    box-shadow: 0 0 0 0.25vh rgb(255 255 255 / 0.45), 0 4vh 8vh rgb(0 0 0 / 0.45);
+  }
+
+  /* The island is on the screen's left edge, where it is with the phone turned. */
+  .screen::before {
+    top: 50%;
+    left: 1.5%;
+    width: 2.6%;
+    height: 28%;
+    translate: 0 -50%;
+  }
+
+  .phone[data-empty] .screen {
+    background: repeating-linear-gradient(45deg, #2b2f5e 0 2.5vh, #252852 2.5vh 5vh);
+  }
+
+  .copy {
+    padding: 7vh 6vw 0;
+  }
+
+  .copy h1 {
+    font-size: 9.5vh;
+  }
+
+  .copy p {
+    margin-top: 1.6vh;
+    font-size: 4.4vh;
+  }
+
+  .points,
+  [data-device="iPad"] .points {
+    top: 18vh;
+    bottom: 38vh;
+    left: 30vw;
+    right: 10vw;
+    gap: 3vh;
+  }
+
+  .points li {
+    padding-left: 10vh;
+    font-size: 6.6vh;
+  }
+
+  .points li::before {
+    width: 7vh;
+    height: 7vh;
+  }
+
+  [data-device="iPad"] .points {
+    left: 32vw;
+  }
+
+  [data-device="iPad"] .points li {
+    padding-left: 6.5vh;
+    font-size: 3.8vh;
+  }
+
+  [data-device="iPad"] .points li::before {
+    width: 4.4vh;
+    height: 4.4vh;
+  }
+
+  [data-device="iPad"] .phone {
+    aspect-ratio: 4 / 3;
+    border-radius: 2vh;
+  }
+
+  [data-device="iPad"] .screen {
+    border-radius: 2vh;
+  }
+
+  [data-device="iPad"] [data-frame="steel"] .phone {
+    padding: 0.8vh;
+    border-radius: 2.7vh;
+  }
+
+  [data-device="iPad"] [data-frame="steel"] .screen {
+    border-width: 0.35vh;
+    border-radius: 1.9vh;
+  }
+
+  [data-device="iPad"] .copy {
+    padding-top: 5vh;
+  }
+
+  [data-device="iPad"] .copy h1 {
+    font-size: 6vh;
+  }
+
+  [data-device="iPad"] .copy p {
+    font-size: 2.6vh;
+  }
 }

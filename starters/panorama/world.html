@@ -7,14 +7,20 @@
   should look three-dimensional; --side: -1 moves that edge to the left, for a
   phone turned the other way. A phone can lie across the edge between two
   panels, like .across, or belong to one and spill into the next, like .spill.
-  Fork a placement for iPad with [data-device="iPad"], or for a language with
-  :lang(de). data-capture is the capture's filename in the captures folder.
+  Fork a placement for iPad with [data-device="iPad"], for a slot on its side
+  with @media (orientation: landscape), where a phone is about as wide in vw
+  as its --h, or for a language with :lang(de). data-capture is the capture's filename in the captures folder.
   data-frame on .phones is how every phone is drawn: steel, hairline or none.
 -->
 <style>
   .opening { --x: 50; --y: 58.5; --h: 68; --r: -6; }
   .across { --x: 199; --y: 64; --h: 72; --r: -66; --ry: 18; --rx: 10; --side: -1; }
   .spill { --x: 372; --y: 66; --h: 84; --r: -4; --ry: -30; --rx: 10; }
+  @media (orientation: landscape) {
+    .opening { --x: 50; --y: 64; --h: 54; --r: -4; }
+    .across { --x: 199; --y: 66; --h: 58; --r: -12; --ry: 18; --rx: 10; --side: -1; }
+    .spill { --x: 368; --y: 68; --h: 62; --r: -3; --ry: -26; --rx: 10; }
+  }
 </style>
 
 <div class="wave back"></div>
