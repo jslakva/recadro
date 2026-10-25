@@ -2,7 +2,8 @@
  * The exploded starter: the phone tipped back in an orthographic view — no
  * perspective, so nothing shrinks with distance — with parts of its own screen
  * lifted straight up off it in layers. The variables are the look. Sizes are in
- * vw/vh and the iPad forks on [data-device], so no device size appears here.
+ * vw/vh, the iPad forks on [data-device] and a slot on its side on the
+ * orientation query, so no device size appears here.
  */
 :root {
   --ground: #e8ebf0;
@@ -218,4 +219,86 @@ body {
 [data-device="iPad"] .socket,
 [data-device="iPad"] .layer {
   border-radius: 1vw;
+}
+
+/*
+ * On its side, the page is wider than tall. The sizes above that are in vw
+ * follow the short side instead, in vh, so the type and the corners keep
+ * their size; the headline fits one line, and the phone turns with the page,
+ * as captures taken on their side are.
+ */
+@media (orientation: landscape) {
+  .copy {
+    padding: 7vh 6vw 0;
+  }
+
+  .copy h1 {
+    font-size: 9vh;
+  }
+
+  .copy p {
+    margin-top: 1.4vh;
+    font-size: 4.2vh;
+  }
+
+  .stage {
+    top: 61%;
+    height: 56vh;
+    aspect-ratio: 19.5 / 9;
+  }
+
+  .stage::before,
+  .stage::after {
+    border-radius: 12vh;
+  }
+
+  .screen {
+    border-radius: 9vh;
+    box-shadow: 0 0 0 0.22vh color-mix(in srgb, var(--ink) 22%, transparent);
+  }
+
+  .socket,
+  .layer {
+    border-radius: 1.8vh;
+  }
+
+  .layer {
+    box-shadow: 0 0 0 0.35vh #fff, 0 1.6vh 3.2vh color-mix(in srgb, var(--ink) 28%, transparent);
+  }
+
+  [data-empty] .screen {
+    background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--ink) 6%, var(--ground)) 0 2.5vh, color-mix(in srgb, var(--ink) 11%, var(--ground)) 2.5vh 5vh);
+  }
+
+  [data-device="iPad"] .copy {
+    padding-top: 5vh;
+  }
+
+  [data-device="iPad"] .copy h1 {
+    font-size: 5.8vh;
+  }
+
+  [data-device="iPad"] .copy p {
+    font-size: 2.5vh;
+  }
+
+  [data-device="iPad"] .stage {
+    top: 58%;
+    height: 64vh;
+    aspect-ratio: 4 / 3;
+  }
+
+  [data-device="iPad"] .screen {
+    border-radius: 2.6vh;
+  }
+
+  [data-device="iPad"] .stage::before,
+  [data-device="iPad"] .stage::after {
+    border-radius: 4vh;
+  }
+
+  [data-device="iPad"] .socket,
+  [data-device="iPad"] .layer {
+    border-radius: 1vh;
+  }
 }

@@ -9,6 +9,12 @@
       .lift-2 { --x: 0; --y: 92; --w: 100; --h: 7; --z: 2; }
       [data-device="iPad"] .lift-1 { --x: 0; --y: 16.8; --w: 100; --h: 5; }
       [data-device="iPad"] .lift-2 { --x: 32; --y: 94.5; --w: 36; --h: 5; }
+      @media (orientation: landscape) {
+        .lift-1 { --x: 30; --y: 35.5; --w: 68; --h: 12; }
+        .lift-2 { --x: 0; --y: 9; --w: 28; --h: 48; }
+        [data-device="iPad"] .lift-1 { --x: 30; --y: 35.5; --w: 68; --h: 12; }
+        [data-device="iPad"] .lift-2 { --x: 0; --y: 9; --w: 28; --h: 48; }
+      }
     </style>
   </head>
   <body>

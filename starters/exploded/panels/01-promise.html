@@ -4,8 +4,10 @@
   is a region of the capture lifted off the screen, placed below as --x --y --w
   --h in percent of the capture: x and y its top left corner, w and h its size.
   --z lifts a layer more steps and --zoom grows it more. A screen lays out
-  differently on iPad, so the regions fork on [data-device="iPad"]; fork a
-  language the same way with :lang(de), and drop a layer there with display: none.
+  differently on iPad, so the regions fork on [data-device="iPad"], and on its
+  side on the orientation query, which repeats the iPad's regions since the
+  upright iPad rule outranks a bare one; fork a language the same way with
+  :lang(de), and drop a layer there with display: none.
 -->
 <html>
   <head>
@@ -16,6 +18,12 @@
       .lift-2 { --x: 4; --y: 46; --w: 92; --h: 11; --z: 2; }
       [data-device="iPad"] .lift-1 { --x: 1.5; --y: 14; --w: 97; --h: 6.5; }
       [data-device="iPad"] .lift-2 { --x: 1.5; --y: 30; --w: 97; --h: 7.5; }
+      @media (orientation: landscape) {
+        .lift-1 { --x: 30; --y: 21.5; --w: 68; --h: 12; }
+        .lift-2 { --x: 30; --y: 49.5; --w: 68; --h: 12; }
+        [data-device="iPad"] .lift-1 { --x: 30; --y: 21.5; --w: 68; --h: 12; }
+        [data-device="iPad"] .lift-2 { --x: 30; --y: 49.5; --w: 68; --h: 12; }
+      }
     </style>
   </head>
   <body>
