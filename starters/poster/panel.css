@@ -3,8 +3,9 @@
  * each panel, set left on a flat colour that changes from panel to panel, over
  * phones drawn in a thick outline with a hard shadow; one panel fans two
  * screens. The variables are the look: the swatches are the panels' colours,
- * picked by data-swatch on each panel's <body>. Sizes are in vw/vh and the iPad
- * forks on [data-device], so no device size appears here.
+ * picked by data-swatch on each panel's <body>. Sizes are in vw/vh, the iPad
+ * forks on [data-device] and a slot on its side on the orientation query, so
+ * no device size appears here.
  */
 :root {
   --ink: #141414;
@@ -183,4 +184,81 @@ img.capture {
 [data-device="iPad"] .screen {
   border-width: 0.3vw;
   border-radius: 2.2vw;
+}
+
+/*
+ * On its side, the page is wider than tall: the headline takes the left of
+ * it, and the phones turn with the page, as captures taken on their side are,
+ * standing to the right and running off the edges. The sizes above that are
+ * in vw follow the short side instead, in vh, so the type and the outlines
+ * keep their weight. A phone's width in vw is about its --h on both slots
+ * here, so one rule places it on either.
+ */
+@media (orientation: landscape) {
+  :where(.phone),
+  :where([data-device="iPad"] .phone) {
+    --x: 46;
+    --y: 24;
+    --h: 66;
+    --r: 0;
+  }
+
+  .copy,
+  [data-device="iPad"] .copy {
+    max-width: 40vw;
+    padding: 8vh 0 0 6vw;
+  }
+
+  .copy h1 {
+    font-size: 15vh;
+  }
+
+  .copy p {
+    margin-top: 2.6vh;
+    padding: 1vh 3.6vh;
+    font-size: 4.2vh;
+  }
+
+  .phone {
+    aspect-ratio: 19.5 / 9;
+    padding: 1.5vh;
+    border-width: 0.9vh;
+    border-radius: 11vh;
+    box-shadow: 2.6vh 2.6vh 0 var(--ink);
+  }
+
+  .screen {
+    border-width: 0.5vh;
+    border-radius: 8.4vh;
+  }
+
+  .phone[data-empty] .screen {
+    background: repeating-linear-gradient(
+      45deg,
+      color-mix(in srgb, var(--ink) 6%, var(--paper)) 0 2.5vh,
+      color-mix(in srgb, var(--ink) 14%, var(--paper)) 2.5vh 5vh
+    );
+  }
+
+  [data-device="iPad"] .copy h1 {
+    font-size: 10vh;
+  }
+
+  [data-device="iPad"] .copy p {
+    padding: 0.9vh 2.2vh;
+    font-size: 2.6vh;
+  }
+
+  [data-device="iPad"] .phone {
+    aspect-ratio: 4 / 3;
+    padding: 1vh;
+    border-width: 0.55vh;
+    border-radius: 3.4vh;
+    box-shadow: 1.6vh 1.6vh 0 var(--ink);
+  }
+
+  [data-device="iPad"] .screen {
+    border-width: 0.3vh;
+    border-radius: 2.2vh;
+  }
 }
