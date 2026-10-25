@@ -17,9 +17,10 @@ import {
   devicesWithCaptures,
   loadSet,
   outTemplate,
+  slotsOf,
   type PanelSet,
 } from "./set.ts";
-import { SLOTS } from "./slots.ts";
+import type { Slot } from "./slots.ts";
 
 /** A running server, plus what the caller needs to build panel URLs. */
 export interface PanelServer {
@@ -49,7 +50,8 @@ export interface ServerOptions {
  */
 interface LineupManifest {
   panels: { slug: string; urlPath: string }[];
-  slots: typeof SLOTS;
+  /** The slots as the set renders them, landscape ones on their side. */
+  slots: Slot[];
   /** Locales `strings/` names, or the default one. */
   locales: string[];
   /** Each slot and locale's `?captures=` URL, keyed by slot then locale. */
@@ -115,7 +117,7 @@ function manifestFor(set: PanelSet, options: ServerOptions): LineupManifest {
   const outUrl = urlPathFor(current.root, current.out.base);
   return {
     panels: discoverPanels(current.dir, current.root).map(({ slug, urlPath }) => ({ slug, urlPath })),
-    slots: SLOTS,
+    slots: slotsOf(current),
     locales,
     captures: capturesUrls(current, locales),
     devicesWithCaptures: devicesWithCaptures(current, locales),

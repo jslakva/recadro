@@ -22,7 +22,7 @@ export interface Slot {
 }
 
 /**
- * Every slot recadro renders, in the order `--devices` reports them.
+ * Every slot recadro renders, upright, in the order `--devices` reports them.
  *
  * Apple derives the smaller iPhone sizes from 6.9", so they are deliberately
  * absent.
@@ -42,17 +42,28 @@ export function viewportFor(slot: Slot): { width: number; height: number } {
 }
 
 /**
- * Resolves `--devices` ids to slots, keeping `SLOTS` order rather than the
- * order they were typed in. Throws on an unknown id: a typo that silently
- * rendered nothing would look exactly like a panel with no capture.
+ * The slots as a set renders them: those `landscape` names turned on their
+ * side, the rest upright. App Store Connect takes either orientation at the
+ * same size; one slot is one orientation, since a panel set is written for
+ * one shape of page.
  */
-export function selectSlots(ids: readonly string[]): Slot[] {
+export function orientedSlots(landscape: readonly string[]): Slot[] {
+  return SLOTS.map((slot) => (landscape.includes(slot.id) ? { ...slot, width: slot.height, height: slot.width } : slot));
+}
+
+/**
+ * Resolves `--devices` ids to slots, keeping `SLOTS` order rather than the
+ * order they were typed in, each turned as `landscape` says. Throws on an
+ * unknown id: a typo that silently rendered nothing would look exactly like a
+ * panel with no capture.
+ */
+export function selectSlots(ids: readonly string[], landscape: readonly string[]): Slot[] {
   for (const id of ids) {
     if (!SLOTS.some((slot) => slot.id === id)) {
       throw new Error(`unknown device "${id}". Known: ${SLOTS.map((s) => s.id).join(", ")}`);
     }
   }
-  return SLOTS.filter((slot) => ids.includes(slot.id));
+  return orientedSlots(landscape).filter((slot) => ids.includes(slot.id));
 }
 
 /**

@@ -51,6 +51,15 @@ recadro reads `recadro.json`. It looks in the folder a command runs in;
   the tree fastlane's `deliver` reads, which picks the slot from the pixel
   size. `"renders/{locale}/{device}"` writes `renders/en-US/iPhone/01-hero.png`.
 
+- `landscape` — The slots rendered landscape, by id: `["iPad"]`,
+  `["iPhone", "iPad"]`. Default: none; every slot is upright. `init` writes
+  it for the slots whose captures are wider than tall. The panels are then
+  shot on their side, at the slot's pixels turned (table below), and the
+  lineup shows them so; it has no switch for it. Change it here, and fit the
+  panels to the new shape: a set written upright does not lay out on its
+  side by itself. A landscape panel may hold an upright capture, and the
+  other way round.
+
 Every key is optional. Paths are relative to the file's folder, not the set.
 Any other key or placeholder is an error. Command-line flags win over the
 file.
@@ -90,8 +99,13 @@ this slot and locale; the page appends the filename it wants — the slug plus
 | `iPhone` | 6.9″                      | 1320 × 2868      | 440 × 956         | 3     |
 | `iPad`   | 13″                       | 2048 × 2732      | 1024 × 1366       | 2     |
 
+A slot `landscape` names is the same with width and height swapped: `iPhone`
+at 2868 × 1320, `iPad` at 2732 × 2048.
+
 The numbers are for reading references and choosing hairlines; they belong in
-no panel. 
+no panel. A panel that serves both shapes forks on
+`@media (orientation: landscape)`; `?device=` says the slot, not which way up
+it is.
 
 For how a page reads the params and loads its capture and strings, see any
 starter's `panel.js`: `starters/<name>/panel.js` in the installed package, or on
@@ -105,7 +119,8 @@ the smallest set that works, four files.
   `render` cannot tell that a capture asked for elsewhere is missing.
 - **Don't write device dimensions into CSS or JS.** Size in `vw`, `vh` and
   `%`. Use `?device=` to fork a layout — set it as an attribute and select on
-  it — never for pixel arithmetic.
+  it — never for pixel arithmetic, and `@media (orientation: landscape)` for
+  a slot on its side.
 - **Don't name strings files anything but locales.** Every entry in `strings/`
   named like a locale is rendered. Shared strings go elsewhere, such as
   `strings-common.json` beside the folder.
@@ -189,9 +204,10 @@ recadro skill  [--config <path>]
 
 Makes a set from a starter: creates the panels from the chosen starter's
 design, prefills them with the captures already taken, writes `recadro.json`
-where the command runs, or where `--config` says — naming the set, and
-`captures` and `out` when the flags give them — and offers to install the
-skill if absent.
+where the command runs, or where `--config` says — naming the set,
+`captures` and `out` when the flags give them, and `landscape` for the slots
+whose captures are wider than tall — and offers to install the skill if
+absent.
 
 - `<dir>` — The new set's folder.
 - `--starter <name>` — The starter to copy. Default: asked at a terminal,
@@ -363,6 +379,9 @@ from the lineup's own page, never from another site open in the same browser.
 - **New panel:** add `panels/NN-slug.html`. Renaming or renumbering changes the
   output filenames, and the upload order follows them.
 - **Text-only panel:** ask for no capture; with nothing to miss, it ships.
+- **Landscape, or back upright:** add or remove the slot in `landscape` in
+  `recadro.json`, then fit the panels to the page's new shape, forking on
+  `@media (orientation: landscape)` where the set keeps both.
 - **New locale:** add its strings file. **New device:** its captures in a
   folder named for the slot, and the other slot's in one too. **Captures
   move:** change `captures` in `recadro.json`. **The set moves:** change

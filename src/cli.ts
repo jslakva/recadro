@@ -345,6 +345,9 @@ async function main(): Promise<void> {
     } else {
       console.log("         filled    nothing: no captures taken yet");
     }
+    if (result.landscape.length) {
+      console.log(`         landscape ${result.landscape.join(", ")}  (shaped by the captures; "landscape" in ${shown(config)})`);
+    }
     if (result.unfilled.length) {
       const left = result.unfilled.map((n) => `{capture:${n}}`).join(", ");
       console.log(`         left      ${left} in the set, for captures still to take`);
@@ -406,7 +409,7 @@ async function main(): Promise<void> {
     throw new Error(`--incomplete shoots panels that must not ship; pass an --out other than ${shown(set.out.base)}`);
   }
   const { ids, from: devicesFrom } = slotsFor(set, locales, values.devices);
-  const slots = selectSlots(ids);
+  const slots = selectSlots(ids, set.landscape);
 
   // Before the server starts and anything is written, so a missing browser
   // stops a render that has touched nothing.
@@ -416,7 +419,8 @@ async function main(): Promise<void> {
   const server = await startServer(set, { port });
   try {
     console.log(`recadro  ${counted(server.panels.length, "panel")} in ${shown(set.dir)}`);
-    console.log(`         devices   ${ids.join(", ")}  (${devicesFrom})`);
+    const turned = slots.map((slot) => (set.landscape.includes(slot.id) ? `${slot.id} landscape` : slot.id));
+    console.log(`         devices   ${turned.join(", ")}  (${devicesFrom})`);
     console.log(`         locales   ${locales.join(", ")}  (${localesFrom})`);
     console.log(`         out       ${shown(out.base)}/${outTemplate(out)}\n`);
 

@@ -9,7 +9,7 @@ import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { searchForWorkspaceRoot } from "vite";
 import { urlPathFor } from "./panels.ts";
 import { imageSize } from "./shape.ts";
-import { SLOTS, slotForShape } from "./slots.ts";
+import { orientedSlots, SLOTS, slotForShape, type Slot } from "./slots.ts";
 
 /**
  * An entry in `strings/` that names a locale — `en-US.json`, `de-DE.md`, `ja`,
@@ -28,14 +28,27 @@ export const DEFAULT_LOCALE = "en-US";
 export const CONFIG_FILE = "recadro.json";
 
 /**
- * Every key `recadro.json` takes. All are paths relative to the file's folder.
+ * The path keys `recadro.json` takes, relative to the file's folder.
  * `set` is the folder holding `panels/`, the file's own folder when absent.
  * `captures` is a folder, read by the names below it; absent, it is `captures`
  * in the set. `out` is a pattern: `{locale}` is a folder per locale, and
  * `{device}`, when present, a folder per slot inside or outside it; without it
  * the slot goes in the filename; absent, `out/{locale}` in the set.
  */
-const KEYS = ["set", "captures", "out"] as const;
+const PATH_KEYS = ["set", "captures", "out"] as const;
+
+/**
+ * Every key `recadro.json` takes: the paths, and `landscape`, the slots
+ * rendered on their side, by id. Absent, every slot is upright. `init` writes
+ * it from the captures' shape; nothing reads it from them afterwards, since a
+ * landscape panel may hold an upright screen and the other way round.
+ */
+const KEYS = [...PATH_KEYS, "landscape"] as const;
+
+/** What `recadro.json` says, as written. */
+interface Config extends Partial<Record<(typeof PATH_KEYS)[number], string>> {
+  landscape?: string[];
+}
 
 /** What a set gets for `captures` and `out` when the file says nothing, relative to the set. */
 const DEFAULTS = { captures: "captures", out: "out/{locale}" };
@@ -70,6 +83,8 @@ export interface PanelSet {
   out: OutLayout;
   /** Locales named in `strings/`, sorted; empty when it names none. */
   locales: string[];
+  /** The slots rendered landscape, by id; empty when every slot is upright. */
+  landscape: string[];
 }
 
 /**
@@ -128,7 +143,7 @@ export function configFile(cwd: string, flag?: string): string {
  * that was quietly ignored would look exactly like captures that do not exist
  * yet. Values come back as written, relative to the file's folder.
  */
-function readConfig(file: string): Partial<Record<(typeof KEYS)[number], string>> {
+function readConfig(file: string): Config {
   let parsed: unknown;
   try {
     parsed = JSON.parse(readFileSync(file, "utf8"));
@@ -139,13 +154,17 @@ function readConfig(file: string): Partial<Record<(typeof KEYS)[number], string>
     throw new Error(`${file}: expected an object`);
   }
 
-  const config: Partial<Record<(typeof KEYS)[number], string>> = {};
+  const config: Config = {};
   for (const [key, value] of Object.entries(parsed)) {
     if (!(KEYS as readonly string[]).includes(key)) {
       throw new Error(`${file}: unknown key "${key}"; ${CONFIG_FILE} takes ${KEYS.join(", ")}`);
     }
+    if (key === "landscape") {
+      config.landscape = readLandscape(file, value);
+      continue;
+    }
     if (typeof value !== "string" || !value.trim()) throw new Error(`${file}: "${key}" must be a path`);
-    config[key as (typeof KEYS)[number]] = value.replace(/\/+$/, "") || ".";
+    config[key as (typeof PATH_KEYS)[number]] = value.replace(/\/+$/, "") || ".";
   }
 
   if (config.captures?.includes("{")) {
@@ -162,6 +181,19 @@ function readConfig(file: string): Partial<Record<(typeof KEYS)[number], string>
   // {locale} holds one folder per locale, as the default does.
   if (config.out && !config.out.includes("{locale}")) config.out = `${config.out}/{locale}`;
   return config;
+}
+
+/** `landscape` as written: a list of slot ids, each known, each once. */
+function readLandscape(file: string, value: unknown): string[] {
+  const ids = SLOTS.map((slot) => slot.id);
+  const example = `"landscape": [${ids.map((id) => `"${id}"`).join(", ")}]`;
+  if (!Array.isArray(value) || value.some((id) => typeof id !== "string")) {
+    throw new Error(`${file}: "landscape" lists the slots rendered landscape, as in ${example}`);
+  }
+  for (const id of value as string[]) {
+    if (!ids.includes(id)) throw new Error(`${file}: "landscape" names "${id}"; the slots are ${ids.join(", ")}`);
+  }
+  return ids.filter((id) => value.includes(id));
 }
 
 /**
@@ -220,7 +252,7 @@ export function loadSet(file: string): PanelSet {
   }
 
   const out = config.out ? outLayout(base, config.out, file) : outLayout(dir, DEFAULTS.out, file);
-  return { config: file, dir, root, captures, out, locales: localesIn(dir) };
+  return { config: file, dir, root, captures, out, locales: localesIn(dir), landscape: config.landscape ?? [] };
 }
 
 /** The captures directly in `dir`, in filename order, numbers compared as numbers. */
@@ -241,6 +273,25 @@ export function shapesIn(dir: string): Map<string, number> {
     counts.set(id, (counts.get(id) ?? 0) + 1);
   }
   return new Map(SLOTS.filter((slot) => counts.has(slot.id)).map((slot) => [slot.id, counts.get(slot.id)!]));
+}
+
+/** The slots as `set` renders them, each upright or on its side as its `recadro.json` says. */
+export function slotsOf(set: PanelSet): Slot[] {
+  return orientedSlots(set.landscape);
+}
+
+/**
+ * Whether the captures in `dir` are landscape: most of them wider than tall.
+ * False for a folder with none.
+ */
+export function landscapeIn(dir: string): boolean {
+  let wide = 0;
+  let tall = 0;
+  for (const name of capturesIn(dir)) {
+    const size = imageSize(join(dir, name));
+    if (size) size.width > size.height ? wide++ : tall++;
+  }
+  return wide > tall;
 }
 
 /**
@@ -302,7 +353,8 @@ export function devicesWithCaptures(set: PanelSet, locales: readonly string[]): 
 
 /**
  * How the captures are laid out, for the line a command prints: each slot
- * with captures and whether its folder is named or told by shape — and, in a
+ * with captures, whether its folder is named or told by shape, whether they
+ * are landscape — and, in a
  * folder told by shape, how many captures are shaped for another slot, since
  * those are never found — and whether they are per locale. "none yet" for a
  * set without any, naming the folders that were passed over because they are
@@ -318,13 +370,14 @@ export function describeCaptures(set: PanelSet, locales: readonly string[]): str
     if (!dirs.length) continue;
     const parts = dirs.map((dir) => relative(base, dir).split(/[\\/]/));
     if (parts.some((p) => locales.some((locale) => p.includes(locale)))) perLocale = true;
+    const turned = dirs.some(landscapeIn) ? " landscape" : "";
     if (parts.some((p) => p.includes(slot.id))) {
-      found.push(`${slot.id}/`);
+      found.push(`${slot.id}/${turned}`);
       continue;
     }
     const odd = dirs.flatMap((dir) => [...shapesIn(dir)].filter(([id]) => id !== slot.id));
     const others = odd.length ? `; ${odd.map(([id, n]) => `${n} shaped for ${id}`).join(", ")}, never found` : "";
-    found.push(`${slot.id} by shape${others}`);
+    found.push(`${slot.id} by shape${turned && `,${turned}`}${others}`);
   }
   if (!found.length) {
     const known = new Set<string>([...SLOTS.map((slot) => slot.id), ...locales]);
