@@ -20,6 +20,7 @@ import { startServer } from "./server.ts";
 import {
   capturesUrl,
   CONFIG_FILE,
+  creativeCapturesUrl,
   configFile,
   DEFAULT_LOCALE,
   describeCaptures,
@@ -29,7 +30,8 @@ import {
   outTemplate,
   type PanelSet,
 } from "./set.ts";
-import { SLOTS, selectSlots } from "./slots.ts";
+import { discoverCreative } from "./panels.ts";
+import { CREATIVE, SLOTS, selectSlots } from "./slots.ts";
 import { DEFAULT_TIMEOUT_S, reply, wait } from "./wait.ts";
 
 const INIT_LINE = `recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--config <path>] [--skill | --no-skill]`;
@@ -47,7 +49,7 @@ const USAGE = `recadro — App Store screenshots as code
 
   ${INIT_LINE}
   recadro dev    [--config <path>] [--port <n>] [--live]
-  recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
+  recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad,creative] [--locales en-US] [--incomplete]
   recadro wait   [--config <path>] [--once [--timeout <s>]]
   recadro reply  <id> "<what you changed>" [--config <path>]
   recadro skill  [--config <path>]
@@ -66,7 +68,8 @@ wait
 
 render
   --out         where renders go       (default: ${CONFIG_FILE} "out", else <set>/out; <locale>/<device>-<slug>.png below it)
-  --devices     slots to render        (default: those with captures, else all)
+  --devices     slots to render        (default: those with captures, else all; and creative/ when there is one)
+                ${SLOTS.map((s) => s.id).join(", ")}, or ${CREATIVE} for the creative assets
   --locales     locales to render      (default: the names in <set>/strings/, else ${DEFAULT_LOCALE})
   --incomplete  shoot panels missing a capture too, to look at them;
                 needs an --out other than the set's own
@@ -111,10 +114,11 @@ function localesFor(set: PanelSet, flag: string | undefined): { locales: string[
 /**
  * The slots to render, and why. Without `--devices`, a slot is rendered when it
  * has captures for one of the locales — so an iPhone-only app renders no iPad
- * panels — and every slot is rendered when none has any yet.
+ * panels — and every slot is rendered when none has any yet. `creative` in the
+ * flag names the creative assets, not a slot, and is left out here.
  */
 function slotsFor(set: PanelSet, locales: string[], flag: string | undefined): { ids: string[]; from: string } {
-  if (flag) return { ids: list(flag), from: "--devices" };
+  if (flag) return { ids: list(flag).filter((id) => id !== CREATIVE), from: "--devices" };
   const found = devicesWithCaptures(set, locales);
   if (!found.length) return { ids: SLOTS.map((s) => s.id), from: "no captures yet" };
   const missing = SLOTS.filter((s) => !found.includes(s.id)).map((s) => s.id);
@@ -390,6 +394,8 @@ async function main(): Promise<void> {
     console.log(`recadro  ${counted(panels.length, "panel")} in ${shown(set.dir)}`);
     console.log(`         locales   ${locales.join(", ")}  (${localesFrom})`);
     console.log(`         captures  ${shown(set.captures)}/  (${describeCaptures(set, locales)})`);
+    const creative = discoverCreative(set.dir, set.root);
+    if (creative.length) console.log(`         creative  ${creative.map((c) => c.panel.slug).join(", ")}  (${CREATIVE}/)`);
     console.log(`         lineup    ${origin}/`);
     if (values.live) {
       const flag = configFlag(set);
@@ -410,6 +416,8 @@ async function main(): Promise<void> {
   }
   const { ids, from: devicesFrom } = slotsFor(set, locales, values.devices);
   const slots = selectSlots(ids, set.landscape);
+  // The creative assets go with every render, unless --devices names slots and not them.
+  const creative = !values.devices || list(values.devices).includes(CREATIVE) ? discoverCreative(set.dir, set.root) : [];
 
   // Before the server starts and anything is written, so a missing browser
   // stops a render that has touched nothing.
@@ -420,7 +428,8 @@ async function main(): Promise<void> {
   try {
     console.log(`recadro  ${counted(server.panels.length, "panel")} in ${shown(set.dir)}`);
     const turned = slots.map((slot) => (set.landscape.includes(slot.id) ? `${slot.id} landscape` : slot.id));
-    console.log(`         devices   ${turned.join(", ")}  (${devicesFrom})`);
+    if (slots.length) console.log(`         devices   ${turned.join(", ")}  (${devicesFrom})`);
+    if (creative.length) console.log(`         creative  ${creative.map((c) => c.panel.slug).join(", ")}  (${CREATIVE}/)`);
     console.log(`         locales   ${locales.join(", ")}  (${localesFrom})`);
     console.log(`         out       ${shown(out.base)}/${outTemplate(out)}\n`);
 
@@ -431,6 +440,8 @@ async function main(): Promise<void> {
       slots,
       locales,
       capturesUrl: (device, locale) => capturesUrl(set, device, locale),
+      creative,
+      creativeCapturesUrl: (locale) => creativeCapturesUrl(set, locale),
       out,
       incomplete: values.incomplete,
     });

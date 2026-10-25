@@ -13,7 +13,7 @@ import type { Browser, Page } from "playwright";
 import sharp from "sharp";
 import type { Panel } from "./panels.ts";
 import { outFile, type OutLayout } from "./set.ts";
-import { viewportFor, type Slot } from "./slots.ts";
+import { CREATIVE, viewportFor, type Slot } from "./slots.ts";
 
 /** Everything one render pass needs. */
 export interface RenderOptions {
@@ -31,6 +31,10 @@ export interface RenderOptions {
   capturesUrl: (device: string, locale: string) => string;
   /** Where renders go: the folder and the layout below it, `<out>/<locale>/<device>-<slug>.png` by default. */
   out: OutLayout;
+  /** The creative assets' pages, each with the placement it is shot at; none to shoot when absent. */
+  creative?: { panel: Panel; placement: Slot }[];
+  /** The `?captures=` a creative asset's page gets for one locale. */
+  creativeCapturesUrl?: (locale: string) => string;
   /**
    * Shoot incomplete panels too, instead of skipping them. For looking, never
    * for shipping: the caller keeps this away from the set's own output
@@ -131,12 +135,12 @@ async function settle(page: Page): Promise<void> {
  * panel deleted from the set cannot survive as a stale PNG that an upload
  * would still find and ship.
  */
-function clear(out: OutLayout, slot: Slot, locale: string): string {
-  const dir = join(out.base, dirname(outFile(out, slot.id, locale, "x")));
+function clear(out: OutLayout, device: string, locale: string): string {
+  const dir = join(out.base, dirname(outFile(out, device, locale, "x")));
   if (out.layout.includes("{device}")) {
     rmSync(dir, { recursive: true, force: true });
   } else {
-    const prefix = `${slot.id}-`;
+    const prefix = `${device}-`;
     for (const name of safeList(dir)) {
       if (name.startsWith(prefix) && name.endsWith(".png")) rmSync(join(dir, name), { force: true });
     }
@@ -154,17 +158,29 @@ function safeList(dir: string): string[] {
   }
 }
 
+/** Shoots the page open in `page` to `file` under `out.base`: flattened onto white, stamped sRGB, no alpha. */
+async function shoot(page: Page, out: OutLayout, file: string): Promise<void> {
+  const shot = await page.screenshot({ type: "png" });
+  await sharp(shot)
+    .flatten({ background: "#ffffff" })
+    .toColorspace("srgb")
+    .withIccProfile("srgb")
+    .png({ compressionLevel: 9 })
+    .toFile(join(out.base, file));
+}
+
 /**
- * Renders every slot x locale x panel whose capture exists, or every panel at
- * all under `incomplete`.
+ * Renders every slot x locale x panel whose capture exists, then every
+ * creative asset per locale, or every one at all under `incomplete`.
  */
 export async function render(options: RenderOptions): Promise<RenderResult> {
   const { browser, origin, panels, slots, locales, capturesUrl, out, incomplete = false } = options;
+  const { creative = [], creativeCapturesUrl } = options;
   const result: RenderResult = { written: [], incomplete: [] };
 
   for (const slot of slots) {
     for (const locale of locales) {
-      clear(out, slot, locale);
+      clear(out, slot.id, locale);
 
       const context = await browser.newContext({
         viewport: viewportFor(slot),
@@ -194,16 +210,36 @@ export async function render(options: RenderOptions): Promise<RenderResult> {
           if (!incomplete) continue;
         }
 
-        const shot = await page.screenshot({ type: "png" });
-        await sharp(shot)
-          .flatten({ background: "#ffffff" })
-          .toColorspace("srgb")
-          .withIccProfile("srgb")
-          .png({ compressionLevel: 9 })
-          .toFile(join(out.base, file));
+        await shoot(page, out, file);
         result.written.push(file);
       }
 
+      await context.close();
+    }
+  }
+
+  // The creative assets: one image per placement and locale, each page at its
+  // own size, named like a slot's panels under the one name they share.
+  for (const locale of creative.length && creativeCapturesUrl ? locales : []) {
+    clear(out, CREATIVE, locale);
+    const capturesPath = creativeCapturesUrl!(locale);
+    for (const { panel, placement } of creative) {
+      const context = await browser.newContext({ viewport: viewportFor(placement), deviceScaleFactor: placement.scale, locale });
+      const page = await context.newPage();
+      const requests = new CaptureRequests(page);
+      const query =
+        `?panel=${panel.slug}&device=${placement.id}&locale=${locale}&captures=${encodeURIComponent(capturesPath)}`;
+      requests.watch(decoded(capturesPath));
+      await page.goto(`${origin}${panel.urlPath}${query}`, { waitUntil: "networkidle" });
+      await settle(page);
+
+      const file = outFile(out, CREATIVE, locale, panel.slug);
+      const missing = requests.report();
+      if (missing.length) result.incomplete.push({ where: file.replace(/\.png$/, ""), missing });
+      if (!missing.length || incomplete) {
+        await shoot(page, out, file);
+        result.written.push(file);
+      }
       await context.close();
     }
   }

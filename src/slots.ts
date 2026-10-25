@@ -42,6 +42,21 @@ export const SLOTS: readonly Slot[] = [
 ];
 
 /**
+ * The creative assets' placements, as slots: the product page header, the
+ * search result, and the one image that can fill both. Each is one image per
+ * locale rather than one per panel, from the page in `creative/` named for it,
+ * at the largest size App Store Connect takes for it.
+ */
+export const PLACEMENTS: readonly Slot[] = [
+  { id: "header", device: "Product page header", display: "21:9", width: 3840, height: 1646, scale: 2 },
+  { id: "search", device: "Search result", display: "3:2", width: 3840, height: 2560, scale: 2 },
+  { id: "universal", device: "Header and search result", display: "16:9", width: 5244, height: 2950, scale: 2 },
+];
+
+/** The name `--devices` and the output use for the creative assets, as a slot's id names its panels. */
+export const CREATIVE = "creative";
+
+/**
  * The CSS-pixel viewport that renders `slot` at its delivered size. Playwright
  * sets this together with `deviceScaleFactor`, so the output dimensions come
  * out by construction rather than by assertion.

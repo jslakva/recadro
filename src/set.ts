@@ -38,16 +38,25 @@ export const CONFIG_FILE = "recadro.json";
 const PATH_KEYS = ["set", "captures", "out"] as const;
 
 /**
- * Every key `recadro.json` takes: the paths, and `landscape`, the slots
- * rendered on their side, by id. Absent, every slot is upright. `init` writes
- * it from the captures' shape; nothing reads it from them afterwards, since a
- * landscape panel may hold an upright screen and the other way round.
+ * Every key `recadro.json` takes: the paths; `landscape`, the slots rendered
+ * on their side, by id; and `app`, how the app appears on the store, for the
+ * lineup's store view. Absent, every slot is upright. `init` writes
+ * `landscape` from the captures' shape; nothing reads it from them
+ * afterwards, since a landscape panel may hold an upright screen and the
+ * other way round.
  */
-const KEYS = [...PATH_KEYS, "landscape"] as const;
+const KEYS = [...PATH_KEYS, "landscape", "app"] as const;
+
+/** The keys `app` takes: the name and subtitle as the store shows them, and the icon, a path. */
+const APP_KEYS = ["name", "subtitle", "icon"] as const;
+
+/** How the app appears on the store, as `app` in `recadro.json` says; each part optional. */
+export type AppInfo = Partial<Record<(typeof APP_KEYS)[number], string>>;
 
 /** What `recadro.json` says, as written. */
 interface Config extends Partial<Record<(typeof PATH_KEYS)[number], string>> {
   landscape?: string[];
+  app?: AppInfo;
 }
 
 /** What a set gets for `captures` and `out` when the file says nothing, relative to the set. */
@@ -85,6 +94,8 @@ export interface PanelSet {
   locales: string[];
   /** The slots rendered landscape, by id; empty when every slot is upright. */
   landscape: string[];
+  /** How the app appears on the store, the icon an absolute path; empty when `app` is absent. */
+  app: AppInfo;
 }
 
 /**
@@ -163,6 +174,10 @@ function readConfig(file: string): Config {
       config.landscape = readLandscape(file, value);
       continue;
     }
+    if (key === "app") {
+      config.app = readApp(file, value);
+      continue;
+    }
     if (typeof value !== "string" || !value.trim()) throw new Error(`${file}: "${key}" must be a path`);
     config[key as (typeof PATH_KEYS)[number]] = value.replace(/\/+$/, "") || ".";
   }
@@ -194,6 +209,22 @@ function readLandscape(file: string, value: unknown): string[] {
     if (!ids.includes(id)) throw new Error(`${file}: "landscape" names "${id}"; the slots are ${ids.join(", ")}`);
   }
   return ids.filter((id) => value.includes(id));
+}
+
+/** `app` as written: an object of strings, with no other keys. */
+function readApp(file: string, value: unknown): AppInfo {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`${file}: "app" is an object: { "name": "…", "subtitle": "…", "icon": "<path>" }`);
+  }
+  const app: AppInfo = {};
+  for (const [key, text] of Object.entries(value)) {
+    if (!(APP_KEYS as readonly string[]).includes(key)) {
+      throw new Error(`${file}: "app" has "${key}"; it takes ${APP_KEYS.join(", ")}`);
+    }
+    if (typeof text !== "string" || !text.trim()) throw new Error(`${file}: "app.${key}" must be text`);
+    app[key as (typeof APP_KEYS)[number]] = text;
+  }
+  return app;
 }
 
 /**
@@ -252,7 +283,15 @@ export function loadSet(file: string): PanelSet {
   }
 
   const out = config.out ? outLayout(base, config.out, file) : outLayout(dir, DEFAULTS.out, file);
-  return { config: file, dir, root, captures, out, locales: localesIn(dir), landscape: config.landscape ?? [] };
+  const app = { ...config.app };
+  if (app.icon) {
+    app.icon = resolve(base, app.icon);
+    const iconFromRoot = relative(root, app.icon);
+    if (iconFromRoot.startsWith("..") || isAbsolute(iconFromRoot)) {
+      throw new Error(`${file}: "app.icon" resolves to ${app.icon}, outside the server root ${root}; the lineup cannot load it`);
+    }
+  }
+  return { config: file, dir, root, captures, out, locales: localesIn(dir), landscape: config.landscape ?? [], app };
 }
 
 /** The captures directly in `dir`, in filename order, numbers compared as numbers. */
@@ -331,6 +370,16 @@ export function capturesDir(set: PanelSet, device: string, locale: string): stri
  */
 export function capturesUrl(set: PanelSet, device: string, locale: string): string {
   return `${urlPathFor(set.root, capturesDir(set, device, locale))}/`;
+}
+
+/**
+ * The `?captures=` URL a creative asset's page gets for a locale: the first
+ * slot's with captures for it, which is the iPhone's when it has any, since a
+ * header or search image shows screens but belongs to no device.
+ */
+export function creativeCapturesUrl(set: PanelSet, locale: string): string {
+  const [first] = devicesWithCaptures(set, [locale]);
+  return capturesUrl(set, first ?? SLOTS[0].id, locale);
 }
 
 /** Every slot and locale's `?captures=` URL, keyed by slot then locale: what the lineup fills its frames from. */

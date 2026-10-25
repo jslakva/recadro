@@ -8,11 +8,12 @@ import type { ServerResponse } from "node:http";
 import { join, sep } from "node:path";
 import { createServer, loadConfigFromFile, mergeConfig, type InlineConfig, type Plugin, type ViteDevServer } from "vite";
 import { announceLive, NoteChannel } from "./notes.ts";
-import { discoverPanels, urlPathFor, type Panel } from "./panels.ts";
+import { discoverCreative, discoverPanels, urlPathFor, type Panel } from "./panels.ts";
 import { PKG } from "./pkg.ts";
 import {
   CAPTURE_FILE,
   capturesUrls,
+  creativeCapturesUrl,
   DEFAULT_LOCALE,
   devicesWithCaptures,
   loadSet,
@@ -66,6 +67,12 @@ interface LineupManifest {
   outUrl: string | null;
   /** Whether the notes channel is served, so the lineup offers a note field beside the clipboard. */
   live: boolean;
+  /** The creative assets' pages, each with the placement it is shot at. */
+  creative: { slug: string; urlPath: string; placement: Slot }[];
+  /** Each locale's `?captures=` URL for the creative assets. */
+  creativeCaptures: Record<string, string>;
+  /** How the app appears on the store, the icon as a root-absolute URL, for the store view. */
+  app: { name?: string; subtitle?: string; icon?: string };
 }
 
 /**
@@ -123,6 +130,13 @@ function manifestFor(set: PanelSet, options: ServerOptions): LineupManifest {
     devicesWithCaptures: devicesWithCaptures(current, locales),
     outUrl: outUrl.startsWith("/..") ? null : `${outUrl}/${outTemplate(current.out)}`,
     live: Boolean(options.live),
+    creative: discoverCreative(current.dir, current.root).map(({ panel, placement }) => ({
+      slug: panel.slug,
+      urlPath: panel.urlPath,
+      placement,
+    })),
+    creativeCaptures: Object.fromEntries(locales.map((locale) => [locale, creativeCapturesUrl(current, locale)])),
+    app: { ...current.app, icon: current.app.icon && urlPathFor(current.root, current.app.icon) },
   };
 }
 

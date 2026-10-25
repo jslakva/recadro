@@ -18,9 +18,11 @@ recadro.json              where recadro runs: "set", and where the inputs and ou
 <captures>/[<locale>/][<device>/]<file>.png   inputs: raw simulator captures; the folders are read by name, both optional
 <set>/
   panels/NN-slug.html     the panels, in filename order; the slug is the name without .html
+  creative/<placement>.html   the creative assets, optional: header.html, search.html, universal.html
   strings/<locale>.*      one entry per locale; the names are the locales
   panel.css, panel.js     what the panels share — the look, the loading — as any page would
 <out>/<locale>/<device>-<slug>.png            outputs: the renders, flat per locale as fastlane's deliver reads them
+<out>/<locale>/creative-<placement>.png       outputs: the creative assets, one per placement and locale
 ```
 
 recadro reads `recadro.json`. It looks in the folder a command runs in;
@@ -59,6 +61,11 @@ recadro reads `recadro.json`. It looks in the folder a command runs in;
   panels to the new shape: a set written upright does not lay out on its
   side by itself. A landscape panel may hold an upright capture, and the
   other way round.
+
+- `app` — How the app appears on the store, for the lineup's store view:
+  `{ "name": "…", "subtitle": "…", "icon": "<path>" }`, each part optional.
+  The icon is an image inside the repository, square, as the store rounds
+  it. Default: placeholders in the store view. Nothing is rendered from it.
 
 Every key is optional. Paths are relative to the file's folder, not the set.
 Any other key or placeholder is an error. Command-line flags win over the
@@ -115,6 +122,42 @@ For how a page reads the params and loads its capture and strings, see any
 starter's `panel.js`: `starters/<name>/panel.js` in the installed package, or on
 [GitHub](https://github.com/jslakva/recadro/tree/main/starters). `blank` is
 the smallest set that works, four files.
+
+## Creative assets
+
+App Store Connect takes, besides the screenshots, an image for the top of
+the product page and one that shows in place of the screenshots in a search
+result, on iOS 27 and iPadOS 27 and later. A set makes them as pages in
+`creative/`, one per placement, each named for it, shot once per locale and
+for no device:
+
+| page             | placement                  | delivered pixels | viewport (CSS px) | scale |
+|------------------|----------------------------|------------------|-------------------|-------|
+| `header.html`    | product page header, 21:9  | 3840 × 1646      | 1920 × 823        | 2     |
+| `search.html`    | search result, 3:2         | 3840 × 2560      | 1920 × 1280       | 2     |
+| `universal.html` | either or both, 16:9       | 5244 × 2950      | 2622 × 1475       | 2     |
+
+- A creative page is a panel in every other way: the same four params, with
+  `device` the placement's name and `captures` the folder of the first slot
+  with captures, the iPhone's when it has any; the same Don'ts; skipped when
+  a capture is missing.
+- The universal image fills both places from one file; give it, or the
+  header and search pair, as App Store Connect is to use them. Each page
+  present is rendered.
+- Apple crops both images on some devices and orientations and publishes no
+  numbers, only templates. Keep what matters in the middle: the templates'
+  safe areas are about the middle 43% × 40% of the header, 56% × 40% of the
+  search image, and 27% × 33% of the universal one, that last raised a little
+  above the centre. On an iPhone held upright the header loses about 8% of its
+  width at each side, and the back and share buttons sit over its top
+  corners.
+- Their review is App Review's, apart from the app's: no prices or offers,
+  no web addresses, no ©, no awards or Apple badges the app was not given, no
+  other platform or store, and nothing above a 4+ rating whatever the app's.
+  Text in them is localized like the panels', a short phrase that adds to the
+  picture rather than describing it.
+- They upload through App Store Connect or its API, not fastlane's
+  `deliver`, and are approved before an app version can use them.
 
 ## Don't
 
@@ -197,7 +240,7 @@ the app does and nothing about what it costs.
 ```
 recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--config <path>] [--skill | --no-skill]
 recadro dev    [--config <path>] [--port <n>] [--live]
-recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad] [--locales en-US] [--incomplete]
+recadro render [--config <path>] [--out <dir>] [--devices iPhone,iPad,creative] [--locales en-US] [--incomplete]
 recadro wait   [--config <path>] [--once [--timeout <s>]]
 recadro reply  <id> "<what you changed>" [--config <path>]
 recadro skill  [--config <path>]
@@ -299,7 +342,8 @@ that uploads next stops. The rest are written, each run replacing only its own
 slots and locales.
 
 - `--devices <slot>[,<slot>]` — Render only the named slots: `iPhone`,
-  `iPad`, `DuoOuter`, `DuoInner`. A named slot is rendered whether or not it has captures. Default:
+  `iPad`, `DuoOuter`, `DuoInner`, and `creative` for the creative assets,
+  which are rendered by default whenever `creative/` holds a page. A named slot is rendered whether or not it has captures. Default:
   every slot that has captures; all slots if the set has no captures.
 - `--locales <locale>[,<locale>]` — Render only the named locales. Default:
   every locale named in `strings/`; `en-US` if there is no `strings/`.
@@ -389,6 +433,9 @@ from the lineup's own page, never from another site open in the same browser.
 - **New panel:** add `panels/NN-slug.html`. Renaming or renumbering changes the
   output filenames, and the upload order follows them.
 - **Text-only panel:** ask for no capture; with nothing to miss, it ships.
+- **Creative assets:** a page in `creative/`, named for its placement. A
+  starter's pair shares its `panel.css`; a set without them makes none, and
+  removing one stops its render.
 - **Landscape, or back upright:** add or remove the slot in `landscape` in
   `recadro.json`, then fit the panels to the page's new shape, forking on
   `@media (orientation: landscape)` where the set keeps both.

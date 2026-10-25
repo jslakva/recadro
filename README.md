@@ -75,6 +75,9 @@ Or, if you let `init` add its skill, from Claude Code:
   channel, for iPhone and iPad, upright or landscape, and for every language
   with a strings file, in the folders fastlane's `deliver` uploads from. When a screen changes, take
   the capture again and rerun it.
+- The same goes for the product page header and the search result image
+  App Store Connect now takes: a page each in the set, rendered per language
+  at Apple's sizes.
 - `dev` and `render` drive the same server, so the preview and the render
   cannot disagree.
 - `/recadro live` has your agent start the dev server with a live channel to

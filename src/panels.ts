@@ -6,6 +6,7 @@
  */
 import { existsSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
+import { CREATIVE, PLACEMENTS, type Slot } from "./slots.ts";
 
 /** One discovered panel. */
 export interface Panel {
@@ -20,6 +21,29 @@ export interface Panel {
 /** The root-absolute URL path of `file` on a server rooted at `root`. */
 export function urlPathFor(root: string, file: string): string {
   return `/${relative(root, file).split("\\").join("/")}`;
+}
+
+/**
+ * Lists the creative assets' pages under `panelsDir/creative/`, one per
+ * placement, in `PLACEMENTS` order; none when the folder is absent. Throws on
+ * a page named for no placement, which would otherwise never be shot. Files
+ * that are not pages — a stylesheet, an image — are the set's own.
+ */
+export function discoverCreative(panelsDir: string, root: string): { panel: Panel; placement: Slot }[] {
+  const dir = join(panelsDir, CREATIVE);
+  if (!existsSync(dir)) return [];
+  const pages = readdirSync(dir).filter((name) => name.endsWith(".html"));
+  const ids = PLACEMENTS.map((placement) => placement.id);
+  for (const name of pages) {
+    const slug = name.slice(0, -".html".length);
+    if (!ids.includes(slug)) {
+      throw new Error(`${join(dir, name)}: ${CREATIVE}/ takes ${ids.map((id) => `${id}.html`).join(", ")}`);
+    }
+  }
+  return PLACEMENTS.filter((placement) => pages.includes(`${placement.id}.html`)).map((placement) => {
+    const file = join(dir, `${placement.id}.html`);
+    return { panel: { slug: placement.id, file, urlPath: urlPathFor(root, file) }, placement };
+  });
 }
 
 /**
