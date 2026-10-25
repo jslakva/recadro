@@ -2,8 +2,9 @@
  * The callouts starter: the phone straight on, with notes pinned to points on
  * its screen — a label, a leader line and a dot where the line lands — and a
  * spotlight that dims everything but one region. For an app whose screens need
- * a word of explanation. The variables are the look. Sizes are in vw/vh and the
- * iPad forks on [data-device], so no device size appears here.
+ * a word of explanation. The variables are the look. Sizes are in vw/vh, the
+ * iPad forks on [data-device] and a slot on its side on the orientation
+ * query, so no device size appears here.
  */
 :root {
   --ground: #123b33;
@@ -262,4 +263,147 @@ img.capture {
 
 [data-device="iPad"] .note.right::after {
   margin-left: -0.95vw;
+}
+
+/*
+ * On its side, the page is wider than tall. The sizes above that are in vw
+ * follow the short side instead, in vh, so the type and the notes keep their
+ * size; the headline fits one line, and the phone turns with the page, as
+ * captures taken on their side are, leaving the room either side for labels.
+ * A label is up to 15vw wide here, so a note's point can be anywhere on the
+ * screen: the label stays in that room.
+ */
+@media (orientation: landscape) {
+  .copy {
+    padding: 6vh 6vw 0;
+  }
+
+  .copy h1 {
+    font-size: 9vh;
+  }
+
+  .copy p {
+    margin-top: 1.4vh;
+    font-size: 4.2vh;
+  }
+
+  body {
+    --device-h: 56vh;
+    --device-w: calc(var(--device-h) * 19.5 / 9);
+    --bezel: 1.8vh;
+  }
+
+  .device {
+    top: 34vh;
+    border-radius: 10.5vh;
+    box-shadow: 0 0 0 0.3vh color-mix(in srgb, var(--ink) 16%, transparent), 0 4vh 8vh rgb(0 0 0 / 0.4);
+  }
+
+  .screen,
+  .marks {
+    border-radius: 8.7vh;
+  }
+
+  .spot {
+    border-width: 0.6vh;
+    border-radius: 2vh;
+  }
+
+  .note.left {
+    left: calc(3vw - var(--edge));
+  }
+
+  .note.right {
+    right: calc(3vw - var(--edge));
+  }
+
+  .note .label {
+    max-width: 15vw;
+    padding: 1.1vh 2.4vh;
+    font-size: 3.7vh;
+  }
+
+  .note::before {
+    min-width: 3vw;
+    height: 0.55vh;
+    box-shadow: 0 0 0 0.25vh color-mix(in srgb, var(--frame) 45%, transparent);
+  }
+
+  .note::after {
+    width: 3.4vh;
+    box-shadow: 0 0 0 0.7vh var(--frame), 0 0 0 1.3vh var(--accent);
+  }
+
+  .note.left::after {
+    margin-right: -1.7vh;
+  }
+
+  .note.right::after {
+    margin-left: -1.7vh;
+  }
+
+  [data-empty] .screen {
+    background: repeating-linear-gradient(
+      45deg,
+      color-mix(in srgb, var(--ink) 10%, var(--ground)) 0 2.5vh,
+      color-mix(in srgb, var(--ink) 6%, var(--ground)) 2.5vh 5vh
+    );
+  }
+
+  [data-device="iPad"] .copy {
+    padding-top: 5vh;
+  }
+
+  [data-device="iPad"] .copy h1 {
+    font-size: 5.8vh;
+  }
+
+  [data-device="iPad"] .copy p {
+    font-size: 2.5vh;
+  }
+
+  [data-device="iPad"] body {
+    --device-h: 62vh;
+    --device-w: calc(var(--device-h) * 4 / 3);
+    --bezel: 1.1vh;
+  }
+
+  [data-device="iPad"] .device {
+    top: 24vh;
+    border-radius: 3vh;
+  }
+
+  [data-device="iPad"] .screen,
+  [data-device="iPad"] .marks {
+    border-radius: 2vh;
+  }
+
+  [data-device="iPad"] .spot {
+    border-width: 0.35vh;
+    border-radius: 1vh;
+  }
+
+  [data-device="iPad"] .note .label {
+    max-width: 12vw;
+    padding: 1vh 1.8vh;
+    font-size: 2.2vh;
+  }
+
+  [data-device="iPad"] .note::before {
+    min-width: 2vw;
+    height: 0.32vh;
+  }
+
+  [data-device="iPad"] .note::after {
+    width: 1.9vh;
+    box-shadow: 0 0 0 0.4vh var(--frame), 0 0 0 0.75vh var(--accent);
+  }
+
+  [data-device="iPad"] .note.left::after {
+    margin-right: -0.95vh;
+  }
+
+  [data-device="iPad"] .note.right::after {
+    margin-left: -0.95vh;
+  }
 }

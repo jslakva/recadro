@@ -4,8 +4,10 @@
   on --x --y below, in percent of the capture, with its label past the left or
   right edge of the phone as its class says; the label is the string named like
   the note. A screen lays out differently on iPad, so the points fork on
-  [data-device="iPad"]; fork a language the same way with :lang(de), where a
-  longer label may want the other side.
+  [data-device="iPad"], and on its side on the orientation query, which
+  repeats the iPad's points since the upright iPad rule outranks a bare one;
+  fork a language the same way with :lang(de), where a longer label may want
+  the other side.
 -->
 <html>
   <head>
@@ -16,6 +18,12 @@
       .second { --x: 40; --y: 54; }
       [data-device="iPad"] .first { --x: 23; --y: 16.3; }
       [data-device="iPad"] .second { --x: 76; --y: 24.5; }
+      @media (orientation: landscape) {
+        .first { --x: 14; --y: 24; }
+        .second { --x: 60; --y: 41.5; }
+        [data-device="iPad"] .first { --x: 14; --y: 24; }
+        [data-device="iPad"] .second { --x: 60; --y: 41.5; }
+      }
     </style>
   </head>
   <body>
