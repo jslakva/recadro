@@ -2,8 +2,9 @@
  * The overlay starter: the capture fills the panel edge to edge, and a band of
  * colour over its top carries the headline, with a highlighted word and, on one
  * panel, a magnifier over part of the screen. The variables are the look —
- * point them at the app's own colours and fonts. Sizes are in vw/vh and the
- * iPad forks on [data-device], so no device size appears here.
+ * point them at the app's own colours and fonts. Sizes are in vw/vh, the
+ * iPad forks on [data-device] and a slot on its side on the orientation
+ * query, so no device size appears here.
  */
 :root {
   --ground: #16181d;
@@ -156,4 +157,65 @@ img.capture {
 
 [data-device="iPad"][data-empty] body::after {
   font-size: 2.4vw;
+}
+
+/*
+ * On its side, the page is wider than tall, and a capture taken on its side
+ * still fills it. The sizes above that are in vw follow the short side
+ * instead, in vh, so the type keeps its size and the band its depth; the
+ * slant is shallower, since the same angle drops further across a wider page.
+ */
+@media (orientation: landscape) {
+  :root {
+    --slant: 3deg;
+  }
+
+  .band {
+    min-height: 0;
+    padding: 9vh 6vw calc(4vh + 100vw * tan(var(--slant)));
+    background:
+      repeating-linear-gradient(135deg, rgb(255 255 255 / 0.06) 0 2.2vh, transparent 2.2vh 4.4vh),
+      var(--accent);
+  }
+
+  .band h1 {
+    font-size: 11vh;
+  }
+
+  .band p {
+    margin-top: 1.4vh;
+    font-size: 4.6vh;
+  }
+
+  .loupe {
+    box-shadow: 0 0 0 1.4vh #fff, 0 3vh 6vh rgb(0 0 0 / 0.45);
+  }
+
+  [data-empty] body {
+    background: repeating-linear-gradient(45deg, #23262d 0 3vh, #1d2026 3vh 6vh);
+  }
+
+  [data-empty] body::after {
+    font-size: 4vh;
+  }
+
+  [data-device="iPad"] .band {
+    padding: 7vh 5vw calc(4vh + 100vw * tan(var(--slant)));
+  }
+
+  [data-device="iPad"] .loupe {
+    box-shadow: 0 0 0 0.9vh #fff, 0 3vh 6vh rgb(0 0 0 / 0.45);
+  }
+
+  [data-device="iPad"] .band h1 {
+    font-size: 7.4vh;
+  }
+
+  [data-device="iPad"] .band p {
+    font-size: 2.8vh;
+  }
+
+  [data-device="iPad"][data-empty] body::after {
+    font-size: 2.4vh;
+  }
 }
