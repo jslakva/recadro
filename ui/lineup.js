@@ -57,7 +57,7 @@ function inSearch(slot) {
 
 /** A slot as a person names it: "6.9″ iPhone". */
 function slotName(slot) {
-  return slot.device ? `${slot.display} ${slot.device}` : slot.id;
+  return slot.device ? [slot.display, slot.device].filter(Boolean).join(" ") : slot.id;
 }
 
 /** Whether a toggle button is pressed. */

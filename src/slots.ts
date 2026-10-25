@@ -19,17 +19,26 @@ export interface Slot {
   height: number;
   /** Device scale factor. The logical viewport is the pixel size divided by it. */
   scale: number;
+  /**
+   * Whether a capture is matched to this slot only at its exact pixel size,
+   * either way up, rather than by the nearest shape. For a display whose shape
+   * sits close to another's, so an iPad mini's capture still reads as the iPad.
+   */
+  exact?: boolean;
 }
 
 /**
  * Every slot recadro renders, upright, in the order `--devices` reports them.
  *
  * Apple derives the smaller iPhone sizes from 6.9", so they are deliberately
- * absent.
+ * absent. iPhone Duo has two displays, and App Store Connect takes screenshots
+ * for each, so it is two slots.
  */
 export const SLOTS: readonly Slot[] = [
   { id: "iPhone", device: "iPhone", display: "6.9″", width: 1320, height: 2868, scale: 3 },
   { id: "iPad", device: "iPad", display: "13″", width: 2048, height: 2732, scale: 2 },
+  { id: "DuoOuter", device: "Duo outer", display: "iPhone", width: 1398, height: 2034, scale: 3, exact: true },
+  { id: "DuoInner", device: "Duo inner", display: "iPhone", width: 2007, height: 2853, scale: 3, exact: true },
 ];
 
 /**
@@ -67,13 +76,18 @@ export function selectSlots(ids: readonly string[], landscape: readonly string[]
 }
 
 /**
- * The slot an image of this size is a capture for: the one whose delivered
- * shape is nearest, upright, so an iPhone SE's 750×1334 still reads as the
- * phone and an iPad mini's 1488×2266 as the iPad. A capture can be any
- * simulator's size; the page scales it into the panel.
+ * The slot an image of this size is a capture for: one at exactly its size,
+ * either way up, or else the one whose delivered shape is nearest, upright,
+ * among those not matched exactly — so an iPhone SE's 750×1334 still reads as
+ * the phone and an iPad mini's 1488×2266 as the iPad, not as a Duo display. A
+ * capture can be any simulator's size; the page scales it into the panel.
  */
 export function slotForShape(width: number, height: number): Slot {
-  const aspect = Math.min(width, height) / Math.max(width, height);
+  const short = Math.min(width, height);
+  const long = Math.max(width, height);
+  const exact = SLOTS.find((slot) => slot.width === short && slot.height === long);
+  if (exact) return exact;
+  const aspect = short / long;
   const off = (slot: Slot) => Math.abs(aspect - slot.width / slot.height);
-  return SLOTS.reduce((best, slot) => (off(slot) < off(best) ? slot : best));
+  return SLOTS.filter((slot) => !slot.exact).reduce((best, slot) => (off(slot) < off(best) ? slot : best));
 }

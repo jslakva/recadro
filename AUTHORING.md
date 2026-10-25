@@ -94,13 +94,17 @@ this slot and locale; the page appends the filename it wants — the slug plus
 `.png`, unless the panel maps names itself. The page is the viewport,
 `100vw × 100vh`, opened at the slot's size:
 
-| slot     | App Store Connect display | delivered pixels | viewport (CSS px) | scale |
-|----------|---------------------------|------------------|-------------------|-------|
-| `iPhone` | 6.9″                      | 1320 × 2868      | 440 × 956         | 3     |
-| `iPad`   | 13″                       | 2048 × 2732      | 1024 × 1366       | 2     |
+| slot       | App Store Connect display | delivered pixels | viewport (CSS px) | scale |
+|------------|---------------------------|------------------|-------------------|-------|
+| `iPhone`   | 6.9″                      | 1320 × 2868      | 440 × 956         | 3     |
+| `iPad`     | 13″                       | 2048 × 2732      | 1024 × 1366       | 2     |
+| `DuoOuter` | iPhone Duo, outer         | 1398 × 2034      | 466 × 678         | 3     |
+| `DuoInner` | iPhone Duo, inner         | 2007 × 2853      | 669 × 951         | 3     |
 
 A slot `landscape` names is the same with width and height swapped: `iPhone`
-at 2868 × 1320, `iPad` at 2732 × 2048.
+at 2868 × 1320, `iPad` at 2732 × 2048, `DuoOuter` at 2034 × 1398, `DuoInner`
+at 2853 × 2007. App Store Connect requires iPhone Duo screenshots, one set per
+display, for apps submitted from April 2027.
 
 The numbers are for reading references and choosing hairlines; they belong in
 no panel. A panel that serves both shapes forks on
@@ -160,12 +164,14 @@ the app does and nothing about what it costs.
 
   ```
   captures/<file>.png                     one slot: the one the captures are shaped for
-  captures/<slot>/<file>.png              both slots, a folder each: iPhone/ and iPad/
+  captures/<slot>/<file>.png              several slots, a folder each: iPhone/, iPad/, DuoOuter/, DuoInner/
   captures/<locale>/[<slot>/]<file>.png   a locale's own captures; <slot>/<locale>/ reads the same
   ```
 
   - A folder named for no slot serves the slot its captures are shaped for:
-    a phone's proportions or an iPad's, whatever their exact size.
+    a phone's proportions or an iPad's, whatever their exact size. A Duo
+    display's captures are told only at its exact pixels, either way up,
+    since its shape is close to an iPad's.
   - Two slots need a folder each, since a panel asks for the same filename on
     both. App Store Connect requires iPad screenshots when the app supports
     iPad.
@@ -256,7 +262,7 @@ panels as their files change, captures and strings included. Pointer mode
   set, and Esc comes back.
 - The settings are in the address, so a link opens a view:
   `/?device=iPad&locale=de-DE&show=out&store=dark`.
-  - `device` — `iPhone` or `iPad`.
+  - `device` — A slot: `iPhone`, `iPad`, `DuoOuter` or `DuoInner`.
   - `locale` — One of the set's locales.
   - `show` — `live`, the panels as pages, or `out`, the renders.
   - `store` — `light` or `dark`, the ground behind the panels. Remembered.
@@ -292,8 +298,8 @@ back without the file — is skipped, and `render` exits non-zero, so a script
 that uploads next stops. The rest are written, each run replacing only its own
 slots and locales.
 
-- `--devices <slot>[,<slot>]` — Render only the named slots, `iPhone` or
-  `iPad`. A named slot is rendered whether or not it has captures. Default:
+- `--devices <slot>[,<slot>]` — Render only the named slots: `iPhone`,
+  `iPad`, `DuoOuter`, `DuoInner`. A named slot is rendered whether or not it has captures. Default:
   every slot that has captures; all slots if the set has no captures.
 - `--locales <locale>[,<locale>]` — Render only the named locales. Default:
   every locale named in `strings/`; `en-US` if there is no `strings/`.
