@@ -68,6 +68,8 @@ Or, if you let `init` add its skill, from Claude Code:
 /recadro live
 ```
 
+- `dev` can also show the set as the store does: a search result and the
+  top of the product page, with your creative assets where they go.
 - `dev` shows the first three panels on their own, as in a search result, on
   the store's light and dark grounds. Point at a spot and it copies a
   reference to paste to your agent: the file, the element and the position.

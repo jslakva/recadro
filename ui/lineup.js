@@ -494,8 +494,9 @@ function applyFocus() {
     figure.classList.toggle("after", at >= 0 && i === at + 1);
   }
   // Neither size nor wrap has anything to change on one panel fitted to the window.
-  el("zoom").disabled = Boolean(slug);
-  el("wrap").disabled = Boolean(slug);
+  const store = radio("mode").value === "store";
+  el("zoom").disabled = Boolean(slug) || store;
+  el("wrap").disabled = Boolean(slug) || store;
   resize();
   if (slug) scrollTo(0, 0);
   else if (was) scrollTo(0, lineupScroll);
@@ -518,6 +519,189 @@ function applyFocus() {
 function step(delta) {
   const next = manifest.panels[manifest.panels.findIndex((p) => p.slug === focusedSlug()) + delta];
   if (next) location.replace(`#${encodeURIComponent(next.slug)}`);
+}
+
+/*
+ * The store view: the set as the App Store shows it, from the live panels and
+ * the creative assets — a search result, and the top of the product page. The
+ * layout is iOS's as Apple describes it, approximate where Apple publishes no
+ * numbers: the header loses about 8% of its width at each side on an iPhone
+ * held upright, and the search image shows whole.
+ */
+
+/** A page drawn at its own size and scaled to `width`, inside a box that clips it. */
+function scaledPage(url, logicalW, logicalH, width, title) {
+  const k = width / logicalW;
+  const box = document.createElement("div");
+  box.className = "scaled";
+  box.style.width = `${width}px`;
+  box.style.height = `${Math.round(logicalH * k)}px`;
+  const iframe = document.createElement("iframe");
+  iframe.src = url;
+  iframe.width = logicalW;
+  iframe.height = logicalH;
+  iframe.title = title;
+  iframe.tabIndex = -1;
+  iframe.style.transform = `scale(${k})`;
+  box.append(iframe);
+  return box;
+}
+
+/** A panel's live URL for a slot and locale. */
+function panelUrl(panel, slot, locale) {
+  return (
+    `${panel.urlPath}?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}` +
+    `&locale=${encodeURIComponent(locale)}&captures=${encodeURIComponent(manifest.captures[slot.id][locale])}`
+  );
+}
+
+/** A creative asset's live URL for a locale. */
+function creativeUrl(asset, locale) {
+  return (
+    `${asset.urlPath}?panel=${asset.slug}&device=${asset.slug}` +
+    `&locale=${encodeURIComponent(locale)}&captures=${encodeURIComponent(manifest.creativeCaptures[locale])}`
+  );
+}
+
+/** The row every listing starts with: the icon, the name and subtitle, and Get. */
+function appRow() {
+  const row = document.createElement("div");
+  row.className = "app-row";
+  const icon = document.createElement(manifest.app.icon ? "img" : "div");
+  icon.className = "icon";
+  if (manifest.app.icon) Object.assign(icon, { src: manifest.app.icon, alt: "" });
+  const names = document.createElement("div");
+  names.className = "names";
+  const name = Object.assign(document.createElement("span"), { className: "name", textContent: manifest.app.name ?? "App name" });
+  const subtitle = Object.assign(document.createElement("span"), {
+    className: "subtitle",
+    textContent: manifest.app.subtitle ?? "Subtitle",
+  });
+  names.append(name, subtitle);
+  const get = Object.assign(document.createElement("span"), { className: "get", textContent: "Get" });
+  row.append(icon, names, get);
+  return row;
+}
+
+/** One creative asset by placement, the universal one standing in for either. */
+function asset(id) {
+  return manifest.creative.find((c) => c.slug === id) ?? manifest.creative.find((c) => c.slug === "universal");
+}
+
+/** The search result: the listing's row over the search image, or over the first panels a search shows. */
+function searchMock(slot, locale, width) {
+  const result = document.createElement("div");
+  result.className = "result";
+  result.append(appRow());
+  const inner = width - 32;
+  const image = asset("search");
+  if (image) {
+    // The universal image shows whole here as well, at its own 16:9.
+    const { width: w, height: h, scale } = image.placement;
+    const box = scaledPage(creativeUrl(image, locale), w / scale, h / scale, inner, `${image.slug} creative asset`);
+    box.style.borderRadius = "12px";
+    result.append(box);
+  } else {
+    const n = inSearch(slot);
+    const shots = document.createElement("div");
+    shots.className = "shots";
+    const each = (inner - (n - 1) * 8) / n;
+    for (const panel of manifest.panels.slice(0, n)) {
+      shots.append(scaledPage(panelUrl(panel, slot, locale), slot.width / slot.scale, slot.height / slot.scale, each, panel.slug));
+    }
+    result.append(shots);
+  }
+  const field = document.createElement("div");
+  field.className = "search-field";
+  field.textContent = `⌕  ${manifest.app.name ?? "App name"}`;
+  const ghost = document.createElement("div");
+  ghost.className = "result ghost";
+  ghost.append(appRow());
+  const placeholder = document.createElement("div");
+  placeholder.className = "scaled";
+  // The next result, dimmed and cut short: the listing is one of several.
+  placeholder.style.cssText = `width:${inner}px;height:${Math.round(inner / 5)}px;border-radius:12px 12px 0 0`;
+  ghost.append(placeholder);
+  return [field, result, ghost];
+}
+
+/**
+ * The top of the product page: the header across it, cropped at the sides and
+ * under the back and share buttons, then the listing, then the screenshots.
+ */
+function productMock(slot, locale, width) {
+  const parts = [];
+  const header = asset("header");
+  if (header) {
+    const head = document.createElement("div");
+    head.className = "page-head";
+    // Drawn 1/0.84 as wide as the page and centred, so 8% falls off each side;
+    // a universal image is cut to the header's 21:9 about its safe area, above centre.
+    const { width: w, height: h, scale } = header.placement;
+    const drawn = width / 0.84;
+    const box = scaledPage(creativeUrl(header, locale), w / scale, h / scale, drawn, `${header.slug} creative asset`);
+    const shown = Math.round((drawn * 9) / 21);
+    const clip = document.createElement("div");
+    clip.className = "scaled";
+    clip.style.cssText = `width:${width}px;height:${shown}px`;
+    box.style.position = "absolute";
+    box.style.left = `${(width - drawn) / 2}px`;
+    box.style.top = `${header.slug === "universal" ? -(Number.parseFloat(box.style.height) - shown) * 0.39 : 0}px`;
+    clip.append(box);
+    const back = Object.assign(document.createElement("span"), { className: "chrome-button back", textContent: "‹" });
+    const share = Object.assign(document.createElement("span"), { className: "chrome-button share", textContent: "↑" });
+    head.append(clip, back, share);
+    parts.push(head);
+  }
+  const product = document.createElement("div");
+  product.className = "product";
+  product.append(appRow());
+  parts.push(product);
+  // Screenshots as the page lists them: upright ones about half the page wide, one on its side the page's width.
+  const gallery = document.createElement("div");
+  gallery.className = "gallery";
+  const wide = slot.width > slot.height;
+  const each = wide ? width - 32 : Math.round((width - 32) * 0.56);
+  for (const panel of manifest.panels) {
+    gallery.append(scaledPage(panelUrl(panel, slot, locale), slot.width / slot.scale, slot.height / slot.scale, each, panel.slug));
+  }
+  parts.push(gallery);
+  return parts;
+}
+
+/** The store view for the current slot and locale, each column the width of its device held upright. */
+function storeView({ slot, locale }) {
+  const width = Math.min(slot.width, slot.height) / slot.scale;
+  const view = document.createElement("div");
+  view.className = "store";
+  for (const [label, build] of [
+    ["Search result", searchMock],
+    ["Product page", productMock],
+  ]) {
+    const figure = document.createElement("figure");
+    const mock = document.createElement("div");
+    mock.className = "mock";
+    mock.style.width = `${width}px`;
+    // An iPad's column is wider than a phone's window; zoomed to fit, it keeps its own proportions.
+    mock.style.zoom = String(Math.min(1, (document.documentElement.clientWidth - 32) / (width + 2)));
+    mock.append(...build(slot, locale, width));
+    const caption = Object.assign(document.createElement("figcaption"), { textContent: label });
+    figure.append(caption, mock);
+    view.append(figure);
+  }
+  const note = document.createElement("p");
+  note.className = "store-note";
+  const missing = [
+    !asset("search") && "no creative/search.html: the search result shows the first panels",
+    !asset("header") && "no creative/header.html: the product page opens on the listing",
+    !manifest.app.name && "no \"app\" in recadro.json: the name, subtitle and icon are placeholders",
+  ].filter(Boolean);
+  note.textContent = [
+    "Approximate: Apple publishes the creative assets' sizes, not how iOS 27 lays them out.",
+    ...missing,
+  ].join(" · ");
+  view.append(note);
+  return view;
 }
 
 /** Rebuilds the lineup from the current controls. */
@@ -543,6 +727,14 @@ function draw() {
   ]
     .filter(Boolean)
     .join(" · ");
+
+  if (mode === "store") {
+    el("first-group").hidden = true;
+    el("lineup").replaceChildren(storeView(context));
+    el("zoom").disabled = true;
+    el("wrap").disabled = true;
+    return;
+  }
 
   // The wrap button names the first group; a slot on its side has one.
   const first = inSearch(slot);
@@ -962,7 +1154,7 @@ const SETTINGS = {
   show: {
     read: () => radio("mode").value,
     write: (v) => (radio("mode", v).checked = true),
-    valid: (v) => v === "live" || (v === "out" && Boolean(manifest.outUrl)),
+    valid: (v) => v === "live" || v === "store" || (v === "out" && Boolean(manifest.outUrl)),
   },
   store: {
     read: () => radio("store").value,

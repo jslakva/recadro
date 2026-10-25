@@ -307,7 +307,13 @@ panels as their files change, captures and strings included. Pointer mode
   `/?device=iPad&locale=de-DE&show=out&store=dark`.
   - `device` — A slot: `iPhone`, `iPad`, `DuoOuter` or `DuoInner`.
   - `locale` — One of the set's locales.
-  - `show` — `live`, the panels as pages, or `out`, the renders.
+  - `show` — `live`, the panels as pages; `out`, the renders; or `store`, the
+    set as the App Store shows it for the slot and locale: a search result,
+    with the search image or else the first panels a search shows, and the top
+    of the product page, with the header over the listing and the panels
+    under it. Live, from the pages, and approximate: Apple publishes the
+    creative assets' sizes, not iOS 27's layout around them. The name,
+    subtitle and icon are `app` in `recadro.json`.
   - `store` — `light` or `dark`, the ground behind the panels. Remembered.
   - `size` — A panel's width, 80 to 420. Remembered.
   - `wrap` — `on` or `off`: the first three on a row of their own, or the
