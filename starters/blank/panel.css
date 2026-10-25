@@ -1,7 +1,7 @@
 /*
  * The blank starter: a headline and the screen, laid out once, to write the
- * rest yourself. Sizes are in vw/vh and the iPad forks on [data-device], so
- * no device size appears here.
+ * rest yourself. Sizes are in vw/vh, the iPad forks on [data-device] and a
+ * slot on its side on the orientation query, so no device size appears here.
  */
 html,
 body {
@@ -45,6 +45,33 @@ img.capture {
 [data-device="iPad"] img.capture {
   aspect-ratio: 3 / 4;
   border-radius: 2vh;
+}
+
+/*
+ * On its side, the page is wider than tall: the type follows the short side,
+ * and the screen turns with the page, as captures taken on their side are.
+ */
+@media (orientation: landscape) {
+  body {
+    gap: 4vh;
+    padding-top: 7vh;
+    font-size: 8vh;
+  }
+
+  img.capture {
+    height: 72vh;
+    aspect-ratio: 19.5 / 9;
+    border-radius: 6vh;
+  }
+
+  [data-device="iPad"] body {
+    font-size: 6vh;
+  }
+
+  [data-device="iPad"] img.capture {
+    aspect-ratio: 4 / 3;
+    border-radius: 2.5vh;
+  }
 }
 
 /* A language that needs its own type or size forks on the locale:
