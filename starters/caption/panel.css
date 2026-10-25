@@ -4,8 +4,9 @@
  * Along the way it shows what a panel can add: a highlighted word, a stroke under it,
  * a blurred backdrop, an enlarged detail, a background image, a sticker. The
  * variables are the look —
- * point them at the app's own colours and fonts. Sizes are in vw/vh and the
- * iPad forks on [data-device], so no device size appears here.
+ * point them at the app's own colours and fonts. Sizes are in vw/vh, the
+ * iPad forks on [data-device] and a slot on its side on the orientation
+ * query, so no device size appears here.
  */
 :root {
   --ground: #f3efe8;
@@ -333,4 +334,151 @@ img.capture {
 
 [data-device="iPad"][data-empty] .screen::after {
   font-size: 2vw;
+}
+
+/*
+ * On its side, the page is wider than tall. The sizes above that are in vw
+ * follow the short side instead, in vh, so the type and the frame keep their
+ * size; the words fit one line each, and the device turns with the page, as
+ * captures taken on their side are, still running off the bottom edge.
+ */
+@media (orientation: landscape) {
+  body {
+    gap: 4vh;
+    padding: 6vh 6vw 0;
+  }
+
+  body[data-ground="blur"]::before {
+    inset: -12vh;
+    filter: blur(10vh) saturate(1.5);
+  }
+
+  .copy,
+  [data-device="iPad"] .copy {
+    --headline-size: 8.4vh;
+    --subline-size: 4.2vh;
+    min-height: calc(1.08 * var(--headline-size) + 1.8vh + 1.35 * var(--subline-size));
+  }
+
+  .device {
+    height: 82vh;
+    aspect-ratio: 19.5 / 9;
+    padding: 2.4vh;
+    border-radius: 12vh;
+  }
+
+  .screen {
+    border-radius: 9.8vh;
+  }
+
+  /* The island is on the screen's left edge, where it is with the phone turned. */
+  .screen::before {
+    top: 50%;
+    left: 1.5%;
+    width: 2.6%;
+    height: 28%;
+    translate: 0 -50%;
+  }
+
+  .strip {
+    bottom: 12vh;
+    aspect-ratio: 6 / 1;
+    border-block-width: 0.7vh;
+  }
+
+  .badge {
+    top: -4vh;
+    right: 6vh;
+    width: 22vh;
+    font-size: 5.2vh;
+  }
+
+  .review {
+    gap: 2.4vh;
+    padding-bottom: 6vh;
+  }
+
+  .stars {
+    font-size: 7vh;
+  }
+
+  .review blockquote {
+    max-width: 70vw;
+    font-size: 6vh;
+  }
+
+  .review blockquote::before {
+    margin-bottom: -3vh;
+    font-size: 13vh;
+  }
+
+  .review .name {
+    font-size: 4.2vh;
+  }
+
+  .review .role {
+    font-size: 3.6vh;
+  }
+
+  [data-empty] .screen {
+    background: repeating-linear-gradient(45deg, #e6e1d9 0 2.5vh, #ddd7ce 2.5vh 5vh);
+  }
+
+  [data-empty] .screen::after {
+    font-size: 3.6vh;
+  }
+
+  [data-device="iPad"] .copy {
+    --headline-size: 5.6vh;
+    --subline-size: 2.5vh;
+  }
+
+  [data-device="iPad"] .device {
+    height: 84vh;
+    aspect-ratio: 4 / 3;
+    padding: 1.4vh;
+    border-radius: 3.6vh;
+  }
+
+  [data-device="iPad"] .screen {
+    border-radius: 2.4vh;
+  }
+
+  [data-device="iPad"] .strip {
+    bottom: 12vh;
+    aspect-ratio: 7 / 1;
+    border-block-width: 0.45vh;
+  }
+
+  [data-device="iPad"] .badge {
+    top: -3vh;
+    right: 6vh;
+    width: 15vh;
+    font-size: 3.4vh;
+  }
+
+  [data-device="iPad"] .stars {
+    font-size: 5vh;
+  }
+
+  [data-device="iPad"] .review blockquote {
+    max-width: 64vw;
+    font-size: 4.4vh;
+  }
+
+  [data-device="iPad"] .review blockquote::before {
+    font-size: 9vh;
+  }
+
+  [data-device="iPad"] .review .name {
+    font-size: 2.6vh;
+  }
+
+  [data-device="iPad"] .review .role {
+    font-size: 2.2vh;
+  }
+
+  [data-device="iPad"][data-empty] .screen::after {
+    font-size: 2vh;
+  }
 }
