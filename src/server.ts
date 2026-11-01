@@ -7,23 +7,11 @@ import { readFileSync } from "node:fs";
 import type { ServerResponse } from "node:http";
 import { join, sep } from "node:path";
 import { createServer, loadConfigFromFile, mergeConfig, type InlineConfig, type Plugin, type ViteDevServer } from "vite";
+import { lineupManifest, type LineupManifest } from "./manifest.ts";
 import { announceLive, NoteChannel } from "./notes.ts";
-import { discoverCreative, discoverPanels, urlPathFor, type Panel } from "./panels.ts";
+import { discoverPanels, type Panel } from "./panels.ts";
 import { PKG } from "./pkg.ts";
-import {
-  CAPTURE_FILE,
-  capturesUrls,
-  creativeCapturesUrl,
-  DEFAULT_LOCALE,
-  devicesWithCaptures,
-  loadSet,
-  captureFolders,
-  checkShapes,
-  outTemplate,
-  slotAt,
-  type PanelSet,
-} from "./set.ts";
-import { SLOTS, type Slot } from "./slots.ts";
+import { CAPTURE_FILE, captureFolders, checkShapes, loadSet, type PanelSet } from "./set.ts";
 
 /** A running server, plus what the caller needs to build panel URLs. */
 export interface PanelServer {
@@ -45,38 +33,6 @@ export interface ServerOptions {
   live?: boolean;
 }
 
-/**
- * What the lineup needs and cannot glob for itself. Served at
- * `/__recadro/panels.json`; the flow is one-way — no page ever reports back.
- * The lineup itself is not a page in that sense: with `live`, it carries the
- * person's notes to the channel.
- */
-interface LineupManifest {
-  /** The panels, each with the geometry it is shot at on every slot. */
-  panels: { slug: string; urlPath: string; slots: Record<string, Slot> }[];
-  /** The slots at the shape their panels take unless one says otherwise. */
-  slots: Slot[];
-  /** Locales `strings/` names, or the default one. */
-  locales: string[];
-  /** Each slot and locale's `?captures=` URL, keyed by slot then locale. */
-  captures: Record<string, Record<string, string>>;
-  /** Slots with captures, so the lineup can say which have none. */
-  devicesWithCaptures: string[];
-  /**
-   * Root-absolute URL of a render, with `{locale}`, `{device}` and `{slug}` for
-   * the lineup to fill, or null when the output folder lies outside the root
-   * and cannot be shown.
-   */
-  outUrl: string | null;
-  /** Whether the notes channel is served, so the lineup offers a note field beside the clipboard. */
-  live: boolean;
-  /** The creative assets' pages, each with the placement it is shot at. */
-  creative: { slug: string; urlPath: string; placement: Slot }[];
-  /** Each locale's `?captures=` URL for the creative assets. */
-  creativeCaptures: Record<string, string>;
-  /** How the app appears on the store, the icon as a root-absolute URL, for the store view. */
-  app: { name?: string; subtitle?: string; icon?: string };
-}
 
 /**
  * Loads a `vite.config.*` sitting beside the panels, if there is one.
@@ -122,31 +78,7 @@ function sendOwnFile(res: ServerResponse, file: string, type: string): void {
  * shows on reload.
  */
 function manifestFor(set: PanelSet, options: ServerOptions): LineupManifest {
-  const current = loadSet(set.config);
-  const panels = discoverPanels(current.dir, current.root);
-  checkShapes(current, panels.map((panel) => panel.slug));
-  const locales = current.locales.length ? current.locales : [DEFAULT_LOCALE];
-  const outUrl = urlPathFor(current.root, current.out.base);
-  return {
-    panels: panels.map(({ slug, urlPath }) => ({
-      slug,
-      urlPath,
-      slots: Object.fromEntries(SLOTS.map((slot) => [slot.id, slotAt(current, slot.id, slug)])),
-    })),
-    slots: SLOTS.map((slot) => slotAt(current, slot.id)),
-    locales,
-    captures: capturesUrls(current, locales),
-    devicesWithCaptures: devicesWithCaptures(current, locales),
-    outUrl: outUrl.startsWith("/..") ? null : `${outUrl}/${outTemplate(current.out)}`,
-    live: Boolean(options.live),
-    creative: discoverCreative(current.dir, current.root).map(({ panel, placement }) => ({
-      slug: panel.slug,
-      urlPath: panel.urlPath,
-      placement,
-    })),
-    creativeCaptures: Object.fromEntries(locales.map((locale) => [locale, creativeCapturesUrl(current, locale)])),
-    app: { ...current.app, icon: current.app.icon && urlPathFor(current.root, current.app.icon) },
-  };
+  return lineupManifest(loadSet(set.config), { live: Boolean(options.live) });
 }
 
 /**
