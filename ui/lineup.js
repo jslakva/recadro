@@ -791,14 +791,18 @@ function mockFigure(label, parts, width) {
   mock.className = "mock";
   mock.style.width = `${width}px`;
   // An iPad's column is wider than a phone's window; zoomed to fit, it keeps its own proportions.
-  mock.style.zoom = String(Math.min(1, (document.documentElement.clientWidth - 32) / (width + 2)));
+  const gutters = document.body.classList.contains("bare") ? 0 : 32;
+  mock.style.zoom = String(Math.min(1, (document.documentElement.clientWidth - gutters) / (width + 2)));
   mock.append(...parts);
   const caption = Object.assign(document.createElement("figcaption"), { textContent: label });
   figure.append(caption, mock);
   return figure;
 }
 
-/** `show=search`: the search result alone, with the first screenshots, as a search shows the set. */
+/**
+ * `show=search`: the search result alone, with the first screenshots, as a
+ * search shows the set; the body is bare, so it is all an embedding page shows.
+ */
 function searchView({ slot, locale }) {
   const width = Math.min(slot.width, slot.height) / slot.scale;
   const view = document.createElement("div");
@@ -870,6 +874,9 @@ function draw() {
     const n = manifest.creative.length;
     el("status").textContent = `${n} creative asset${n === 1 ? "" : "s"} · one per locale, for every device`;
   }
+
+  // show=search is for a page embedding the lineup: the mock-up and nothing of the lineup around it.
+  document.body.classList.toggle("bare", mode === "search");
 
   if (mode !== "panels") {
     el("first-group").hidden = true;

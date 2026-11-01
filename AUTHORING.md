@@ -363,8 +363,9 @@ panels as their files change, captures and strings included. Pointer mode
     The store view is live, from the pages, and approximate: Apple publishes
     the creative assets' sizes, not iOS 27's layout around them. The name,
     subtitle, icon and the facts under them are `app` in `recadro.json`.
-    `search` shows the search result alone, with the first screenshots. It
-    has no button: it is for a page that embeds the lineup. Default: `panels`.
+    `search` shows the search result alone, with the first screenshots, and
+    none of the lineup around it. It has no button: it is for a page that
+    embeds the lineup. Default: `panels`.
   - `store` — `light` or `dark`, the ground behind the panels. Remembered.
   - `size` — A panel's width, 80 to 420. Remembered.
   - `wrap` — `on` or `off`: the first three on a row of their own, or the

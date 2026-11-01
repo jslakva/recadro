@@ -184,6 +184,15 @@
       .creative .scaled { border-radius: 10px; overflow: hidden; position: relative; background: var(--hole); }
       .creative .scaled iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: top left; pointer-events: none; }
       .creative figcaption { font-size: 12px; color: var(--ground-dim); }
+      /* show=search, embedded: the mock-up alone, on whatever the page behind it is. */
+      body.bare { padding: 0; background: transparent; }
+      /* An iframe whose colour scheme differs from its page's is painted on an
+         opaque canvas, so bare, the scheme is the ground's: a dark page shows
+         through store=dark, a light one through store=light. */
+      :root:has(body.bare[data-store="dark"]) { color-scheme: dark; }
+      :root:has(body.bare[data-store="light"]) { color-scheme: light; }
+      body.bare header, body.bare .lead, body.bare .store figcaption { display: none; }
+      body.bare .store { padding: 0; }
       .store-note { flex-basis: 100%; margin: 0; max-width: 72ch; font-size: 12px; color: var(--ground-dim); }
       .strip { display: flex; gap: 20px; padding: 12px 16px 0; overflow-x: auto; align-items: flex-start; }
       figure { margin: 0; flex: 0 0 auto; }
