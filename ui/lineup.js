@@ -820,7 +820,7 @@ function storeView({ slot, locale }) {
   // image or the first screenshots, and the set should read in either.
   const views = asset("search")
     ? [
-        ["Search result, with the search image", searchMock],
+        ["Search result, with the search results image", searchMock],
         ["Search result, with the first screenshots", (...a) => searchMock(...a, true)],
         ["Product page", productMock],
       ]

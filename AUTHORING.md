@@ -192,7 +192,7 @@ for no device:
 - Apple crops both images on some devices and orientations and publishes no
   numbers, only templates. Keep what matters in the middle: the templates'
   safe areas are about the middle 43% × 40% of the header, 56% × 40% of the
-  search image, and 27% × 33% of the universal one, that last raised a little
+  search results image, and 27% × 33% of the universal one, that last raised a little
   above the centre. On an iPhone held upright the header loses about 8% of its
   width at each side, and the back and share buttons sit over its top
   corners.
@@ -358,7 +358,7 @@ panels as their files change, captures and strings included. Pointer mode
     `panels` shows the panels as pages. `creative` shows the creative assets
     on their own, each at its placement's proportions. `store` shows the set
     as the App Store does for the slot and locale: a search result, with the
-    search image or else the first panels a search shows, and the top of the
+    search results image or else the first panels a search shows, and the top of the
     product page, with the header over the listing and the panels under it.
     The store view is live, from the pages, and approximate: Apple publishes
     the creative assets' sizes, not iOS 27's layout around them. The name,
