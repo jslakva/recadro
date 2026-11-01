@@ -343,24 +343,27 @@ side, since a search result shows one landscape screenshot. Reloads the
 panels as their files change, captures and strings included. Pointer mode
 (`P`) copies a reference to a spot in a panel, for pasting to an agent.
 
-- It shows the live panels, or the contents of `out` on a toggle, where a
-  panel not rendered is a hole naming the file it looked for.
+- It shows the live pages, as `render` shoots them: a panel that looks wrong
+  there is wrong in the PNG too.
 - The ground behind the panels switches between the App Store's light and
   dark backgrounds, starting from the system's appearance.
 - A click shows a panel alone, its neighbours dimmed either side on a wide
   window; the arrow keys, a swipe or a click on a neighbour step through the
   set, and Esc comes back.
 - The settings are in the address, so a link opens a view:
-  `/?device=iPad&locale=de-DE&show=out&store=dark`.
+  `/?device=iPad&locale=de-DE&show=store&store=dark`.
   - `device` — A slot: `iPhone`, `iPad` or `Duo`.
   - `locale` — One of the set's locales.
-  - `show` — `live`, the panels as pages; `out`, the renders; or `store`, the
-    set as the App Store shows it for the slot and locale: a search result,
-    with the search image or else the first panels a search shows, and the top
-    of the product page, with the header over the listing and the panels
-    under it. Live, from the pages, and approximate: Apple publishes the
-    creative assets' sizes, not iOS 27's layout around them. The name,
+  - `show` — `panels`, `creative` or `store`. Choose what the lineup shows.
+    `panels` shows the panels as pages. `creative` shows the creative assets
+    on their own, each at its placement's proportions. `store` shows the set
+    as the App Store does for the slot and locale: a search result, with the
+    search image or else the first panels a search shows, and the top of the
+    product page, with the header over the listing and the panels under it.
+    The store view is live, from the pages, and approximate: Apple publishes
+    the creative assets' sizes, not iOS 27's layout around them. The name,
     subtitle, icon and the facts under them are `app` in `recadro.json`.
+    Default: `panels`.
   - `store` — `light` or `dark`, the ground behind the panels. Remembered.
   - `size` — A panel's width, 80 to 420. Remembered.
   - `wrap` — `on` or `off`: the first three on a row of their own, or the

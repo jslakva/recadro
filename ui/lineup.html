@@ -5,9 +5,8 @@
   rather than the layout. Served by recadro at `/` so the panels directory holds
   panels and nothing that knows about the tool.
 
-  Live mode iframes the panels at logical size and scales them down; `out/` mode
-  shows the rendered PNGs, where an unrendered panel appears as a hole. That
-  hole is the only failure signal there is, by design.
+  The panels are iframed at logical size and scaled down: what shows is what
+  render shoots, so a panel that looks wrong here is wrong in the PNG too.
 
   A click on a panel shows it alone, as large as the window allows, at
   `#<slug>`; the arrows step through the set and Esc comes back. It is the same
@@ -28,7 +27,9 @@
   product page. A slot on its side shows one there, and the button says
   "wrap one".
 
-  "store" in show draws the set as the App Store does instead of the panels:
+  "creative assets" in show draws the header and search images on their own,
+  each at its placement's proportions. "store" draws the set as the App Store
+  does instead of the panels:
   a search result and the top of the product page, each the width of the
   device held upright, built from the live panels and the creative assets. Judging that split is most of what this view is for, so space
   carries it: the gap before the rest is the widest on the page.
@@ -39,8 +40,8 @@
   address that doesn't name them.
 
   The header is tool chrome and stays dark on either ground, each control under
-  a caption, in three clusters: what is shown (device, locale), how (live or
-  out/, the store's ground), and the tools for looking (size, wrap three,
+  a caption, in three clusters: what is shown (device, locale), how (panels,
+  creative assets or the store, and the store's ground), and the tools for looking (size, wrap three,
   pointer). A set with one locale shows it where the choice would be; the
   slot's name and pixel sizes are stated above the panels.
 -->
@@ -178,6 +179,11 @@
       .mock .product .names { gap: 4px; }
       .mock .gallery { display: flex; gap: 10px; overflow: hidden; padding: 0 16px 24px; }
       .mock .gallery .scaled { flex: none; border-radius: 14px; }
+      .creative { display: grid; gap: 28px; padding: 12px 16px 0; justify-items: start; }
+      .creative figure { display: grid; gap: 8px; margin: 0; }
+      .creative .scaled { border-radius: 10px; overflow: hidden; position: relative; background: var(--hole); }
+      .creative .scaled iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: top left; pointer-events: none; }
+      .creative figcaption { font-size: 12px; color: var(--ground-dim); }
       .store-note { flex-basis: 100%; margin: 0; max-width: 72ch; font-size: 12px; color: var(--ground-dim); }
       .strip { display: flex; gap: 20px; padding: 12px 16px 0; overflow-x: auto; align-items: flex-start; }
       figure { margin: 0; flex: 0 0 auto; }
@@ -256,16 +262,6 @@
       .pager .count { color: var(--ground-dim); font-variant-numeric: tabular-nums; }
       .pager .back { grid-area: 2 / 1 / 3 / 4; justify-self: center; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; }
       .pager a { padding: 6px 4px; margin: -6px -4px; }
-      /* The hole: a panel with no PNG in out/, expected for one still waiting on
-         its capture and the only signal for a render that failed. Flat, with a
-         hairline edge, so it reads as the tool's and never as a panel's own
-         empty frame, and it names the file it looked for. */
-      .hole { display: grid; place-items: center; padding: 12px; background: var(--hole);
-              box-shadow: inset 0 0 0 1px var(--hole-edge); }
-      .hole-note { display: grid; gap: 6px; margin: 0; text-align: center; color: var(--hole-ink); }
-      .hole-note code { font: 10px/1.35 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-                        font-variant-ligatures: none; overflow-wrap: anywhere; }
-      .hole-note code span { display: inline-block; max-width: 100%; }
       figcaption { margin-top: 8px; font-size: 11px; color: var(--ground-dim);
                    display: flex; justify-content: space-between; gap: 10px; }
       a { color: var(--ground-dim); text-decoration: none; border-bottom: 1px solid transparent; }
@@ -410,8 +406,8 @@
         <div class="field">
           <span class="caption" id="mode-caption">show</span>
           <span class="seg" id="mode" role="radiogroup" aria-labelledby="mode-caption">
-            <label><input type="radio" name="mode" value="live" checked />live</label>
-            <label title="The PNGs render wrote"><input type="radio" name="mode" value="out" />out/</label>
+            <label><input type="radio" name="mode" value="panels" checked />panels</label>
+            <label title="The header and search images, from the pages in creative/"><input type="radio" name="mode" value="creative" />creative assets</label>
             <label title="The set on the App Store: a search result and the product page, from the live panels and creative assets"><input type="radio" name="mode" value="store" />store</label>
           </span>
         </div>

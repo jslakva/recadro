@@ -9,9 +9,8 @@ import {
   checkShapes,
   creativeCapturesUrl,
   DEFAULT_LOCALE,
-  devicesWithCaptures,
-  outTemplate,
   slotAt,
+  type AppInfo,
   type PanelSet,
 } from "./set.ts";
 import { SLOTS, type Slot } from "./slots.ts";
@@ -31,14 +30,6 @@ export interface LineupManifest {
   locales: string[];
   /** Each slot and locale's `?captures=` URL, keyed by slot then locale. */
   captures: Record<string, Record<string, string>>;
-  /** Slots with captures, so the lineup can say which have none. */
-  devicesWithCaptures: string[];
-  /**
-   * Root-absolute URL of a render, with `{locale}`, `{device}` and `{slug}` for
-   * the lineup to fill, or null when the output folder lies outside the root
-   * and cannot be shown.
-   */
-  outUrl: string | null;
   /** Whether the notes channel is served, so the lineup offers a note field beside the clipboard. */
   live: boolean;
   /** The creative assets' pages, each with the placement it is shot at. */
@@ -46,7 +37,7 @@ export interface LineupManifest {
   /** Each locale's `?captures=` URL for the creative assets. */
   creativeCaptures: Record<string, string>;
   /** How the app appears on the store, the icon as a root-absolute URL, for the store view. */
-  app: { name?: string; subtitle?: string; icon?: string };
+  app: AppInfo;
 }
 
 /**
@@ -57,7 +48,6 @@ export function lineupManifest(set: PanelSet, { live = false }: { live?: boolean
   const panels = discoverPanels(set.dir, set.root);
   checkShapes(set, panels.map((panel) => panel.slug));
   const locales = set.locales.length ? set.locales : [DEFAULT_LOCALE];
-  const outUrl = urlPathFor(set.root, set.out.base);
   return {
     panels: panels.map(({ slug, urlPath }) => ({
       slug,
@@ -67,8 +57,6 @@ export function lineupManifest(set: PanelSet, { live = false }: { live?: boolean
     slots: SLOTS.map((slot) => slotAt(set, slot.id)),
     locales,
     captures: capturesUrls(set, locales),
-    devicesWithCaptures: devicesWithCaptures(set, locales),
-    outUrl: outUrl.startsWith("/..") ? null : `${outUrl}/${outTemplate(set.out)}`,
     live,
     creative: discoverCreative(set.dir, set.root).map(({ panel, placement }) => ({
       slug: panel.slug,

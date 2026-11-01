@@ -45,7 +45,6 @@ if (manifest.locales.includes("en-US")) el("locale").value = "en-US";
 el("locale").hidden = manifest.locales.length < 2;
 el("locale-only").hidden = manifest.locales.length > 1;
 el("locale-only").textContent = el("locale").value;
-if (!manifest.outUrl) radio("mode", "out").disabled = true;
 
 /**
  * How many panels a search result shows: three upright, one on its side, as
@@ -247,12 +246,12 @@ function contextFor(panel, context) {
 }
 
 /**
- * Builds one panel's figure in the current mode; its width comes from the
+ * Builds one panel's figure; its width comes from the
  * lineup's CSS variables, its height and scale from its own, set by `resize`
  * from the panel's shape.
  */
 function figureFor(panel, context) {
-  const { slot, locale, mode, logicalW, logicalH } = context;
+  const { slot, locale, logicalW, logicalH } = context;
   const figure = document.createElement("figure");
   figure.dataset.slug = panel.slug;
   figure.dataset.w = String(logicalW);
@@ -260,63 +259,27 @@ function figureFor(panel, context) {
   // Named by its slug alone, not by every link in its caption.
   figure.setAttribute("aria-label", panel.slug);
   const frame = document.createElement("div");
-  // Loading until its panel or PNG arrives, so a frame has a footprint on the
+  // Loading until its panel arrives, so a frame has a footprint on the
   // ground before then; a lazy one far down the page stays so until reached.
   frame.className = "frame loading";
   const alone = `#${encodeURIComponent(panel.slug)}`;
 
-  const liveUrl = panelUrl(panel, slot, locale);
-  const pngUrl = String(manifest.outUrl)
-    .replaceAll("{locale}", locale)
-    .replaceAll("{device}", slot.id)
-    .replaceAll("{slug}", panel.slug);
-
-  if (mode === "live") {
-    const iframe = document.createElement("iframe");
-    // A long set, or several on one page, loads only the panels near the screen.
-    iframe.loading = "lazy";
-    iframe.src = liveUrl;
-    iframe.width = logicalW;
-    iframe.height = logicalH;
-    // The frame's link is the one stop per panel; the panel's page is looked at, not used.
-    iframe.title = panel.slug;
-    iframe.tabIndex = -1;
-    // Keys pressed with focus inside a panel still reach the lineup, on every
-    // load, since a panel reloading under HMR is a fresh window.
-    iframe.addEventListener("load", () => {
-      frame.classList.remove("loading");
-      iframe.contentWindow.addEventListener("keydown", onKey);
-    });
-    frame.append(iframe);
-  } else {
-    const img = document.createElement("img");
-    img.src = pngUrl;
-    img.alt = "";
-    // The hole names the file it looked for, as a path in the repo rather than a
-    // URL: a render that never ran and an out/ written in another layout look
-    // the same, and only the path tells them apart. It still opens alone; there
-    // is nothing in it to point at, and no PNG to link to.
-    img.addEventListener("load", () => frame.classList.remove("loading"));
-    img.addEventListener("error", () => {
-      frame.classList.replace("loading", "hole");
-      const note = document.createElement("p");
-      note.className = "hole-note";
-      // One piece per folder, so a narrow frame wraps the path at its slashes
-      // rather than inside a name.
-      const path = document.createElement("code");
-      const parts = decodeURI(pngUrl).slice(1).split("/");
-      for (const [i, part] of parts.entries()) {
-        const piece = document.createElement("span");
-        piece.textContent = i < parts.length - 1 ? `${part}/` : part;
-        path.append(piece);
-      }
-      note.append("not rendered", path);
-      img.replaceWith(note);
-      frame.querySelector(".aim")?.remove();
-      for (const link of figure.querySelectorAll("a.png")) link.remove();
-    });
-    frame.append(img);
-  }
+  const iframe = document.createElement("iframe");
+  // A long set, or several on one page, loads only the panels near the screen.
+  iframe.loading = "lazy";
+  iframe.src = panelUrl(panel, slot, locale);
+  iframe.width = logicalW;
+  iframe.height = logicalH;
+  // The frame's link is the one stop per panel; the panel's page is looked at, not used.
+  iframe.title = panel.slug;
+  iframe.tabIndex = -1;
+  // Keys pressed with focus inside a panel still reach the lineup, on every
+  // load, since a panel reloading under HMR is a fresh window.
+  iframe.addEventListener("load", () => {
+    frame.classList.remove("loading");
+    iframe.contentWindow.addEventListener("keydown", onKey);
+  });
+  frame.append(iframe);
   // Clicking a frame in the lineup shows that panel alone.
   const open = document.createElement("a");
   open.className = "open";
@@ -369,19 +332,6 @@ function figureFor(panel, context) {
   });
   caption.append(slugLink);
 
-  // The rendered file itself, beside the slug in the lineup and on the way back
-  // when the panel is shown alone.
-  const pngLink = () => {
-    const link = document.createElement("a");
-    link.className = "png";
-    link.href = pngUrl;
-    link.target = "_blank";
-    link.rel = "noopener";
-    link.textContent = "png";
-    return link;
-  };
-  if (mode === "out") caption.append(pngLink());
-
   // Seen only when the panel is shown alone: a pager as wide as the frame, the
   // neighbours at its edges in the direction a swipe or an arrow goes, this
   // panel and its place in the set between them, and the way back beneath.
@@ -418,7 +368,7 @@ function figureFor(panel, context) {
   const keys = document.createElement("span");
   keys.className = "keys";
   keys.textContent = "← → to step, Esc to go back";
-  back.append(all, ...(mode === "out" ? [pngLink()] : []), keys);
+  back.append(all, keys);
   pager.append(back);
   caption.append(pager);
 
@@ -517,7 +467,7 @@ function applyFocus() {
     figure.classList.toggle("after", at >= 0 && i === at + 1);
   }
   // Neither size nor wrap has anything to change on one panel fitted to the window.
-  const store = radio("mode").value === "store";
+  const store = radio("mode").value !== "panels";
   el("zoom").disabled = Boolean(slug) || store;
   el("wrap").disabled = Boolean(slug) || store;
   resize();
@@ -790,6 +740,37 @@ function productMock(slot, locale, width) {
   return parts;
 }
 
+/**
+ * The creative assets on their own, each at its placement's proportions and as
+ * wide as the window allows: the header, the search image, or the one image
+ * that serves both. Their screens are the first slot with captures, whichever
+ * device is chosen.
+ */
+function creativeView({ locale }) {
+  const view = document.createElement("div");
+  view.className = "creative";
+  const width = Math.min(960, document.documentElement.clientWidth - 32);
+  for (const asset of manifest.creative) {
+    const { width: w, height: h, scale } = asset.placement;
+    const figure = document.createElement("figure");
+    const box = scaledPage(creativeUrl(asset, locale), w / scale, h / scale, width, `${asset.slug} creative asset`);
+    const caption = Object.assign(document.createElement("figcaption"), {
+      textContent: `${asset.slug} · ${asset.placement.device} · ${w}×${h} px`,
+    });
+    figure.append(box, caption);
+    view.append(figure);
+  }
+  if (!manifest.creative.length) {
+    view.append(
+      Object.assign(document.createElement("p"), {
+        className: "store-note",
+        textContent: "No creative assets: add creative/header.html, creative/search.html or creative/universal.html beside panels/.",
+      }),
+    );
+  }
+  return view;
+}
+
 /** The store view for the current slot and locale, each column the width of its device held upright. */
 function storeView({ slot, locale }) {
   const width = Math.min(slot.width, slot.height) / slot.scale;
@@ -838,25 +819,27 @@ function draw() {
   const context = { slot, locale, mode, logicalW, logicalH };
 
   // What the frames are: the slot by name, the sizes a panel is written and
-  // delivered at, and the count. A slot with no captures is still worth
-  // designing, but render skips it by default, so the lineup says so while it
-  // is the one shown.
-  const bare = manifest.devicesWithCaptures.length && !manifest.devicesWithCaptures.includes(slot.id);
+  // delivered at, and the count.
   el("status").textContent = [
     slotName(slot),
     `${logicalW}×${logicalH} logical`,
     `${slot.width}×${slot.height} px`,
     `${manifest.panels.length} panels`,
-    bare && "no captures for this slot",
     new Set(manifest.panels.map((p) => `${p.slots[slot.id].width}×${p.slots[slot.id].height}`)).size > 1 &&
       "shapes vary by panel",
   ]
     .filter(Boolean)
     .join(" · ");
 
-  if (mode === "store") {
+  // The creative assets belong to no device: one image per locale and placement.
+  if (mode === "creative") {
+    const n = manifest.creative.length;
+    el("status").textContent = `${n} creative asset${n === 1 ? "" : "s"} · one per locale, for every device`;
+  }
+
+  if (mode === "store" || mode === "creative") {
     el("first-group").hidden = true;
-    el("lineup").replaceChildren(storeView(context));
+    el("lineup").replaceChildren(mode === "store" ? storeView(context) : creativeView(context));
     el("zoom").disabled = true;
     el("wrap").disabled = true;
     return;
@@ -1281,7 +1264,7 @@ const SETTINGS = {
   show: {
     read: () => radio("mode").value,
     write: (v) => (radio("mode", v).checked = true),
-    valid: (v) => v === "live" || v === "store" || (v === "out" && Boolean(manifest.outUrl)),
+    valid: (v) => v === "panels" || v === "creative" || v === "store",
   },
   store: {
     read: () => radio("store").value,
