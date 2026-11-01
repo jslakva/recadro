@@ -27,6 +27,16 @@ const el = (id) => document.getElementById(id);
 const radio = (name, value) =>
   document.querySelector(`input[name="${name}"]${value ? `[value="${value}"]` : ":checked"}`);
 
+/**
+ * Whether the address asked for `show=search`: the search result alone, with
+ * the first screenshots, for a page embedding the lineup. It has no button;
+ * choosing one in show leaves it.
+ */
+let searchOnly = false;
+
+/** What show is set to: a button's value, or "search". */
+const shown = () => (searchOnly ? "search" : radio("mode").value);
+
 // The device switch: one segment per slot, named by the kind of device; the
 // display size and pixels are in its tooltip and in the status.
 for (const slot of manifest.slots) {
@@ -467,7 +477,7 @@ function applyFocus() {
     figure.classList.toggle("after", at >= 0 && i === at + 1);
   }
   // Neither size nor wrap has anything to change on one panel fitted to the window.
-  const store = radio("mode").value !== "panels";
+  const store = shown() !== "panels";
   el("zoom").disabled = Boolean(slug) || store;
   el("wrap").disabled = Boolean(slug) || store;
   resize();
@@ -774,6 +784,29 @@ function creativeView({ locale }) {
   return view;
 }
 
+/** One store mock-up under its label, `width` wide, or zoomed down to fit the window. */
+function mockFigure(label, parts, width) {
+  const figure = document.createElement("figure");
+  const mock = document.createElement("div");
+  mock.className = "mock";
+  mock.style.width = `${width}px`;
+  // An iPad's column is wider than a phone's window; zoomed to fit, it keeps its own proportions.
+  mock.style.zoom = String(Math.min(1, (document.documentElement.clientWidth - 32) / (width + 2)));
+  mock.append(...parts);
+  const caption = Object.assign(document.createElement("figcaption"), { textContent: label });
+  figure.append(caption, mock);
+  return figure;
+}
+
+/** `show=search`: the search result alone, with the first screenshots, as a search shows the set. */
+function searchView({ slot, locale }) {
+  const width = Math.min(slot.width, slot.height) / slot.scale;
+  const view = document.createElement("div");
+  view.className = "store";
+  view.append(mockFigure("Search result, with the first screenshots", searchMock(slot, locale, width, true), width));
+  return view;
+}
+
 /** The store view for the current slot and locale, each column the width of its device held upright. */
 function storeView({ slot, locale }) {
   const width = Math.min(slot.width, slot.height) / slot.scale;
@@ -791,18 +824,7 @@ function storeView({ slot, locale }) {
         ["Search result", searchMock],
         ["Product page", productMock],
       ];
-  for (const [label, build] of views) {
-    const figure = document.createElement("figure");
-    const mock = document.createElement("div");
-    mock.className = "mock";
-    mock.style.width = `${width}px`;
-    // An iPad's column is wider than a phone's window; zoomed to fit, it keeps its own proportions.
-    mock.style.zoom = String(Math.min(1, (document.documentElement.clientWidth - 32) / (width + 2)));
-    mock.append(...build(slot, locale, width));
-    const caption = Object.assign(document.createElement("figcaption"), { textContent: label });
-    figure.append(caption, mock);
-    view.append(figure);
-  }
+  for (const [label, build] of views) view.append(mockFigure(label, build(slot, locale, width), width));
   const note = document.createElement("p");
   note.className = "store-note";
   const missing = [
@@ -825,7 +847,7 @@ function storeView({ slot, locale }) {
 function draw() {
   const slot = manifest.slots.find((s) => s.id === radio("device").value);
   const locale = el("locale").value;
-  const mode = radio("mode").value;
+  const mode = shown();
   const logicalW = slot.width / slot.scale;
   const logicalH = slot.height / slot.scale;
   const context = { slot, locale, mode, logicalW, logicalH };
@@ -849,9 +871,9 @@ function draw() {
     el("status").textContent = `${n} creative asset${n === 1 ? "" : "s"} · one per locale, for every device`;
   }
 
-  if (mode === "store" || mode === "creative") {
+  if (mode !== "panels") {
     el("first-group").hidden = true;
-    el("lineup").replaceChildren(mode === "store" ? storeView(context) : creativeView(context));
+    el("lineup").replaceChildren({ store: storeView, creative: creativeView, search: searchView }[mode](context));
     el("zoom").disabled = true;
     el("wrap").disabled = true;
     return;
@@ -1274,9 +1296,13 @@ const SETTINGS = {
     valid: (v) => manifest.locales.includes(v),
   },
   show: {
-    read: () => radio("mode").value,
-    write: (v) => (radio("mode", v).checked = true),
-    valid: (v) => v === "panels" || v === "creative" || v === "store",
+    read: shown,
+    write: (v) => {
+      searchOnly = v === "search";
+      if (searchOnly) for (const button of document.querySelectorAll('input[name="mode"]')) button.checked = false;
+      else radio("mode", v).checked = true;
+    },
+    valid: (v) => v === "panels" || v === "creative" || v === "store" || v === "search",
   },
   store: {
     read: () => radio("store").value,
@@ -1331,6 +1357,7 @@ function keepSetting(name) {
 // The radio groups report a change from whichever button was chosen.
 for (const [id, name] of [["device", "device"], ["locale", "locale"], ["mode", "show"]]) {
   el(id).addEventListener("change", () => {
+    if (name === "show") searchOnly = false;
     keepSetting(name);
     draw();
   });
