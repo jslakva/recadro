@@ -658,13 +658,16 @@ function asset(id) {
   return manifest.creative.find((c) => c.slug === id) ?? manifest.creative.find((c) => c.slug === "universal");
 }
 
-/** The search result: the listing's row over the search image, or over the first panels a search shows. */
-function searchMock(slot, locale, width) {
+/**
+ * The search result: the listing's row over the search image, or, with
+ * `screens` or no search image, over the first panels a search shows.
+ */
+function searchMock(slot, locale, width, screens = false) {
   const result = document.createElement("div");
   result.className = "result";
   result.append(appRow("search"), searchFacts());
   const inner = width - 32;
-  const image = asset("search");
+  const image = screens ? null : asset("search");
   if (image) {
     // The universal image shows whole here as well, at its own 16:9.
     const { width: w, height: h, scale } = image.placement;
@@ -776,10 +779,19 @@ function storeView({ slot, locale }) {
   const width = Math.min(slot.width, slot.height) / slot.scale;
   const view = document.createElement("div");
   view.className = "store";
-  for (const [label, build] of [
-    ["Search result", searchMock],
-    ["Product page", productMock],
-  ]) {
+  // With a search image, the result is shown both ways: the store shows the
+  // image or the first screenshots, and the set should read in either.
+  const views = asset("search")
+    ? [
+        ["Search result, with the search image", searchMock],
+        ["Search result, with the first screenshots", (...a) => searchMock(...a, true)],
+        ["Product page", productMock],
+      ]
+    : [
+        ["Search result", searchMock],
+        ["Product page", productMock],
+      ];
+  for (const [label, build] of views) {
     const figure = document.createElement("figure");
     const mock = document.createElement("div");
     mock.className = "mock";
