@@ -112,11 +112,14 @@ Several sets are several files: `recadro.json` for the one run without a
 
 ## What a page is given
 
-Four query params, and nothing else:
+Query params, and nothing else:
 
 ```
-?panel=<slug>&device=<slot>&locale=<locale>&captures=<folder URL>
+?panel=<slug>&device=<slot>[&display=<display>]&locale=<locale>&captures=<folder URL>
 ```
+
+`display` names the display the panel is shot at, as its `shape` gives it:
+`outer` or `inner` for the Duo. It is absent for a slot with one display.
 
 `captures` is a root-absolute folder URL ending in `/`, already resolved for
 this slot and locale; the page appends the filename it wants — the slug plus
@@ -139,8 +142,8 @@ Connect requires iPhone Duo screenshots for apps submitted from April 2027.
 
 The numbers are for reading references and choosing hairlines; they belong in
 no panel. A panel that serves both shapes forks on
-`@media (orientation: landscape)`; `?device=` says the slot, not which way up
-it is.
+`@media (orientation: landscape)`; `?device=` says the slot and `?display=`
+its display, not which way up it is.
 
 For how a page reads the params and loads its capture and strings, see any
 starter's `panel.js`: `starters/<name>/panel.js` in the installed package, or on
@@ -189,8 +192,8 @@ for no device:
   into `panel.js` breaks the moment captures move or become per locale, and
   `render` cannot tell that a capture asked for elsewhere is missing.
 - **Don't write device dimensions into CSS or JS.** Size in `vw`, `vh` and
-  `%`. Use `?device=` to fork a layout — set it as an attribute and select on
-  it — never for pixel arithmetic, and `@media (orientation: landscape)` for
+  `%`. Use `?device=` and `?display=` to fork a layout — set them as attributes
+  and select on them — never for pixel arithmetic, and `@media (orientation: landscape)` for
   a slot on its side.
 - **Don't name strings files anything but locales.** Every entry in `strings/`
   named like a locale is rendered. Shared strings go elsewhere, such as

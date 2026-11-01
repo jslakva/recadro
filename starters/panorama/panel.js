@@ -19,6 +19,7 @@ const root = document.documentElement;
 
 root.lang = locale;
 root.dataset.device = params.get("device");
+if (params.get("display")) root.dataset.display = params.get("display");
 
 // The page's shape, for the CSS: a phone's tall one, or "tablet" for the
 // squarer one of an iPad or an iPhone Duo display, either way up; and the

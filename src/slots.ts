@@ -17,6 +17,8 @@ export interface Slot {
   device: string;
   /** The display App Store Connect lists the size under, and which way up: "6.9″", "outer display, landscape". */
   display: string;
+  /** The display's name, as `shape` names it and a page is given it in `?display=`: "outer", "inner"; empty for a slot's only display. */
+  displayId: string;
   /** Delivered pixel width. */
   width: number;
   /** Delivered pixel height. */
@@ -130,7 +132,7 @@ export function shaped(kind: SlotKind, shape: Shape): Slot {
   const display = kind.displays.find((d) => d.id === shape.display) ?? kind.displays[0];
   const [width, height] = shape.landscape ? [display.height, display.width] : [display.width, display.height];
   const label = shape.landscape ? `${display.label}, landscape` : display.label;
-  return { id: kind.id, device: kind.device, display: label, width, height, scale: kind.scale };
+  return { id: kind.id, device: kind.device, display: label, displayId: display.id, width, height, scale: kind.scale };
 }
 
 /**
@@ -140,9 +142,9 @@ export function shaped(kind: SlotKind, shape: Shape): Slot {
  * at the largest size App Store Connect takes for it.
  */
 export const PLACEMENTS: readonly Slot[] = [
-  { id: "header", device: "Product page header", display: "21:9", width: 3840, height: 1646, scale: 2 },
-  { id: "search", device: "Search result", display: "3:2", width: 3840, height: 2560, scale: 2 },
-  { id: "universal", device: "Header and search result", display: "16:9", width: 5244, height: 2950, scale: 2 },
+  { id: "header", device: "Product page header", display: "21:9", displayId: "", width: 3840, height: 1646, scale: 2 },
+  { id: "search", device: "Search result", display: "3:2", displayId: "", width: 3840, height: 2560, scale: 2 },
+  { id: "universal", device: "Header and search result", display: "16:9", displayId: "", width: 5244, height: 2950, scale: 2 },
 ];
 
 /** The name `--devices` and the output use for the creative assets, as a slot's id names its panels. */

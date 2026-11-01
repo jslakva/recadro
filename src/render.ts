@@ -207,7 +207,9 @@ export async function render(options: RenderOptions): Promise<RenderResult> {
 
         for (const panel of shapedPanels) {
           const query =
-            `?panel=${panel.slug}&device=${encodeURIComponent(kind.id)}&locale=${locale}&captures=${captures}`;
+            `?panel=${panel.slug}&device=${encodeURIComponent(kind.id)}` +
+            (slot.displayId ? `&display=${slot.displayId}` : "") +
+            `&locale=${locale}&captures=${captures}`;
           // `networkidle` rather than `load`: a panel fetches its own captions and
           // sets its capture from them, so the capture request does not exist yet
           // when `load` fires, and a page asked before it had asked for anything

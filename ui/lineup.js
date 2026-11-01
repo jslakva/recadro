@@ -265,10 +265,7 @@ function figureFor(panel, context) {
   frame.className = "frame loading";
   const alone = `#${encodeURIComponent(panel.slug)}`;
 
-  const captures = manifest.captures[slot.id][locale];
-  const panelUrl =
-    `${panel.urlPath}?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}` +
-    `&locale=${encodeURIComponent(locale)}&captures=${encodeURIComponent(captures)}`;
+  const liveUrl = panelUrl(panel, slot, locale);
   const pngUrl = String(manifest.outUrl)
     .replaceAll("{locale}", locale)
     .replaceAll("{device}", slot.id)
@@ -278,7 +275,7 @@ function figureFor(panel, context) {
     const iframe = document.createElement("iframe");
     // A long set, or several on one page, loads only the panels near the screen.
     iframe.loading = "lazy";
-    iframe.src = panelUrl;
+    iframe.src = liveUrl;
     iframe.width = logicalW;
     iframe.height = logicalH;
     // The frame's link is the one stop per panel; the panel's page is looked at, not used.
@@ -573,10 +570,15 @@ function scaledPage(url, logicalW, logicalH, width, title) {
   return box;
 }
 
-/** A panel's live URL for a slot and locale. */
+/**
+ * A panel's live URL for a slot and locale, with the display the panel is
+ * shot at where the slot has more than one, as render opens it.
+ */
 function panelUrl(panel, slot, locale) {
+  const { displayId } = panel.slots[slot.id] ?? slot;
   return (
     `${panel.urlPath}?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}` +
+    (displayId ? `&display=${encodeURIComponent(displayId)}` : "") +
     `&locale=${encodeURIComponent(locale)}&captures=${encodeURIComponent(manifest.captures[slot.id][locale])}`
   );
 }

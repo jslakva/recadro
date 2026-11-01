@@ -9,8 +9,8 @@
  * is how render knows to skip the panel — and its <img> is hidden and its
  * phone marked empty.
  *
- * The root gets the slot as data-device and the locale as lang, so a panel's
- * CSS can fork on either.
+ * The root gets the slot as data-device, its display as data-display where it
+ * has more than one, and the locale as lang, so a panel's CSS can fork on each.
  */
 const params = new URLSearchParams(location.search);
 const panel = params.get("panel");
@@ -19,6 +19,7 @@ const root = document.documentElement;
 
 root.lang = locale;
 root.dataset.device = params.get("device");
+if (params.get("display")) root.dataset.display = params.get("display");
 
 // The page's shape, for the CSS: a phone's tall one, or "tablet" for the
 // squarer one of an iPad or an iPhone Duo display, either way up; and the
