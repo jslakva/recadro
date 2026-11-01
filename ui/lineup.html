@@ -145,6 +145,25 @@
       .mock .subtitle { font-size: 13px; color: var(--ground-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .mock .get { flex: none; min-width: 72px; height: 30px; display: grid; place-items: center; border-radius: 15px;
                    font-weight: 700; font-size: 15px; color: #fff; background: #0a84ff; }
+      .mock .get.plain { color: #0a84ff; background: var(--hole); }
+      .mock .buy { flex: none; display: grid; justify-items: center; gap: 3px; }
+      .mock .purchases { font-size: 9px; color: var(--ground-dim); }
+      .mock .product .buy { justify-items: start; margin-top: 8px; }
+      .mock .placeholder { color: var(--ground-dim); opacity: .6; }
+      .mock .facts { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+                     font-size: 13px; color: var(--ground-dim); white-space: nowrap; }
+      .mock .facts .stars { letter-spacing: 1px; }
+      .mock .facts .fact { display: flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+      .mock .facts svg { flex: none; width: 15px; height: 15px; }
+      .mock .info { display: flex; margin: 0 -16px 0 0; padding: 10px 0; border-block: 1px solid var(--hole-edge);
+                    overflow: hidden; }
+      .mock .info-column { flex: none; width: 27.5%; display: grid; justify-items: center; gap: 4px; padding: 2px 6px;
+                           text-align: center; color: var(--ground-dim); white-space: nowrap; }
+      .mock .info-column + .info-column { border-left: 1px solid var(--hole-edge); }
+      .mock .info-label { font-size: 10px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+      .mock .info-value { height: 26px; display: grid; place-items: center; font-size: 21px; font-weight: 700; }
+      .mock .info-value svg { width: 24px; height: 24px; }
+      .mock .info-sub { font-size: 12px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
       .mock .shots { display: flex; gap: 8px; }
       .mock .shots .scaled { border-radius: 12px; }
       .mock .page-head { position: relative; }

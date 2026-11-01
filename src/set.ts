@@ -48,11 +48,14 @@ const PATH_KEYS = ["set", "out"] as const;
  */
 const KEYS = ["set", "captures", "out", "shape", "app"] as const;
 
-/** The keys `app` takes: the name and subtitle as the store shows them, and the icon, a path. */
-const APP_KEYS = ["name", "subtitle", "icon"] as const;
+/**
+ * The keys `app` takes: the name, subtitle, category, age rating and developer
+ * as the store shows them, the icon, a path, and whether it lists in-app purchases.
+ */
+const APP_KEYS = ["name", "subtitle", "icon", "category", "age", "developer", "purchases"] as const;
 
 /** How the app appears on the store, as `app` in `recadro.json` says; each part optional. */
-export type AppInfo = Partial<Record<(typeof APP_KEYS)[number], string>>;
+export type AppInfo = Partial<Record<Exclude<(typeof APP_KEYS)[number], "purchases">, string>> & { purchases?: boolean };
 
 /** What `recadro.json` says, as written. */
 interface Config extends Partial<Record<(typeof PATH_KEYS)[number], string>> {
@@ -259,15 +262,20 @@ function readCaptureMap(file: string, value: object): Record<string, string> {
 /** `app` as written: an object of strings, with no other keys. */
 function readApp(file: string, value: unknown): AppInfo {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error(`${file}: "app" is an object: { "name": "…", "subtitle": "…", "icon": "<path>" }`);
+    throw new Error(`${file}: "app" is an object: { "name": "…", "subtitle": "…", "icon": "<path>", "category": "…", "age": "…", "developer": "…", "purchases": true }`);
   }
   const app: AppInfo = {};
   for (const [key, text] of Object.entries(value)) {
     if (!(APP_KEYS as readonly string[]).includes(key)) {
       throw new Error(`${file}: "app" has "${key}"; it takes ${APP_KEYS.join(", ")}`);
     }
+    if (key === "purchases") {
+      if (typeof text !== "boolean") throw new Error(`${file}: "app.purchases" must be true or false`);
+      app.purchases = text;
+      continue;
+    }
     if (typeof text !== "string" || !text.trim()) throw new Error(`${file}: "app.${key}" must be text`);
-    app[key as (typeof APP_KEYS)[number]] = text;
+    app[key as Exclude<(typeof APP_KEYS)[number], "purchases">] = text;
   }
   return app;
 }

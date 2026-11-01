@@ -591,8 +591,13 @@ function creativeUrl(asset, locale) {
   );
 }
 
-/** The row every listing starts with: the icon, the name and subtitle, and Get. */
-function appRow() {
+/**
+ * The row every listing starts with: the icon, the name and subtitle, and Get,
+ * with "In-App Purchases" under it when `app.purchases` says so. A search
+ * result's Get is a grey capsule at the row's end; the product page's is
+ * filled, under the subtitle.
+ */
+function appRow(kind) {
   const row = document.createElement("div");
   row.className = "app-row";
   const icon = document.createElement(manifest.app.icon ? "img" : "div");
@@ -606,9 +611,96 @@ function appRow() {
     textContent: manifest.app.subtitle ?? "Subtitle",
   });
   names.append(name, subtitle);
-  const get = Object.assign(document.createElement("span"), { className: "get", textContent: "Get" });
-  row.append(icon, names, get);
+  const buy = document.createElement("div");
+  buy.className = "buy";
+  buy.append(Object.assign(document.createElement("span"), { className: `get${kind === "search" ? " plain" : ""}`, textContent: "Get" }));
+  if (manifest.app.purchases) {
+    buy.append(Object.assign(document.createElement("span"), { className: "purchases", textContent: "In-App Purchases" }));
+  }
+  // On the product page Get sits under the subtitle; in a search result, at the row's end.
+  if (kind === "product") {
+    names.append(buy);
+    row.append(icon, names);
+  } else row.append(icon, names, buy);
   return row;
+}
+
+/** Store glyphs, drawn small: the developer's, and one for any category, since the store's own differ by category. */
+const GLYPHS = {
+  developer:
+    '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="2.5" width="15" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="8.2" r="2.6" fill="currentColor"/><path d="M5.2 15.5c.9-2.6 2.7-3.8 4.8-3.8s3.9 1.2 4.8 3.8z" fill="currentColor"/></svg>',
+  category:
+    '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="2.5" width="6.4" height="6.4" rx="1.6" fill="currentColor"/><rect x="11.1" y="2.5" width="6.4" height="6.4" rx="1.6" fill="currentColor"/><rect x="2.5" y="11.1" width="6.4" height="6.4" rx="1.6" fill="currentColor"/><rect x="11.1" y="11.1" width="6.4" height="6.4" rx="1.6" fill="currentColor"/></svg>',
+};
+
+/** A fact from `app`, or its name greyed where the set leaves it out. */
+function fact(key, placeholder) {
+  const value = manifest.app[key];
+  return Object.assign(document.createElement("span"), {
+    className: value ? "" : "placeholder",
+    textContent: value ?? placeholder,
+  });
+}
+
+/**
+ * The line under a search result: the stars as the store draws an app with no
+ * ratings yet, hollow and uncounted, then the developer and the category.
+ */
+function searchFacts() {
+  const line = document.createElement("div");
+  line.className = "facts";
+  const stars = Object.assign(document.createElement("span"), { className: "stars", textContent: "☆☆☆☆☆" });
+  const developer = document.createElement("span");
+  developer.className = "fact";
+  developer.innerHTML = GLYPHS.developer;
+  developer.append(fact("developer", "Developer"));
+  const category = document.createElement("span");
+  category.className = "fact";
+  category.innerHTML = GLYPHS.category;
+  category.append(fact("category", "Category"));
+  line.append(stars, developer, category);
+  return line;
+}
+
+/**
+ * The product page's strip of facts, running off its right edge as the store's
+ * does. No ratings column: the store shows none until there are ratings. The
+ * languages are the set's locales.
+ */
+function productFacts() {
+  const strip = document.createElement("div");
+  strip.className = "info";
+  const language = (locale) => locale.split("-")[0].toUpperCase();
+  const languages = [...new Set(manifest.locales.map(language))];
+  let languageName = languages[0];
+  try {
+    languageName = new Intl.DisplayNames(["en"], { type: "language" }).of(languages[0].toLowerCase()) ?? languageName;
+  } catch {}
+  const columns = [
+    ["Age rating", fact("age", "Age"), Object.assign(document.createElement("span"), { textContent: "Years" })],
+    ["Category", GLYPHS.category, fact("category", "Category")],
+    ["Developer", GLYPHS.developer, fact("developer", "Developer")],
+    [
+      "Language",
+      Object.assign(document.createElement("span"), { textContent: languages[0] }),
+      Object.assign(document.createElement("span"), {
+        textContent: languages.length > 1 ? `+ ${languages.length - 1} More` : languageName,
+      }),
+    ],
+  ];
+  for (const [label, top, bottom] of columns) {
+    const column = document.createElement("div");
+    column.className = "info-column";
+    const head = Object.assign(document.createElement("span"), { className: "info-label", textContent: label });
+    const value = document.createElement("span");
+    value.className = "info-value";
+    if (typeof top === "string") value.innerHTML = top;
+    else value.append(top);
+    bottom.classList.add("info-sub");
+    column.append(head, value, bottom);
+    strip.append(column);
+  }
+  return strip;
 }
 
 /** One creative asset by placement, the universal one standing in for either. */
@@ -620,7 +712,7 @@ function asset(id) {
 function searchMock(slot, locale, width) {
   const result = document.createElement("div");
   result.className = "result";
-  result.append(appRow());
+  result.append(appRow("search"), searchFacts());
   const inner = width - 32;
   const image = asset("search");
   if (image) {
@@ -645,7 +737,7 @@ function searchMock(slot, locale, width) {
   field.textContent = `⌕  ${manifest.app.name ?? "App name"}`;
   const ghost = document.createElement("div");
   ghost.className = "result ghost";
-  ghost.append(appRow());
+  ghost.append(appRow("search"));
   const placeholder = document.createElement("div");
   placeholder.className = "scaled";
   // The next result, dimmed and cut short: the listing is one of several.
@@ -684,7 +776,7 @@ function productMock(slot, locale, width) {
   }
   const product = document.createElement("div");
   product.className = "product";
-  product.append(appRow());
+  product.append(appRow("product"), productFacts());
   parts.push(product);
   // Screenshots as the page lists them: upright ones about half the page wide, one on its side the page's width.
   const gallery = document.createElement("div");
@@ -724,6 +816,9 @@ function storeView({ slot, locale }) {
     !asset("search") && "no creative/search.html: the search result shows the first panels",
     !asset("header") && "no creative/header.html: the product page opens on the listing",
     !manifest.app.name && "no \"app\" in recadro.json: the name, subtitle and icon are placeholders",
+    manifest.app.name &&
+      !(manifest.app.category && manifest.app.age && manifest.app.developer) &&
+      "\"app\" names no category, age or developer: those are placeholders",
   ].filter(Boolean);
   note.textContent = [
     "Approximate: Apple publishes the creative assets' sizes, not how iOS 27 lays them out.",

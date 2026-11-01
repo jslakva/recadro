@@ -84,10 +84,28 @@ recadro reads `recadro.json`. It looks in the folder a command runs in;
   and the other way round. A panel's key naming no panel in the set is an
   error, so a renamed panel cannot quietly lose its shape.
 
-- `app` — How the app appears on the store, for the lineup's store view:
-  `{ "name": "…", "subtitle": "…", "icon": "<path>" }`, each part optional.
-  The icon is an image inside the repository, square, as the store rounds
-  it. Default: placeholders in the store view. Nothing is rendered from it.
+- `app` — Describe the app as the store shows it, for the lineup's store view.
+  Nothing is rendered from it. Each key is optional; one left out is a
+  placeholder in the store view.
+
+  ```json
+  "app": { "name": "Larder", "subtitle": "What's in the cupboard", "icon": "assets/icon.png",
+           "category": "Food & Drink", "age": "4+", "developer": "Your Name", "purchases": true }
+  ```
+
+  - `name` — The app's name.
+  - `subtitle` — Its subtitle.
+  - `icon` — `<path>` An image inside the repository, square, as the store
+    rounds it.
+  - `category` — Its primary category, as App Store Connect names it.
+  - `age` — Its age rating: `"4+"`, `"9+"`, `"13+"`, `"16+"` or `"18+"`.
+  - `developer` — The developer's name, as the store shows it.
+  - `purchases` — `true` or `false`. Show "In-App Purchases" under Get.
+    Default: `false`.
+
+  The ratings show as the store shows an app with none yet: hollow stars in
+  a search result, no column on the product page. The languages are the
+  set's locales.
 
 Every key is optional. Paths are relative to the file's folder, not the set.
 Any other key or placeholder is an error. Command-line flags win over the
@@ -342,7 +360,7 @@ panels as their files change, captures and strings included. Pointer mode
     of the product page, with the header over the listing and the panels
     under it. Live, from the pages, and approximate: Apple publishes the
     creative assets' sizes, not iOS 27's layout around them. The name,
-    subtitle and icon are `app` in `recadro.json`.
+    subtitle, icon and the facts under them are `app` in `recadro.json`.
   - `store` — `light` or `dark`, the ground behind the panels. Remembered.
   - `size` — A panel's width, 80 to 420. Remembered.
   - `wrap` — `on` or `off`: the first three on a row of their own, or the
