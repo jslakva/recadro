@@ -29,9 +29,9 @@ every panel you touched, at every slot and locale. Look for a headline that
 wraps badly or is cropped, text past the frame, a fallback font, a capture
 that did not load, a layout that only works on one slot or in one language.
 Look at the first three together: they are all a search result shows, or the
-first alone for a slot `landscape` names, since a search result shows one
-screenshot on its side. Shoot
-before and after a change and compare the spot. Don't assert image
+first alone where the first panel's `shape` is landscape, since a search
+result shows one screenshot on its side. Shoot before and after a change and
+compare the spot. Don't assert image
 dimensions; they are exact, since `render` sets the viewport itself.
 
 ## Composing a set

@@ -8,8 +8,8 @@
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, extname, join, relative, sep } from "node:path";
 import { PKG } from "./pkg.ts";
-import { capturesDir, capturesIn, DEFAULT_LOCALE, landscapeIn, loadSet, type PanelSet } from "./set.ts";
-import { SLOTS } from "./slots.ts";
+import { capturesDir, capturesIn, DEFAULT_LOCALE, loadSet, shapeTaken, type PanelSet } from "./set.ts";
+import { defaultShape, shapeText, SLOTS } from "./slots.ts";
 
 /** Where the starters ship: one folder per starter, named for it. */
 export const STARTERS_DIR = join(PKG, "starters");
@@ -89,8 +89,8 @@ export interface InitResult {
   capturesFrom: string | null;
   /** Placeholder numbers the copy left unfilled, for want of that many captures. */
   unfilled: number[];
-  /** The slots written to `recadro.json` as landscape, for captures wider than tall. */
-  landscape: string[];
+  /** The shapes written to `recadro.json`, by slot, for captures that are not the slot's first display upright. */
+  shapes: Record<string, string>;
 }
 
 /**
@@ -116,18 +116,26 @@ export function listStarters(): string[] {
 function capturesTaken(config: string): { files: string[]; from: string | null } {
   const set = loadSet(config);
   for (const slot of SLOTS) {
-    const files = capturesIn(capturesDir(set, slot.id, DEFAULT_LOCALE));
+    const dir = capturesDir(set, slot.id, DEFAULT_LOCALE);
+    const files = dir ? capturesIn(dir) : [];
     if (files.length) return { files, from: slot.id };
   }
   return { files: [], from: null };
 }
 
 /**
- * The slots whose captures are landscape, read for the default locale as
- * `capturesTaken` reads them. A slot with no captures yet stays upright.
+ * The shape each slot's captures are, where it is not the slot's default —
+ * on their side, or the Duo's inner display — read for the default locale as
+ * `capturesTaken` reads them. A slot with no captures yet keeps its default.
  */
-function landscapeTaken(set: PanelSet): string[] {
-  return SLOTS.filter((slot) => landscapeIn(capturesDir(set, slot.id, DEFAULT_LOCALE))).map((slot) => slot.id);
+function shapesTaken(set: PanelSet): Record<string, string> {
+  const shapes: Record<string, string> = {};
+  for (const slot of SLOTS) {
+    const dir = capturesDir(set, slot.id, DEFAULT_LOCALE);
+    const shape = dir && shapeTaken(dir, slot);
+    if (shape && shapeText(shape) !== shapeText(defaultShape(slot))) shapes[slot.id] = shapeText(shape);
+  }
+  return shapes;
 }
 
 /** Copies `from` into `to`, filling capture placeholders in text files and noting the ones left. */
@@ -157,7 +165,7 @@ function copyStarter(from: string, to: string, captures: string[], unfilled: Set
  * where it runs, since that folder has its set: a second one is made from
  * another folder. The file is written and read back before anything is
  * copied, so its paths are checked first; a failure removes what was made.
- * It is written again with `landscape` when captures turn out to be, since
+ * It is written again with `shape` when captures turn out to need one, since
  * where they are is known only once the file is read.
  */
 export function initSet(options: InitOptions): InitResult {
@@ -181,12 +189,12 @@ export function initSet(options: InitOptions): InitResult {
   mkdirSync(dir, { recursive: true });
   try {
     writeFileSync(config, `${JSON.stringify(written, null, 2)}\n`);
-    const landscape = landscapeTaken(loadSet(config));
-    if (landscape.length) writeFileSync(config, `${JSON.stringify({ ...written, landscape }, null, 2)}\n`);
+    const shapes = shapesTaken(loadSet(config));
+    if (Object.keys(shapes).length) writeFileSync(config, `${JSON.stringify({ ...written, shape: shapes }, null, 2)}\n`);
     const taken = capturesTaken(config);
     const unfilled = new Set<number>();
     copyStarter(source, dir, taken.files, unfilled);
-    return { captures: taken.files, capturesFrom: taken.from, unfilled: [...unfilled].sort((a, b) => a - b), landscape };
+    return { captures: taken.files, capturesFrom: taken.from, unfilled: [...unfilled].sort((a, b) => a - b), shapes };
   } catch (error) {
     rmSync(config, { force: true });
     if (!existed) rmSync(made, { recursive: true, force: true });

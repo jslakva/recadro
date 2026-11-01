@@ -13,7 +13,7 @@ import type { Browser, Page } from "playwright";
 import sharp from "sharp";
 import type { Panel } from "./panels.ts";
 import { outFile, type OutLayout } from "./set.ts";
-import { CREATIVE, viewportFor, type Slot } from "./slots.ts";
+import { CREATIVE, viewportFor, type Slot, type SlotKind } from "./slots.ts";
 
 /** Everything one render pass needs. */
 export interface RenderOptions {
@@ -24,7 +24,9 @@ export interface RenderOptions {
   /** Panels to attempt, in filename order. */
   panels: Panel[];
   /** Slots to render each panel into. */
-  slots: Slot[];
+  slots: SlotKind[];
+  /** The geometry a panel is shot at on a slot: which display, and which way up. */
+  slotFor: (id: string, slug: string) => Slot;
   /** Locale codes: the output folder names under each slot, and the page's `?locale=`. */
   locales: string[];
   /** The page's `?captures=` for one slot and locale: a root-absolute folder URL. */
@@ -174,47 +176,59 @@ async function shoot(page: Page, out: OutLayout, file: string): Promise<void> {
  * creative asset per locale, or every one at all under `incomplete`.
  */
 export async function render(options: RenderOptions): Promise<RenderResult> {
-  const { browser, origin, panels, slots, locales, capturesUrl, out, incomplete = false } = options;
+  const { browser, origin, panels, slots, slotFor, locales, capturesUrl, out, incomplete = false } = options;
   const { creative = [], creativeCapturesUrl } = options;
   const result: RenderResult = { written: [], incomplete: [] };
 
-  for (const slot of slots) {
+  for (const kind of slots) {
     for (const locale of locales) {
-      clear(out, slot.id, locale);
+      clear(out, kind.id, locale);
 
-      const context = await browser.newContext({
-        viewport: viewportFor(slot),
-        deviceScaleFactor: slot.scale,
-        locale,
-      });
-      const page = await context.newPage();
-      const requests = new CaptureRequests(page);
-
-      const capturesPath = capturesUrl(slot.id, locale);
-      const captures = encodeURIComponent(capturesPath);
+      // One browser context per shape the slot's panels are shot at: most
+      // sets have one, and a panel with its own shape gets a context of its own.
+      const byShape = new Map<string, { slot: Slot; panels: Panel[] }>();
       for (const panel of panels) {
-        const query =
-          `?panel=${panel.slug}&device=${encodeURIComponent(slot.id)}&locale=${locale}&captures=${captures}`;
-        // `networkidle` rather than `load`: a panel fetches its own captions and
-        // sets its capture from them, so the capture request does not exist yet
-        // when `load` fires, and a page asked before it had asked for anything
-        // would be called complete.
-        requests.watch(decoded(capturesPath));
-        await page.goto(`${origin}${panel.urlPath}${query}`, { waitUntil: "networkidle" });
-        await settle(page);
-
-        const file = outFile(out, slot.id, locale, panel.slug);
-        const missing = requests.report();
-        if (missing.length) {
-          result.incomplete.push({ where: file.replace(/\.png$/, ""), missing });
-          if (!incomplete) continue;
-        }
-
-        await shoot(page, out, file);
-        result.written.push(file);
+        const slot = slotFor(kind.id, panel.slug);
+        const key = `${slot.width}x${slot.height}`;
+        const group = byShape.get(key) ?? byShape.set(key, { slot, panels: [] }).get(key)!;
+        group.panels.push(panel);
       }
 
-      await context.close();
+      const capturesPath = capturesUrl(kind.id, locale);
+      const captures = encodeURIComponent(capturesPath);
+      for (const { slot, panels: shapedPanels } of byShape.values()) {
+        const context = await browser.newContext({
+          viewport: viewportFor(slot),
+          deviceScaleFactor: slot.scale,
+          locale,
+        });
+        const page = await context.newPage();
+        const requests = new CaptureRequests(page);
+
+        for (const panel of shapedPanels) {
+          const query =
+            `?panel=${panel.slug}&device=${encodeURIComponent(kind.id)}&locale=${locale}&captures=${captures}`;
+          // `networkidle` rather than `load`: a panel fetches its own captions and
+          // sets its capture from them, so the capture request does not exist yet
+          // when `load` fires, and a page asked before it had asked for anything
+          // would be called complete.
+          requests.watch(decoded(capturesPath));
+          await page.goto(`${origin}${panel.urlPath}${query}`, { waitUntil: "networkidle" });
+          await settle(page);
+
+          const file = outFile(out, kind.id, locale, panel.slug);
+          const missing = requests.report();
+          if (missing.length) {
+            result.incomplete.push({ where: file.replace(/\.png$/, ""), missing });
+            if (!incomplete) continue;
+          }
+
+          await shoot(page, out, file);
+          result.written.push(file);
+        }
+
+        await context.close();
+      }
     }
   }
 

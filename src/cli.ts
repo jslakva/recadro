@@ -28,10 +28,12 @@ import {
   isDir,
   loadSet,
   outTemplate,
+  shapeOf,
+  slotAt,
   type PanelSet,
 } from "./set.ts";
 import { discoverCreative } from "./panels.ts";
-import { CREATIVE, SLOTS, selectSlots } from "./slots.ts";
+import { CREATIVE, defaultShape, selectSlots, shapeText, SLOTS, type SlotKind } from "./slots.ts";
 import { DEFAULT_TIMEOUT_S, reply, wait } from "./wait.ts";
 
 const INIT_LINE = `recadro init   <dir> [--starter <name>] [--captures <dir>] [--out <dir>] [--config <path>] [--skill | --no-skill]`;
@@ -123,6 +125,23 @@ function slotsFor(set: PanelSet, locales: string[], flag: string | undefined): {
   if (!found.length) return { ids: SLOTS.map((s) => s.id), from: "no captures yet" };
   const missing = SLOTS.filter((s) => !found.includes(s.id)).map((s) => s.id);
   return { ids: found, from: missing.length ? `no captures for ${missing.join(", ")}` : "captures" };
+}
+
+/** The `captures` line `init`, `dev` and `render` print: the folder and what is in it, or each mapped slot's. */
+function capturesLine(set: PanelSet, locales: string[]): string {
+  const said = describeCaptures(set, locales);
+  return set.captures ? `${shown(set.captures)}/  (${said})` : `${said}  (mapped in ${CONFIG_FILE})`;
+}
+
+/**
+ * A slot as the `devices` line names it: with its shape where that is not the
+ * slot's default, and how many panels are shot at another.
+ */
+function shapeLine(set: PanelSet, slot: SlotKind, panels: { slug: string }[]): string {
+  const own = shapeText(shapeOf(set, slot.id));
+  const named = own === shapeText(defaultShape(slot)) ? slot.id : `${slot.id} ${own}`;
+  const others = panels.filter((panel) => shapeText(shapeOf(set, slot.id, panel.slug)) !== own).length;
+  return others ? `${named} (${counted(others, "panel")} otherwise)` : named;
 }
 
 /** Asks a yes-or-no question on the terminal; Enter alone is yes, Ctrl+C quits. */
@@ -340,7 +359,7 @@ async function main(): Promise<void> {
     const names = [set.dir !== process.cwd() ? `set ${shown(set.dir)}` : "", captures ? `captures ${captures}` : "", out ? `out ${out}` : ""].filter(Boolean);
     console.log(`recadro  ${shown(dir)} from the ${starter} starter`);
     console.log(`         config    ${shown(config)}  (${names.length ? names.join(", ") : "the set is this folder"})`);
-    console.log(`         captures  ${shown(set.captures)}/  (${describeCaptures(set, [DEFAULT_LOCALE])})`);
+    console.log(`         captures  ${capturesLine(set, [DEFAULT_LOCALE])}`);
     if (result.capturesFrom) {
       const first = result.captures[0];
       const last = result.captures.at(-1);
@@ -349,8 +368,10 @@ async function main(): Promise<void> {
     } else {
       console.log("         filled    nothing: no captures taken yet");
     }
-    if (result.landscape.length) {
-      console.log(`         landscape ${result.landscape.join(", ")}  (shaped by the captures; "landscape" in ${shown(config)})`);
+    const shapes = Object.entries(result.shapes);
+    if (shapes.length) {
+      const said = shapes.map(([id, text]) => `${id} ${text}`).join(", ");
+      console.log(`         shape     ${said}  (as the captures are; "shape" in ${shown(config)})`);
     }
     if (result.unfilled.length) {
       const left = result.unfilled.map((n) => `{capture:${n}}`).join(", ");
@@ -393,7 +414,7 @@ async function main(): Promise<void> {
     const { origin, panels } = await startServer(set, { port, watchFetched: true, live: values.live });
     console.log(`recadro  ${counted(panels.length, "panel")} in ${shown(set.dir)}`);
     console.log(`         locales   ${locales.join(", ")}  (${localesFrom})`);
-    console.log(`         captures  ${shown(set.captures)}/  (${describeCaptures(set, locales)})`);
+    console.log(`         captures  ${capturesLine(set, locales)}`);
     const creative = discoverCreative(set.dir, set.root);
     if (creative.length) console.log(`         creative  ${creative.map((c) => c.panel.slug).join(", ")}  (${CREATIVE}/)`);
     console.log(`         lineup    ${origin}/`);
@@ -415,7 +436,12 @@ async function main(): Promise<void> {
     throw new Error(`--incomplete shoots panels that must not ship; pass an --out other than ${shown(set.out.base)}`);
   }
   const { ids, from: devicesFrom } = slotsFor(set, locales, values.devices);
-  const slots = selectSlots(ids, set.landscape);
+  const slots = selectSlots(ids);
+  for (const slot of slots) {
+    if (set.captureMap && !set.captureMap[slot.id] && values.devices) {
+      throw new Error(`--devices ${slot.id}: "captures" in ${shown(set.config)} names no folder for ${slot.id}`);
+    }
+  }
   // The creative assets go with every render, unless --devices names slots and not them.
   const creative = !values.devices || list(values.devices).includes(CREATIVE) ? discoverCreative(set.dir, set.root) : [];
 
@@ -427,8 +453,7 @@ async function main(): Promise<void> {
   const server = await startServer(set, { port });
   try {
     console.log(`recadro  ${counted(server.panels.length, "panel")} in ${shown(set.dir)}`);
-    const turned = slots.map((slot) => (set.landscape.includes(slot.id) ? `${slot.id} landscape` : slot.id));
-    if (slots.length) console.log(`         devices   ${turned.join(", ")}  (${devicesFrom})`);
+    if (slots.length) console.log(`         devices   ${slots.map((slot) => shapeLine(set, slot, server.panels)).join(", ")}  (${devicesFrom})`);
     if (creative.length) console.log(`         creative  ${creative.map((c) => c.panel.slug).join(", ")}  (${CREATIVE}/)`);
     console.log(`         locales   ${locales.join(", ")}  (${localesFrom})`);
     console.log(`         out       ${shown(out.base)}/${outTemplate(out)}\n`);
@@ -438,6 +463,7 @@ async function main(): Promise<void> {
       origin: server.origin,
       panels: server.panels,
       slots,
+      slotFor: (id, slug) => slotAt(set, id, slug),
       locales,
       capturesUrl: (device, locale) => capturesUrl(set, device, locale),
       creative,

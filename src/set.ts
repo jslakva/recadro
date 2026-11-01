@@ -5,11 +5,11 @@
  * says is never read here.
  */
 import { existsSync, readdirSync, readFileSync, statSync, type Dirent } from "node:fs";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { searchForWorkspaceRoot } from "vite";
 import { urlPathFor } from "./panels.ts";
 import { imageSize } from "./shape.ts";
-import { orientedSlots, SLOTS, slotForShape, type Slot } from "./slots.ts";
+import { defaultShape, parseShape, shaped, shapeText, SLOTS, slotForShape, slotKind, type Shape, type Slot, type SlotKind } from "./slots.ts";
 
 /**
  * An entry in `strings/` that names a locale — `en-US.json`, `de-DE.md`, `ja`,
@@ -30,22 +30,23 @@ export const CONFIG_FILE = "recadro.json";
 /**
  * The path keys `recadro.json` takes, relative to the file's folder.
  * `set` is the folder holding `panels/`, the file's own folder when absent.
- * `captures` is a folder, read by the names below it; absent, it is `captures`
- * in the set. `out` is a pattern: `{locale}` is a folder per locale, and
- * `{device}`, when present, a folder per slot inside or outside it; without it
- * the slot goes in the filename; absent, `out/{locale}` in the set.
+ * `out` is a pattern: `{locale}` is a folder per locale, and `{device}`, when
+ * present, a folder per slot inside or outside it; without it the slot goes
+ * in the filename; absent, `out/{locale}` in the set.
  */
-const PATH_KEYS = ["set", "captures", "out"] as const;
+const PATH_KEYS = ["set", "out"] as const;
 
 /**
- * Every key `recadro.json` takes: the paths; `landscape`, the slots rendered
- * on their side, by id; and `app`, how the app appears on the store, for the
- * lineup's store view. Absent, every slot is upright. `init` writes
- * `landscape` from the captures' shape; nothing reads it from them
+ * Every key `recadro.json` takes: the paths; `captures`, a folder read by the
+ * names below it — absent, `captures` in the set — or an object naming each
+ * slot's folder, `{locale}` where they are per locale; `shape`, which display
+ * and which way up each slot's panels are shot at, by slot or by slot and
+ * panel; and `app`, how the app appears on the store, for the lineup's store
+ * view. `init` writes `shape` from the captures; nothing reads it from them
  * afterwards, since a landscape panel may hold an upright screen and the
  * other way round.
  */
-const KEYS = [...PATH_KEYS, "landscape", "app"] as const;
+const KEYS = ["set", "captures", "out", "shape", "app"] as const;
 
 /** The keys `app` takes: the name and subtitle as the store shows them, and the icon, a path. */
 const APP_KEYS = ["name", "subtitle", "icon"] as const;
@@ -55,7 +56,8 @@ export type AppInfo = Partial<Record<(typeof APP_KEYS)[number], string>>;
 
 /** What `recadro.json` says, as written. */
 interface Config extends Partial<Record<(typeof PATH_KEYS)[number], string>> {
-  landscape?: string[];
+  captures?: string | Record<string, string>;
+  shape?: Record<string, Shape>;
   app?: AppInfo;
 }
 
@@ -86,14 +88,16 @@ export interface PanelSet {
   dir: string;
   /** The server root: the repository the set sits in. */
   root: string;
-  /** The captures folder, absolute. `dev` watches below it. */
-  captures: string;
+  /** The captures folder, absolute, read by the names below it; null when `captureMap` names each slot's. */
+  captures: string | null;
+  /** Each slot's captures folder, absolute, `{locale}` kept, when `recadro.json` names them; null otherwise. */
+  captureMap: Record<string, string> | null;
   /** Where renders go: the folder, and the layout of locale and slot below it. */
   out: OutLayout;
   /** Locales named in `strings/`, sorted; empty when it names none. */
   locales: string[];
-  /** The slots rendered landscape, by id; empty when every slot is upright. */
-  landscape: string[];
+  /** The shapes `recadro.json` gives, by slot id, or by `<slot>/<panel slug>` for one panel. */
+  shapes: Record<string, Shape>;
   /** How the app appears on the store, the icon an absolute path; empty when `app` is absent. */
   app: AppInfo;
 }
@@ -170,8 +174,12 @@ function readConfig(file: string): Config {
     if (!(KEYS as readonly string[]).includes(key)) {
       throw new Error(`${file}: unknown key "${key}"; ${CONFIG_FILE} takes ${KEYS.join(", ")}`);
     }
-    if (key === "landscape") {
-      config.landscape = readLandscape(file, value);
+    if (key === "shape") {
+      config.shape = readShapes(file, value);
+      continue;
+    }
+    if (key === "captures" && value && typeof value === "object" && !Array.isArray(value)) {
+      config.captures = readCaptureMap(file, value);
       continue;
     }
     if (key === "app") {
@@ -179,10 +187,12 @@ function readConfig(file: string): Config {
       continue;
     }
     if (typeof value !== "string" || !value.trim()) throw new Error(`${file}: "${key}" must be a path`);
-    config[key as (typeof PATH_KEYS)[number]] = value.replace(/\/+$/, "") || ".";
+    const path = value.replace(/\/+$/, "") || ".";
+    if (key === "captures") config.captures = path;
+    else config[key as (typeof PATH_KEYS)[number]] = path;
   }
 
-  if (config.captures?.includes("{")) {
+  if (typeof config.captures === "string" && config.captures.includes("{")) {
     throw new Error(
       `${file}: "captures" is a folder, with no placeholders; its locale and device folders are read by name`,
     );
@@ -198,17 +208,52 @@ function readConfig(file: string): Config {
   return config;
 }
 
-/** `landscape` as written: a list of slot ids, each known, each once. */
-function readLandscape(file: string, value: unknown): string[] {
-  const ids = SLOTS.map((slot) => slot.id);
-  const example = `"landscape": [${ids.map((id) => `"${id}"`).join(", ")}]`;
-  if (!Array.isArray(value) || value.some((id) => typeof id !== "string")) {
-    throw new Error(`${file}: "landscape" lists the slots rendered landscape, as in ${example}`);
+/**
+ * `shape` as written: an object whose keys are a slot, or a slot and a panel's
+ * slug as `<slot>/<slug>`, and whose values are shapes in words. Whether a
+ * slug names a panel is checked once the panels are listed, by `checkShapes`.
+ */
+function readShapes(file: string, value: unknown): Record<string, Shape> {
+  const example = `"shape": { "iPad": "landscape", "Duo": "inner", "Duo/04-catalog": "outer landscape" }`;
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`${file}: "shape" is an object, as in ${example}`);
   }
-  for (const id of value as string[]) {
-    if (!ids.includes(id)) throw new Error(`${file}: "landscape" names "${id}"; the slots are ${ids.join(", ")}`);
+  const shapes: Record<string, Shape> = {};
+  for (const [key, text] of Object.entries(value)) {
+    const id = key.split("/")[0];
+    if (!SLOTS.some((slot) => slot.id === id) || key.split("/").length > 2 || key.endsWith("/")) {
+      throw new Error(`${file}: "shape" has "${key}"; its keys are a slot, ${SLOTS.map((s) => s.id).join(", ")}, or a slot and a panel, as "Duo/04-catalog"`);
+    }
+    if (typeof text !== "string") throw new Error(`${file}: "shape.${key}" must be words, as "inner landscape"`);
+    try {
+      shapes[key] = parseShape(slotKind(id), text);
+    } catch (error) {
+      throw new Error(`${file}: "shape.${key}": ${error instanceof Error ? error.message : error}`);
+    }
   }
-  return ids.filter((id) => value.includes(id));
+  return shapes;
+}
+
+/**
+ * `captures` as an object: each slot's folder, a path, `{locale}` as a whole
+ * folder name where the captures are per locale. A slot it leaves out has no
+ * captures.
+ */
+function readCaptureMap(file: string, value: object): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const [id, path] of Object.entries(value)) {
+    if (!SLOTS.some((slot) => slot.id === id)) {
+      throw new Error(`${file}: "captures" names "${id}"; the slots are ${SLOTS.map((s) => s.id).join(", ")}`);
+    }
+    if (typeof path !== "string" || !path.trim()) throw new Error(`${file}: "captures.${id}" must be a path`);
+    for (const segment of path.split(/[\\/]/)) {
+      if (segment.includes("{") && segment !== "{locale}") {
+        throw new Error(`${file}: "captures.${id}" ${path}: its one placeholder is {locale}, a whole folder name`);
+      }
+    }
+    map[id] = path.replace(/\/+$/, "") || ".";
+  }
+  return map;
 }
 
 /** `app` as written: an object of strings, with no other keys. */
@@ -276,10 +321,20 @@ export function loadSet(file: string): PanelSet {
   const dir = resolve(base, config.set ?? ".");
   const root = rootFor(dir);
 
-  const captures = config.captures ? resolve(base, config.captures) : join(dir, DEFAULTS.captures);
-  const fromRoot = relative(root, captures);
-  if (fromRoot.startsWith("..") || isAbsolute(fromRoot)) {
-    throw new Error(`${file}: captures resolve to ${captures}, outside the server root ${root}; a page cannot load them`);
+  const inRoot = (path: string, what: string) => {
+    const fromRoot = relative(root, path.split("{locale}")[0]);
+    if (fromRoot.startsWith("..") || isAbsolute(fromRoot)) {
+      throw new Error(`${file}: ${what} resolve to ${path}, outside the server root ${root}; a page cannot load them`);
+    }
+  };
+  let captures: string | null = null;
+  let captureMap: Record<string, string> | null = null;
+  if (config.captures && typeof config.captures === "object") {
+    captureMap = Object.fromEntries(Object.entries(config.captures).map(([id, path]) => [id, resolve(base, path)]));
+    for (const [id, path] of Object.entries(captureMap)) inRoot(path, `${id}'s captures`);
+  } else {
+    captures = config.captures ? resolve(base, config.captures) : join(dir, DEFAULTS.captures);
+    inRoot(captures, "captures");
   }
 
   const out = config.out ? outLayout(base, config.out, file) : outLayout(dir, DEFAULTS.out, file);
@@ -291,7 +346,7 @@ export function loadSet(file: string): PanelSet {
       throw new Error(`${file}: "app.icon" resolves to ${app.icon}, outside the server root ${root}; the lineup cannot load it`);
     }
   }
-  return { config: file, dir, root, captures, out, locales: localesIn(dir), landscape: config.landscape ?? [], app };
+  return { config: file, dir, root, captures, captureMap, out, locales: localesIn(dir), shapes: config.shape ?? {}, app };
 }
 
 /** The captures directly in `dir`, in filename order, numbers compared as numbers. */
@@ -308,29 +363,55 @@ export function shapesIn(dir: string): Map<string, number> {
   for (const name of capturesIn(dir)) {
     const size = imageSize(join(dir, name));
     if (!size) continue;
-    const id = slotForShape(size.width, size.height).id;
+    const id = slotForShape(size.width, size.height).kind.id;
     counts.set(id, (counts.get(id) ?? 0) + 1);
   }
   return new Map(SLOTS.filter((slot) => counts.has(slot.id)).map((slot) => [slot.id, counts.get(slot.id)!]));
 }
 
-/** The slots as `set` renders them, each upright or on its side as its `recadro.json` says. */
-export function slotsOf(set: PanelSet): Slot[] {
-  return orientedSlots(set.landscape);
-}
-
 /**
- * Whether the captures in `dir` are landscape: most of them wider than tall.
- * False for a folder with none.
+ * The shape most of the captures in `dir` that read as `kind` are: which
+ * display, and whether on their side. Null for a folder with none of them.
  */
-export function landscapeIn(dir: string): boolean {
-  let wide = 0;
-  let tall = 0;
+export function shapeTaken(dir: string, kind: SlotKind): Shape | null {
+  const counts = new Map<string, { shape: Shape; n: number }>();
   for (const name of capturesIn(dir)) {
     const size = imageSize(join(dir, name));
-    if (size) size.width > size.height ? wide++ : tall++;
+    if (!size) continue;
+    const { kind: read, shape } = slotForShape(size.width, size.height);
+    if (read.id !== kind.id) continue;
+    const key = shapeText(shape);
+    counts.set(key, { shape, n: (counts.get(key)?.n ?? 0) + 1 });
   }
-  return wide > tall;
+  let best: { shape: Shape; n: number } | null = null;
+  for (const entry of counts.values()) if (!best || entry.n > best.n) best = entry;
+  return best?.shape ?? null;
+}
+
+/** The shape one panel is shot at on one slot: its own in `shape`, else the slot's, else the slot's first display upright. */
+export function shapeOf(set: PanelSet, id: string, slug?: string): Shape {
+  return (slug && set.shapes[`${id}/${slug}`]) || set.shapes[id] || defaultShape(slotKind(id));
+}
+
+/** The geometry one panel is shot at on one slot, or the slot's own without a slug. */
+export function slotAt(set: PanelSet, id: string, slug?: string): Slot {
+  return shaped(slotKind(id), shapeOf(set, id, slug));
+}
+
+/** Throws on a `shape` key naming a panel the set does not have: a renamed panel would quietly lose its shape. */
+export function checkShapes(set: PanelSet, slugs: readonly string[]): void {
+  for (const key of Object.keys(set.shapes)) {
+    const slug = key.split("/")[1];
+    if (slug && !slugs.includes(slug)) {
+      throw new Error(`${set.config}: "shape" has "${key}", and the set has no panel ${slug}; the panels are ${slugs.join(", ")}`);
+    }
+  }
+}
+
+/** The folders a set's captures are under, for `dev` to watch: the captures folder, or each mapped one up to `{locale}`. */
+export function captureFolders(set: PanelSet): string[] {
+  if (set.captures) return [set.captures];
+  return [...new Set(Object.values(set.captureMap ?? {}).map((path) => path.split("{locale}")[0].replace(/[\\/]+$/, "")))];
 }
 
 /**
@@ -345,16 +426,19 @@ export function slotOf(dir: string): string | null {
 }
 
 /**
- * The folder holding one slot's captures in one locale, absolute.
+ * The folder holding one slot's captures in one locale, absolute, or null for
+ * a slot `recadro.json` maps no folder to.
  *
- * Read from names below the captures folder: a folder named for the locale, a
+ * Mapped, it is the slot's folder with `{locale}` filled. Otherwise it is read
+ * from names below the captures folder: a folder named for the locale, a
  * folder named for the slot, either inside the other, and each optional. A
  * folder that names no slot serves the one its captures are shaped for. The
  * most specific folder that exists wins; when none does, the folder where
  * they would go, so a missing capture is reported at a path that makes sense.
  */
-export function capturesDir(set: PanelSet, device: string, locale: string): string {
-  const base = set.captures;
+export function capturesDir(set: PanelSet, device: string, locale: string): string | null {
+  if (set.captureMap) return set.captureMap[device]?.replaceAll("{locale}", locale) ?? null;
+  const base = set.captures!;
   const candidates: string[][] = [[locale, device], [device, locale], [locale], [device], []];
   for (const parts of candidates) {
     const dir = join(base, ...parts);
@@ -369,7 +453,10 @@ export function capturesDir(set: PanelSet, device: string, locale: string): stri
  * with a trailing slash so a page appends a filename.
  */
 export function capturesUrl(set: PanelSet, device: string, locale: string): string {
-  return `${urlPathFor(set.root, capturesDir(set, device, locale))}/`;
+  const dir = capturesDir(set, device, locale);
+  // A slot with no folder mapped still gets a folder, one that holds nothing,
+  // so its panels ask and miss as they would for captures not taken yet.
+  return dir ? `${urlPathFor(set.root, dir)}/` : `/__recadro/no-captures/${device}/`;
 }
 
 /**
@@ -396,7 +483,7 @@ export function capturesUrls(set: PanelSet, locales: readonly string[]): Record<
  * so it still renders.
  */
 export function devicesWithCaptures(set: PanelSet, locales: readonly string[]): string[] {
-  const found = SLOTS.filter((slot) => locales.some((locale) => isDir(capturesDir(set, slot.id, locale))));
+  const found = SLOTS.filter((slot) => locales.some((locale) => isDir(capturesDir(set, slot.id, locale) ?? "")));
   return found.map((slot) => slot.id);
 }
 
@@ -411,15 +498,31 @@ export function devicesWithCaptures(set: PanelSet, locales: readonly string[]): 
  * device family is the usual reason nothing is found.
  */
 export function describeCaptures(set: PanelSet, locales: readonly string[]): string {
-  const base = set.captures;
+  // What the captures are, where it is not the slot's default shape.
+  const turnedIn = (dirs: string[], kind: SlotKind) => {
+    const shape = dirs.map((dir) => shapeTaken(dir, kind)).find(Boolean);
+    const text = shape ? shapeText(shape) : "";
+    return text && text !== shapeText(defaultShape(kind)) ? ` ${text}` : "";
+  };
+  if (set.captureMap) {
+    const from = dirname(set.config);
+    return Object.entries(set.captureMap)
+      .map(([id, path]) => {
+        const dirs = [...new Set(locales.map((locale) => path.replaceAll("{locale}", locale)))].filter(isDir);
+        const shown = `${relative(from, path).split(sep).join("/")}/`;
+        return dirs.length ? `${id} ${shown}${turnedIn(dirs, slotKind(id))}` : `${id} ${shown} none yet`;
+      })
+      .join(", ");
+  }
+  const base = set.captures!;
   const found: string[] = [];
   let perLocale = false;
   for (const slot of SLOTS) {
-    const dirs = [...new Set(locales.map((locale) => capturesDir(set, slot.id, locale)).filter(isDir))];
+    const dirs = [...new Set(locales.map((locale) => capturesDir(set, slot.id, locale)!).filter(isDir))];
     if (!dirs.length) continue;
     const parts = dirs.map((dir) => relative(base, dir).split(/[\\/]/));
     if (parts.some((p) => locales.some((locale) => p.includes(locale)))) perLocale = true;
-    const turned = dirs.some(landscapeIn) ? " landscape" : "";
+    const turned = turnedIn(dirs, slot);
     if (parts.some((p) => p.includes(slot.id))) {
       found.push(`${slot.id}/${turned}`);
       continue;

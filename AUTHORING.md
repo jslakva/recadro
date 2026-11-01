@@ -38,7 +38,21 @@ recadro reads `recadro.json`. It looks in the folder a command runs in;
 
 - `set` — The folder holding `panels/` and `strings/`. Default: the file's
   own folder.
-- `captures` — The captures folder, laid out as under Captures below. Must be
+- `captures` — The captures folder, laid out as under Captures below; or an
+  object naming each slot's folder, for a capture flow whose folder names are
+  its own:
+
+  ```json
+  "captures": {
+    "iPhone": "maestro/screenshots/iPhone",
+    "iPad": "maestro/screenshots/iPad",
+    "Duo": "maestro/screenshots/DuoOuter"
+  }
+  ```
+
+  A folder in the object may hold `{locale}`, a whole folder name, where the
+  captures are per locale; without it, one folder serves every locale. A slot
+  the object leaves out has no captures. Either way, every folder must be
   inside the repository: a page loads captures by URL from its root. Default:
   `<set>/captures`.
 - `out` — Where renders go, as a folder or a pattern. Must be inside the
@@ -53,14 +67,22 @@ recadro reads `recadro.json`. It looks in the folder a command runs in;
   the tree fastlane's `deliver` reads, which picks the slot from the pixel
   size. `"renders/{locale}/{device}"` writes `renders/en-US/iPhone/01-hero.png`.
 
-- `landscape` — The slots rendered landscape, by id: `["iPad"]`,
-  `["iPhone", "iPad"]`. Default: none; every slot is upright. `init` writes
-  it for the slots whose captures are wider than tall. The panels are then
-  shot on their side, at the slot's pixels turned (table below), and the
-  lineup shows them so; it has no switch for it. Change it here, and fit the
-  panels to the new shape: a set written upright does not lay out on its
-  side by itself. A landscape panel may hold an upright capture, and the
-  other way round.
+- `shape` — Which display and which way up a slot's panels are shot at, in
+  words: `"landscape"`, `"portrait"`, and for the Duo `"outer"` or
+  `"inner"`, in any order. A key is a slot, or a slot and one panel's slug:
+
+  ```json
+  "shape": { "iPad": "landscape", "Duo": "inner", "Duo/04-catalog": "outer landscape" }
+  ```
+
+  A panel takes its own shape, else its slot's, else the slot's first
+  display upright: iPhone and iPad upright, the Duo's outer display upright.
+  `init` writes the slot's shape where its captures are another. The lineup
+  shows each panel at its shape; it has no switch for it. Change it here,
+  and fit the panels to the new shape: a set written upright does not lay
+  out on its side by itself. A landscape panel may hold an upright capture,
+  and the other way round. A panel's key naming no panel in the set is an
+  error, so a renamed panel cannot quietly lose its shape.
 
 - `app` — How the app appears on the store, for the lineup's store view:
   `{ "name": "…", "subtitle": "…", "icon": "<path>" }`, each part optional.
@@ -101,17 +123,19 @@ this slot and locale; the page appends the filename it wants — the slug plus
 `.png`, unless the panel maps names itself. The page is the viewport,
 `100vw × 100vh`, opened at the slot's size:
 
-| slot       | App Store Connect display | delivered pixels | viewport (CSS px) | scale |
-|------------|---------------------------|------------------|-------------------|-------|
-| `iPhone`   | 6.9″                      | 1320 × 2868      | 440 × 956         | 3     |
-| `iPad`     | 13″                       | 2048 × 2732      | 1024 × 1366       | 2     |
-| `DuoOuter` | iPhone Duo, outer         | 1398 × 2034      | 466 × 678         | 3     |
-| `DuoInner` | iPhone Duo, inner         | 2007 × 2853      | 669 × 951         | 3     |
+| slot     | shape     | App Store Connect display | delivered pixels | viewport (CSS px) | scale |
+|----------|-----------|---------------------------|------------------|-------------------|-------|
+| `iPhone` |           | 6.9″                      | 1320 × 2868      | 440 × 956         | 3     |
+| `iPad`   |           | 13″                       | 2048 × 2732      | 1024 × 1366       | 2     |
+| `Duo`    | `"outer"` | iPhone Duo, outer display | 1398 × 2034      | 466 × 678         | 3     |
+| `Duo`    | `"inner"` | iPhone Duo, inner display | 2007 × 2853      | 669 × 951         | 3     |
 
-A slot `landscape` names is the same with width and height swapped: `iPhone`
-at 2868 × 1320, `iPad` at 2732 × 2048, `DuoOuter` at 2034 × 1398, `DuoInner`
-at 2853 × 2007. App Store Connect requires iPhone Duo screenshots, one set per
-display, for apps submitted from April 2027.
+A panel shot `"landscape"` is the same with width and height swapped: the
+iPhone at 2868 × 1320, the iPad at 2732 × 2048, the Duo's outer display at
+2034 × 1398 and its inner one at 2853 × 2007. The Duo is one set of
+screenshots in App Store Connect that takes all four sizes, so it is one
+slot, its panels shot at whichever display their shape names. App Store
+Connect requires iPhone Duo screenshots for apps submitted from April 2027.
 
 The numbers are for reading references and choosing hairlines; they belong in
 no panel. A panel that serves both shapes forks on
@@ -207,14 +231,16 @@ the app does and nothing about what it costs.
 
   ```
   captures/<file>.png                     one slot: the one the captures are shaped for
-  captures/<slot>/<file>.png              several slots, a folder each: iPhone/, iPad/, DuoOuter/, DuoInner/
+  captures/<slot>/<file>.png              several slots, a folder each: iPhone/, iPad/, Duo/
   captures/<locale>/[<slot>/]<file>.png   a locale's own captures; <slot>/<locale>/ reads the same
   ```
 
   - A folder named for no slot serves the slot its captures are shaped for:
-    a phone's proportions or an iPad's, whatever their exact size. A Duo
-    display's captures are told only at its exact pixels, either way up,
-    since its shape is close to an iPad's.
+    a phone's proportions or an iPad's, whatever their exact size. The Duo's
+    captures are told only at one of its four exact sizes, since its shape
+    is close to an iPad's.
+  - Folders named otherwise, as a capture flow names them, are given to
+    `captures` in `recadro.json` as an object, one folder per slot.
   - Two slots need a folder each, since a panel asks for the same filename on
     both. App Store Connect requires iPad screenshots when the app supports
     iPad.
@@ -254,9 +280,9 @@ recadro skill  [--config <path>]
 Makes a set from a starter: creates the panels from the chosen starter's
 design, prefills them with the captures already taken, writes `recadro.json`
 where the command runs, or where `--config` says — naming the set,
-`captures` and `out` when the flags give them, and `landscape` for the slots
-whose captures are wider than tall — and offers to install the skill if
-absent.
+`captures` and `out` when the flags give them, and `shape` for the slots
+whose captures are another shape than the slot's default — and offers to
+install the skill if absent.
 
 - `<dir>` — The new set's folder.
 - `--starter <name>` — The starter to copy. Default: asked at a terminal,
@@ -305,7 +331,7 @@ panels as their files change, captures and strings included. Pointer mode
   set, and Esc comes back.
 - The settings are in the address, so a link opens a view:
   `/?device=iPad&locale=de-DE&show=out&store=dark`.
-  - `device` — A slot: `iPhone`, `iPad`, `DuoOuter` or `DuoInner`.
+  - `device` — A slot: `iPhone`, `iPad` or `Duo`.
   - `locale` — One of the set's locales.
   - `show` — `live`, the panels as pages; `out`, the renders; or `store`, the
     set as the App Store shows it for the slot and locale: a search result,
@@ -348,7 +374,7 @@ that uploads next stops. The rest are written, each run replacing only its own
 slots and locales.
 
 - `--devices <slot>[,<slot>]` — Render only the named slots: `iPhone`,
-  `iPad`, `DuoOuter`, `DuoInner`, and `creative` for the creative assets,
+  `iPad`, `Duo`, and `creative` for the creative assets,
   which are rendered by default whenever `creative/` holds a page. A named slot is rendered whether or not it has captures. Default:
   every slot that has captures; all slots if the set has no captures.
 - `--locales <locale>[,<locale>]` — Render only the named locales. Default:
@@ -433,7 +459,7 @@ from the lineup's own page, never from another site open in the same browser.
   `<style>`, in percent of the capture. Fit it to the app's screen on each
   slot. The starters fork the squarer slots, iPad and both Duo displays,
   with `[data-form="tablet"]`, and their `panel.js` sets it; fork one slot
-  alone with `[data-device="DuoInner"]` where its screen lays out apart, and
+  alone with `[data-device="Duo"]` where its screen lays out apart, and
   with `:lang(de)` only where a language moves the screen. Look at the
   capture for that slot before choosing numbers.
 - **New panel:** add `panels/NN-slug.html`. Renaming or renumbering changes the
@@ -442,10 +468,11 @@ from the lineup's own page, never from another site open in the same browser.
 - **Creative assets:** a page in `creative/`, named for its placement. A
   starter's pair shares its `panel.css`; a set without them makes none, and
   removing one stops its render.
-- **Landscape, or back upright:** add or remove the slot in `landscape` in
-  `recadro.json`, then fit the panels to the page's new shape, forking on
-  `@media (orientation: landscape)` where the set keeps both.
+- **Landscape, another display, or back:** set the slot's or the panel's
+  `shape` in `recadro.json`, then fit the panels to the page's new shape,
+  forking on `@media (orientation: landscape)` where the set keeps both.
 - **New locale:** add its strings file. **New device:** its captures in a
-  folder named for the slot, and the other slot's in one too. **Captures
-  move:** change `captures` in `recadro.json`. **The set moves:** change
+  folder named for the slot, and the other slot's in one too, or each named
+  in `captures` in `recadro.json`. **Captures move:** change `captures` in
+  `recadro.json`. **The set moves:** change
   `set`. No panel changes for any of these.

@@ -55,9 +55,11 @@ function inSearch(slot) {
   return slot.width > slot.height ? 1 : 3;
 }
 
-/** A slot as a person names it: "6.9″ iPhone". */
+/** A slot as a person names it: "6.9″ iPhone", "iPhone Duo, outer display". */
 function slotName(slot) {
-  return slot.device ? [slot.display, slot.device].filter(Boolean).join(" ") : slot.id;
+  if (!slot.device) return slot.id;
+  // A size reads before the device, "6.9″ iPhone"; a display after it, "iPhone Duo, outer display".
+  return /^\d/.test(slot.display) ? `${slot.display} ${slot.device}` : `${slot.device}, ${slot.display}`;
 }
 
 /** Whether a toggle button is pressed. */
@@ -235,11 +237,26 @@ function aimFor(panel, context, frame) {
   return aim;
 }
 
-/** Builds one panel's figure in the current mode; its size comes from the lineup's CSS variables. */
+/**
+ * A panel's context on the slot shown: the slot at the panel's own shape —
+ * which display, which way up — and the logical size that gives.
+ */
+function contextFor(panel, context) {
+  const slot = panel.slots[context.slot.id];
+  return { ...context, slot, logicalW: slot.width / slot.scale, logicalH: slot.height / slot.scale };
+}
+
+/**
+ * Builds one panel's figure in the current mode; its width comes from the
+ * lineup's CSS variables, its height and scale from its own, set by `resize`
+ * from the panel's shape.
+ */
 function figureFor(panel, context) {
   const { slot, locale, mode, logicalW, logicalH } = context;
   const figure = document.createElement("figure");
   figure.dataset.slug = panel.slug;
+  figure.dataset.w = String(logicalW);
+  figure.dataset.h = String(logicalH);
   // Named by its slug alone, not by every link in its caption.
   figure.setAttribute("aria-label", panel.slug);
   const frame = document.createElement("div");
@@ -445,22 +462,31 @@ function searchAcross(slot) {
 }
 
 /**
- * Sizes every frame by setting three CSS variables on the lineup, leaving the
- * frames themselves untouched: from the size slider, or fitted to the window
- * when one panel is shown alone.
+ * Sizes every frame by CSS variables, leaving the frames themselves untouched:
+ * one width for all on the lineup, from the size slider or fitted to the
+ * window when one panel is shown alone, and on each figure the height and
+ * scale its own shape gives at that width, since panels on one slot may be
+ * shot at different displays or either way up.
  */
 function resize() {
-  const slot = manifest.slots.find((s) => s.id === radio("device").value);
-  const logicalW = slot.width / slot.scale;
-  const logicalH = slot.height / slot.scale;
+  const slot = firstSlot();
   const focused = el("lineup").querySelector("figure.focused");
   if (!focused && !zoomMoved) el("zoom").value = String(searchAcross(slot) ?? el("zoom").defaultValue);
-  const thumbW = focused ? fitWidth(focused, logicalW, logicalH) : Number(el("zoom").value);
-  const k = thumbW / logicalW;
-  const lineup = el("lineup").style;
-  lineup.setProperty("--thumb-w", `${thumbW}px`);
-  lineup.setProperty("--frame-h", `${Math.round(logicalH * k)}px`);
-  lineup.setProperty("--k", String(k));
+  const thumbW = focused
+    ? fitWidth(focused, Number(focused.dataset.w), Number(focused.dataset.h))
+    : Number(el("zoom").value);
+  el("lineup").style.setProperty("--thumb-w", `${thumbW}px`);
+  for (const figure of el("lineup").querySelectorAll("figure[data-w]")) {
+    const k = thumbW / Number(figure.dataset.w);
+    figure.style.setProperty("--frame-h", `${Math.round(Number(figure.dataset.h) * k)}px`);
+    figure.style.setProperty("--k", String(k));
+  }
+}
+
+/** The slot shown, at its first panel's shape: what a search result shows first, and so how many. */
+function firstSlot() {
+  const id = radio("device").value;
+  return manifest.panels[0]?.slots[id] ?? manifest.slots.find((s) => s.id === id);
 }
 
 /** The panel the URL's hash names, if it names one. */
@@ -602,12 +628,13 @@ function searchMock(slot, locale, width) {
     box.style.borderRadius = "12px";
     result.append(box);
   } else {
-    const n = inSearch(slot);
+    const n = inSearch(firstSlot());
     const shots = document.createElement("div");
     shots.className = "shots";
     const each = (inner - (n - 1) * 8) / n;
     for (const panel of manifest.panels.slice(0, n)) {
-      shots.append(scaledPage(panelUrl(panel, slot, locale), slot.width / slot.scale, slot.height / slot.scale, each, panel.slug));
+      const own = panel.slots[slot.id];
+      shots.append(scaledPage(panelUrl(panel, slot, locale), own.width / own.scale, own.height / own.scale, each, panel.slug));
     }
     result.append(shots);
   }
@@ -660,10 +687,10 @@ function productMock(slot, locale, width) {
   // Screenshots as the page lists them: upright ones about half the page wide, one on its side the page's width.
   const gallery = document.createElement("div");
   gallery.className = "gallery";
-  const wide = slot.width > slot.height;
-  const each = wide ? width - 32 : Math.round((width - 32) * 0.56);
   for (const panel of manifest.panels) {
-    gallery.append(scaledPage(panelUrl(panel, slot, locale), slot.width / slot.scale, slot.height / slot.scale, each, panel.slug));
+    const own = panel.slots[slot.id];
+    const each = own.width > own.height ? width - 32 : Math.round((width - 32) * 0.56);
+    gallery.append(scaledPage(panelUrl(panel, slot, locale), own.width / own.scale, own.height / own.scale, each, panel.slug));
   }
   parts.push(gallery);
   return parts;
@@ -724,6 +751,8 @@ function draw() {
     `${slot.width}×${slot.height} px`,
     `${manifest.panels.length} panels`,
     bare && "no captures for this slot",
+    new Set(manifest.panels.map((p) => `${p.slots[slot.id].width}×${p.slots[slot.id].height}`)).size > 1 &&
+      "shapes vary by panel",
   ]
     .filter(Boolean)
     .join(" · ");
@@ -736,8 +765,9 @@ function draw() {
     return;
   }
 
-  // The wrap button names the first group; a slot on its side has one.
-  const first = inSearch(slot);
+  // The wrap button names the first group; a slot on its side has one, as the
+  // first panel's shape decides.
+  const first = inSearch(firstSlot());
   const count = first === 1 ? "one" : "three";
   el("wrap").textContent = `wrap ${count}`;
   el("wrap").title = `The first ${first === 1 ? "panel on its own" : "three on their own row"}, as a search result shows ${first === 1 ? "it" : "them"}`;
@@ -765,7 +795,7 @@ function draw() {
     }
     const strip = document.createElement("div");
     strip.className = "strip";
-    for (const panel of group.panels) strip.append(figureFor(panel, context));
+    for (const panel of group.panels) strip.append(figureFor(panel, contextFor(panel, context)));
     lineup.append(strip);
   }
   drawPins();

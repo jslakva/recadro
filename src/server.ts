@@ -17,11 +17,13 @@ import {
   DEFAULT_LOCALE,
   devicesWithCaptures,
   loadSet,
+  captureFolders,
+  checkShapes,
   outTemplate,
-  slotsOf,
+  slotAt,
   type PanelSet,
 } from "./set.ts";
-import type { Slot } from "./slots.ts";
+import { SLOTS, type Slot } from "./slots.ts";
 
 /** A running server, plus what the caller needs to build panel URLs. */
 export interface PanelServer {
@@ -50,8 +52,9 @@ export interface ServerOptions {
  * person's notes to the channel.
  */
 interface LineupManifest {
-  panels: { slug: string; urlPath: string }[];
-  /** The slots as the set renders them, landscape ones on their side. */
+  /** The panels, each with the geometry it is shot at on every slot. */
+  panels: { slug: string; urlPath: string; slots: Record<string, Slot> }[];
+  /** The slots at the shape their panels take unless one says otherwise. */
   slots: Slot[];
   /** Locales `strings/` names, or the default one. */
   locales: string[];
@@ -120,11 +123,17 @@ function sendOwnFile(res: ServerResponse, file: string, type: string): void {
  */
 function manifestFor(set: PanelSet, options: ServerOptions): LineupManifest {
   const current = loadSet(set.config);
+  const panels = discoverPanels(current.dir, current.root);
+  checkShapes(current, panels.map((panel) => panel.slug));
   const locales = current.locales.length ? current.locales : [DEFAULT_LOCALE];
   const outUrl = urlPathFor(current.root, current.out.base);
   return {
-    panels: discoverPanels(current.dir, current.root).map(({ slug, urlPath }) => ({ slug, urlPath })),
-    slots: slotsOf(current),
+    panels: panels.map(({ slug, urlPath }) => ({
+      slug,
+      urlPath,
+      slots: Object.fromEntries(SLOTS.map((slot) => [slot.id, slotAt(current, slot.id, slug)])),
+    })),
+    slots: SLOTS.map((slot) => slotAt(current, slot.id)),
     locales,
     captures: capturesUrls(current, locales),
     devicesWithCaptures: devicesWithCaptures(current, locales),
@@ -151,12 +160,12 @@ function manifestFor(set: PanelSet, options: ServerOptions): LineupManifest {
  * itself has no vite client and stays; the panels inside it reload.
  */
 function watchFetched(server: ViteDevServer, set: PanelSet): void {
-  const captures = set.captures;
+  const captures = captureFolders(set);
   const panels = join(set.dir, "panels") + sep;
   server.watcher.add(captures);
   let pending: NodeJS.Timeout | undefined;
   server.watcher.on("all", (_event, file) => {
-    const capture = file.startsWith(captures + sep) && CAPTURE_FILE.test(file);
+    const capture = captures.some((folder) => file.startsWith(folder + sep)) && CAPTURE_FILE.test(file);
     const fetched =
       file.startsWith(set.dir + sep) &&
       !file.startsWith(panels) &&
@@ -247,5 +256,8 @@ export async function startServer(set: PanelSet, options: ServerOptions = {}): P
   const origin = resolved.replace(/\/$/, "");
   if (options.live) announceLive(set.dir, origin);
 
-  return { vite, origin, panels: discoverPanels(set.dir, set.root) };
+  const panels = discoverPanels(set.dir, set.root);
+  // A shape for a panel the set has not got stops the command before anything runs on it.
+  checkShapes(set, panels.map((panel) => panel.slug));
+  return { vite, origin, panels };
 }
