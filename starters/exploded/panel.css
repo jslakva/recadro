@@ -374,3 +374,37 @@ body {
   height: 110vh;
   aspect-ratio: var(--screen);
 }
+
+/*
+ * The iPhone Duo, upright, drawn as Device Hub draws it. The outer display has
+ * its hinge on the left: nearly square corners there, round ones on the
+ * right, the hinge a slab outside the frame, and the camera a round hole in
+ * the top right of the screen. The inner display is round at every corner and
+ * has no hole. Radii are a share of the screen's width, the vertical one
+ * scaled by --screen so a corner stays round; on its side a Duo panel keeps
+ * the squarer slots' frame.
+ */
+@media (orientation: portrait) {
+  [data-display="outer"] .screen {
+    border-radius: 1.6% 12.3% 12.3% 1.6% / calc(1.6% * var(--screen)) calc(12.3% * var(--screen)) calc(12.3% * var(--screen)) calc(1.6% * var(--screen));
+  }
+
+  [data-display="outer"] .screen::before {
+    content: "";
+    display: block;
+    position: absolute;
+    z-index: 1;
+    top: 7%;
+    left: 89.6%;
+    width: 7.9%;
+    height: auto;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    border-radius: 50%;
+    background: #000;
+  }
+
+  [data-display="inner"] .screen {
+    border-radius: 8% / calc(8% * var(--screen));
+  }
+}
