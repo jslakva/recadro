@@ -7,6 +7,8 @@
   [data-form="tablet"], and on its side on the orientation query, which
   repeats the squarer slots' part since their upright rule outranks a bare one; fork
   a language the same way with :lang(de).
+  A slot where the app lays its screens out as neither shape forks on its own
+  name after the squarer rule: the part for [data-device="Duo"].
 -->
 <html>
   <head>
@@ -15,6 +17,7 @@
     <style>
       .detail { --x: 26; --y: 59; --w: 40; --h: 12; }
       [data-form="tablet"] .detail { --x: 36; --y: 82; --w: 24; --h: 8; }
+      [data-device="Duo"] .detail { --x: 12; --y: 47.7; --w: 38; --h: 26.1; }
       @media (orientation: landscape) {
         .detail { --x: 32; --y: 50; --w: 16; --h: 11; }
         [data-form="tablet"] .detail { --x: 32; --y: 50; --w: 16; --h: 11; }

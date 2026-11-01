@@ -6,6 +6,8 @@
   the slice's width and centres on its middle. A screen lays out differently on
   a squarer display, so the slice forks on [data-form="tablet"], and on its side, on the
   orientation query; fork a language the same way with :lang(de).
+  A slot where the app lays its screens out as neither shape forks on its own
+  name after the squarer rule: the slice for [data-device="Duo"].
 -->
 <html>
   <head>
@@ -14,6 +16,7 @@
     <style>
       .detail { --x: 12; --y: 54; --w: 76; --h: 12; }
       [data-form="tablet"] .detail { --x: 6; --y: 85; --w: 88; --h: 13; }
+      [data-device="Duo"] .detail { --x: 0; --y: 47.6; --w: 100; --h: 13.8; }
       @media (orientation: landscape) {
         .detail { --x: 30; --y: 50; --w: 66; --h: 12; }
         [data-form="tablet"] .detail { --x: 31; --y: 35.5; --w: 66; --h: 12; }

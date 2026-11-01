@@ -8,6 +8,8 @@
   repeats their points since their upright rule outranks a bare one;
   fork a language the same way with :lang(de), where a longer label may want
   the other side.
+  A slot where the app lays its screens out as neither shape forks on its own
+  name after the squarer rule: the points for [data-device="Duo"].
 -->
 <html>
   <head>
@@ -18,6 +20,8 @@
       .second { --x: 40; --y: 54; }
       [data-form="tablet"] .first { --x: 23; --y: 16.3; }
       [data-form="tablet"] .second { --x: 76; --y: 24.5; }
+      [data-device="Duo"] .first { --x: 45; --y: 33.5; }
+      [data-device="Duo"] .second { --x: 40; --y: 69.5; }
       @media (orientation: landscape) {
         .first { --x: 14; --y: 24; }
         .second { --x: 60; --y: 41.5; }
