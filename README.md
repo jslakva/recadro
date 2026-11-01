@@ -18,7 +18,8 @@ the work around the story:
   second trip through a design tool.
 - Add a language by adding one strings file for it.
 - Get exact files for every device and language, as App Store Connect wants
-  them.
+  them: iPhone, iPad and iPhone Duo screenshots, and iOS 27's new creative
+  assets, the product page header and the search results image.
 
 ## See it live
 
@@ -77,7 +78,7 @@ Or, if you let `init` add its skill, from Claude Code:
   channel, for iPhone, iPad and iPhone Duo, upright or landscape, and for every language
   with a strings file, in the folders fastlane's `deliver` uploads from. When a screen changes, take
   the capture again and rerun it.
-- The same goes for the product page header and the search result image
+- The same goes for the product page header and the search results image
   App Store Connect now takes: a page each in the set, rendered per language
   at Apple's sizes.
 - `dev` and `render` drive the same server, so the preview and the render
