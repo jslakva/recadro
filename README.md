@@ -74,7 +74,7 @@ Or, if you let `init` add its skill, from Claude Code:
   the store's light and dark grounds. Point at a spot and it copies a
   reference to paste to your agent: the file, the element and the position.
 - `render` writes each PNG at its slot's exact pixels, sRGB with no alpha
-  channel, for iPhone and iPad, upright or landscape, and for every language
+  channel, for iPhone, iPad and iPhone Duo, upright or landscape, and for every language
   with a strings file, in the folders fastlane's `deliver` uploads from. When a screen changes, take
   the capture again and rerun it.
 - The same goes for the product page header and the search result image
