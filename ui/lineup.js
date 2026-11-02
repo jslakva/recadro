@@ -20,7 +20,7 @@ function manifestUrl() {
   return named?.startsWith("/") && !named.startsWith("//") ? named : "/__recadro/panels.json";
 }
 
-const manifest = await fetch(manifestUrl()).then((r) => r.json());
+let manifest = await fetch(manifestUrl()).then((r) => r.json());
 const el = (id) => document.getElementById(id);
 
 /** The radio button in the group `name` holding `value`, or the checked one. */
@@ -48,13 +48,19 @@ for (const slot of manifest.slots) {
 }
 radio("device", manifest.slots[0].id).checked = true;
 
-for (const locale of manifest.locales) el("locale").append(new Option(locale, locale));
-if (manifest.locales.includes("en-US")) el("locale").value = "en-US";
-// A set in one language has nothing to choose, but still says which it is,
-// in the same place a choice would be.
-el("locale").hidden = manifest.locales.length < 2;
-el("locale-only").hidden = manifest.locales.length > 1;
-el("locale-only").textContent = el("locale").value;
+/** Fills the locale choice from the manifest, keeping the one chosen while the set still has it. */
+function fillLocales() {
+  const was = el("locale").value;
+  el("locale").replaceChildren(...manifest.locales.map((locale) => new Option(locale, locale)));
+  if (manifest.locales.includes(was)) el("locale").value = was;
+  else if (manifest.locales.includes("en-US")) el("locale").value = "en-US";
+  // A set in one language has nothing to choose, but still says which it is,
+  // in the same place a choice would be.
+  el("locale").hidden = manifest.locales.length < 2;
+  el("locale-only").hidden = manifest.locales.length > 1;
+  el("locale-only").textContent = el("locale").value;
+}
+fillLocales();
 
 /**
  * How many panels a search result shows: three upright, one on its side, as
@@ -766,7 +772,11 @@ function creativeView({ locale }) {
   for (const asset of manifest.creative) {
     const { width: w, height: h, scale } = asset.placement;
     const figure = document.createElement("figure");
+    figure.dataset.slug = asset.slug;
     const box = scaledPage(creativeUrl(asset, locale), w / scale, h / scale, width, `${asset.slug} creative asset`);
+    // The pointer works here as on a panel; the slot it names is the creative assets'.
+    box.classList.add("spot");
+    box.append(aimFor(asset, { slot: { ...asset.placement, id: "creative" }, locale, logicalW: w / scale, logicalH: h / scale }, box));
     const caption = Object.assign(document.createElement("figcaption"), {
       textContent: `${asset.slug} · ${asset.placement.device} · ${w}×${h} px`,
     });
@@ -881,6 +891,7 @@ function draw() {
   if (mode !== "panels") {
     el("first-group").hidden = true;
     el("lineup").replaceChildren({ store: storeView, creative: creativeView, search: searchView }[mode](context));
+    drawPins();
     el("zoom").disabled = true;
     el("wrap").disabled = true;
     return;
@@ -1009,7 +1020,7 @@ function drawPins() {
   for (const pin of el("lineup").querySelectorAll(".pin")) pin.remove();
   for (const note of notes.values()) {
     if (!note.spot || dismissed.has(note.id)) continue;
-    for (const frame of el("lineup").querySelectorAll(`figure[data-slug="${CSS.escape(note.slug)}"] .frame`)) {
+    for (const frame of el("lineup").querySelectorAll(`figure[data-slug="${CSS.escape(note.slug)}"] :is(.frame, .spot)`)) {
       const pin = document.createElement("span");
       pin.className = `pin${noteState(note)}`;
       // A pin shows as a box when clicked open, or when its reply arrived under the person's eyes; after a reload every pin is a circle.
@@ -1428,3 +1439,25 @@ function onKey(event) {
 el("point").addEventListener("click", () => setPointing(!document.body.classList.contains("pointing")));
 window.addEventListener("keydown", onKey);
 draw();
+
+/**
+ * Under `dev`, the set as it is on disk: the server says when a page is added
+ * or removed or `recadro.json` changes, and the lineup fetches the manifest
+ * again, redrawing only when it differs, so the panels reload only for a real
+ * change. Also on reconnecting, since a restarted server may serve a changed
+ * set. A lineup given `?manifest=` is a static page and has no server to ask.
+ */
+if (manifestUrl() === "/__recadro/panels.json") {
+  const refresh = async () => {
+    const next = await fetch(manifestUrl())
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+    if (!next || JSON.stringify(next) === JSON.stringify(manifest)) return;
+    manifest = next;
+    fillLocales();
+    draw();
+  };
+  const events = new EventSource("/__recadro/set/events");
+  events.addEventListener("set", refresh);
+  events.addEventListener("open", refresh);
+}

@@ -340,8 +340,10 @@ when the installed skill is from another version.
 Serves the lineup at `/` — every panel side by side, the first three grouped
 on their own, as a search result shows them; the first alone for a slot on its
 side, since a search result shows one landscape screenshot. Reloads the
-panels as their files change, captures and strings included. Pointer mode
-(`P`) copies a reference to a spot in a panel, for pasting to an agent.
+panels as their files change, captures and strings included, and redraws
+when a panel or creative asset is added or removed or `recadro.json` changes.
+Pointer mode (`P`) copies a reference to a spot in a panel or creative asset,
+for pasting to an agent.
 
 - It shows the live pages, as `render` shoots them: a panel that looks wrong
   there is wrong in the PNG too.

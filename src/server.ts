@@ -27,7 +27,10 @@ export interface PanelServer {
 export interface ServerOptions {
   /** Port to listen on; vite picks one when absent. */
   port?: number;
-  /** Reload the panels when a capture or a file they fetch changes. For `dev`; `render` has nothing to reload. */
+  /**
+   * Reload the panels when a capture or a file they fetch changes, and tell the
+   * lineup when the set gains or loses a page. For `dev`; `render` has nothing to reload.
+   */
   watchFetched?: boolean;
   /** Serve the notes channel and announce the server for `wait`. `dev --live` only. */
   live?: boolean;
@@ -109,6 +112,45 @@ function watchFetched(server: ViteDevServer, set: PanelSet): void {
   });
 }
 
+/** How often an open event stream gets a comment line, so nothing between drops it as idle. */
+const PING_MS = 30_000;
+
+/**
+ * Tells every open lineup when the set may have changed shape: a page added to
+ * or taken from `panels/` or `creative/`, a strings file added or removed, or
+ * `recadro.json` edited. The lineup has no vite client, and its manifest is
+ * fetched once, so without this a panel written while it is open never shows.
+ * The event carries nothing; the lineup fetches the manifest again and redraws
+ * only when it differs. Returns the handler for the lineup's event stream.
+ */
+function watchSet(server: ViteDevServer, set: PanelSet): (res: ServerResponse) => void {
+  const lineups = new Set<ServerResponse>();
+  server.watcher.add(set.config);
+  let pending: NodeJS.Timeout | undefined;
+  server.watcher.on("all", (event, file) => {
+    const reshaped =
+      file === set.config ||
+      (event !== "change" && file.startsWith(set.dir + sep) && !file.startsWith(set.out.base + sep));
+    if (!reshaped) return;
+    clearTimeout(pending);
+    pending = setTimeout(() => {
+      for (const lineup of lineups) lineup.write("event: set\ndata: {}\n\n");
+    }, 300);
+  });
+  return (res) => {
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-store");
+    res.flushHeaders();
+    lineups.add(res);
+    const ping = setInterval(() => res.write(": ping\n\n"), PING_MS);
+    res.on("close", () => {
+      clearInterval(ping);
+      lineups.delete(res);
+    });
+  };
+}
+
 /**
  * Serves the lineup at `/`, its script, and its manifest.
  *
@@ -129,6 +171,7 @@ function recadroPlugin(set: PanelSet, options: ServerOptions): Plugin {
   return {
     name: "recadro",
     configureServer(server) {
+      const setEvents = options.watchFetched ? watchSet(server, set) : null;
       if (options.watchFetched) watchFetched(server, set);
 
       server.middlewares.use((req, res, next) => {
@@ -138,6 +181,11 @@ function recadroPlugin(set: PanelSet, options: ServerOptions): Plugin {
           res.setHeader("Content-Type", "application/json");
           res.setHeader("Cache-Control", "no-store");
           res.end(JSON.stringify(manifestFor(set, options)));
+          return;
+        }
+
+        if (path === "/__recadro/set/events" && setEvents) {
+          setEvents(res);
           return;
         }
 

@@ -13,8 +13,8 @@
   scaled iframe, never the bare panel URL, which only looks right in a window
   the slot's size.
 
-  The pointer copies a reference to one spot — file, point, element — for a
-  person to paste to a coding agent. It reads what is under the cursor and
+  The pointer copies a reference to one spot — file, point, element — in a
+  panel or a creative asset, for a person to paste to a coding agent. It reads what is under the cursor and
   judges nothing. Under `dev --live`, with an agent's `recadro wait` connected
   or the agent between two, a click opens a note field at the spot instead, and the note goes to the
   agent with the reference; a pin marks it — turning while the agent has it,
@@ -33,6 +33,10 @@
   a search result and the top of the product page, each the width of the
   device held upright, built from the live panels and the creative assets. Judging that split is most of what this view is for, so space
   carries it: the gap before the rest is the widest on the page.
+
+  Under `dev`, the lineup follows the set on disk: the server says when a page
+  is added or removed or `recadro.json` changes, and the lineup fetches its
+  manifest again and redraws if it differs.
 
   The controls live in the lineup's own query (`?store=light&device=iPad`),
   so a reload or a link keeps the view and a page embedding the lineup can set
